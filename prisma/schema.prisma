@@ -1,0 +1,379 @@
+// Delhi Urban Event Intelligence System — data model
+// SQLite backend. No enums/arrays on SQLite: string fields validated by zod in
+// src/lib/validation.ts. Structured payloads stored as JSON strings via
+// src/lib/json.ts helpers.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Actors & org structure
+// ---------------------------------------------------------------------------
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      String   @default("ANALYST") // ADMIN | ANALYST | AGENCY | CITIZEN
+  agencyId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Agency {
+  id        String   @id @default(cuid())
+  code      String   @unique // MCD | PWD | NDMC | DJB | IFC | DDMA | DCP
+  name      String
+  kind      String   @default("CIVIC") // CIVIC | UT | UTILITY | MONITOR
+  hotline   String?
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+model Jurisdiction {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  kind        String   @default("WARD") // WARD | CORRIDOR | CATCHMENT
+  agencyCode  String? // administrating agency
+  bboxJson    String? // [minLng,minLat,maxLng,maxLat]
+  geometryJson String // GeoJSON Polygon coordinates (array of rings)
+  centroidLat Float
+  centroidLng Float
+  areaKm2     Float?
+  pilot       Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  assets      InfrastructureAsset[]
+  events      UrbanEvent[]
+  incidents   HistoricalIncident[]
+  maintenance MaintenanceAction[]
+  links       ResponsibilityLink[]
+}
+
+// ---------------------------------------------------------------------------
+// Static / contextual geography
+// ---------------------------------------------------------------------------
+
+model InfrastructureAsset {
+  id             String   @id @default(cuid())
+  code           String   @unique
+  kind           String // DRAIN | CULVERT | PUMP_STATION | ROAD_SEGMENT | UNDERPASS | DEPRESSION | OUTFALL
+  name           String
+  jurisdictionId String
+  agencyCode     String
+  lat            Float
+  lng            Float
+  pathJson       String? // GeoJSON LineString coordinates for drains/roads
+  conditionScore Int      @default(60) // 0-100, higher = better
+  capacityNote   String?
+  lastInspectedAt DateTime?
+  createdAt      DateTime @default(now())
+
+  jurisdiction Jurisdiction      @relation(fields: [jurisdictionId], references: [id])
+  maintenance  MaintenanceAction[]
+  links        ResponsibilityLink[]
+  actions      ActionItem[]
+
+  @@index([jurisdictionId])
+  @@index([kind])
+}
+
+model WeatherObservation {
+  id          String   @id @default(cuid())
+  stationCode String
+  stationName String
+  lat         Float
+  lng         Float
+  observedAt  DateTime
+  rainfallMm  Float // 3-hour accumulation, synthetic
+  source      String   @default("SYNTHETIC_DEMO")
+  createdAt   DateTime @default(now())
+
+  @@index([stationCode, observedAt])
+}
+
+model HistoricalIncident {
+  id             String   @id @default(cuid())
+  jurisdictionId String
+  lat            Float
+  lng            Float
+  occurredOn     DateTime // date of incident
+  severity       String // LOW | MODERATE | HIGH | CRITICAL
+  durationHours  Float?
+  waterDepthCm   Int?
+  reportedVia    String   @default("MEDIA") // MEDIA | AGENCY | HOTLINE
+  source         String   @default("SYNTHETIC_DEMO")
+  createdAt      DateTime @default(now())
+
+  jurisdiction Jurisdiction @relation(fields: [jurisdictionId], references: [id])
+
+  @@index([jurisdictionId, occurredOn])
+}
+
+model MaintenanceAction {
+  id             String   @id @default(cuid())
+  assetId        String
+  jurisdictionId String
+  agencyCode     String
+  kind           String // DESILTING | REPAIR | PUMP_SERVICE | GRADING | INSPECTION
+  status         String   @default("COMPLETED") // PLANNED | IN_PROGRESS | COMPLETED
+  scheduledAt    DateTime
+  performedAt    DateTime?
+  notes          String?
+  source         String   @default("SYNTHETIC_DEMO")
+  createdAt      DateTime @default(now())
+
+  asset        InfrastructureAsset @relation(fields: [assetId], references: [id])
+  jurisdiction Jurisdiction       @relation(fields: [jurisdictionId], references: [id])
+
+  @@index([assetId])
+}
+
+// ---------------------------------------------------------------------------
+// Reports → Events → Actions → Verification chain
+// ---------------------------------------------------------------------------
+
+model CitizenReport {
+  id              String   @id @default(cuid())
+  publicRef       String   @unique // tracking code, e.g. CR-4F7K
+  description     String
+  category        String   @default("WATERLOGGING") // WATERLOGGING | DRAIN_OVERFLOW | SEWER_BACKUP | POTHOLE | DEBRIS_BLOCKAGE
+  severityReported String  @default("MEDIUM") // LOW | MEDIUM | HIGH | CRITICAL
+  lat             Float
+  lng             Float
+  addressText     String?
+  submittedAt     DateTime @default(now())
+  channel         String   @default("WEB") // WEB | APP | HOTLINE
+  reporterPhone   String? // optional, hashed at rest
+  consentGiven    Boolean  @default(false)
+  status          String   @default("RECEIVED") // RECEIVED | TRIAGED | MERGED | RESOLVED
+  urbanEventId    String?
+  // AI classification (structured, validated; null until classified)
+  classificationJson String?
+  classificationProvider String? // GLM | MOCK | RULE
+  classificationModel  String?
+  classificationConfidence Float?
+  isDuplicate     Boolean  @default(false)
+  duplicateOfId   String?
+  source          String   @default("SYNTHETIC_DEMO")
+  createdAt       DateTime @default(now())
+
+  urbanEvent UrbanEvent? @relation(fields: [urbanEventId], references: [id])
+  evidence   Evidence[]
+
+  @@index([urbanEventId])
+  @@index([status])
+  @@index([submittedAt])
+}
+
+model UrbanEvent {
+  id          String   @id @default(cuid())
+  code        String   @unique // UE-2025-0001
+  title       String
+  category    String   @default("WATERLOGGING")
+  status      String   @default("DETECTED") // DETECTED | TRIAGED | ASSIGNED | IN_PROGRESS | VERIFIED | CLOSED | REOPENED
+  severity    Int      @default(2) // 1-5
+  lat         Float
+  lng         Float
+  locationText String
+  jurisdictionId String?
+  agencyCode  String? // resolved responsible agency
+  firstReportedAt DateTime
+  lastActivityAt  DateTime
+  reportCount Int      @default(1)
+  recurrenceCount Int  @default(0)
+  recurrenceWindowDays Int @default(90)
+  // risk snapshot
+  riskScore   Int      @default(0) // 0-100
+  riskBand    String   @default("LOW") // LOW | MODERATE | HIGH | CRITICAL
+  riskFactorsJson String?
+  riskModelVersion String?
+  riskAssessedAt  DateTime?
+  // AI classification provenance
+  confidence  Float    @default(0.5) // 0-1 classification confidence
+  confidenceNote String?
+  classificationProvider String?
+  modelVersion String?
+  // enrichment snapshot
+  rainfall24hMm Float?
+  rainfall72hMm Float?
+  clusterKey  String?
+  closedAt    DateTime?
+  reopenedAt  DateTime?
+  groundTruthHotspotId String? // links seeded event to known hotspot (analytics)
+  groundTruthAgencyCode String? // known responsible agency (analytics)
+  source      String   @default("SYNTHETIC_DEMO")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  jurisdiction Jurisdiction?       @relation(fields: [jurisdictionId], references: [id])
+  reports      CitizenReport[]
+  evidence     Evidence[]
+  links        ResponsibilityLink[]
+  actions      ActionItem[]
+  verifications Verification[]
+  riskAssessments RiskAssessment[]
+
+  @@index([status])
+  @@index([jurisdictionId])
+  @@index([riskBand])
+  @@index([lastActivityAt])
+}
+
+model Evidence {
+  id            String   @id @default(cuid())
+  urbanEventId  String?
+  reportId      String?
+  verificationId String?
+  kind          String // CITIZEN_PHOTO | FIELD_PHOTO | FIELD_NOTE | RAINFALL_RECORD | GIS_SNAPSHOT | AI_OUTPUT | DOCUMENT
+  caption       String?
+  content       String // data URL (SVG synthetic) or text
+  mediaType     String   @default("image/svg") // image/svg | text/plain
+  capturedAt    DateTime @default(now())
+  capturedBy    String   @default("SYSTEM") // CITIZEN | FIELD_TEAM | SYSTEM | AI
+  lat           Float?
+  lng           Float?
+  metadataJson  String?
+  source        String   @default("SYNTHETIC_DEMO")
+  createdAt     DateTime @default(now())
+
+  urbanEvent   UrbanEvent?   @relation(fields: [urbanEventId], references: [id])
+  report       CitizenReport? @relation(fields: [reportId], references: [id])
+  verification Verification? @relation(fields: [verificationId], references: [id])
+}
+
+model ResponsibilityLink {
+  id             String   @id @default(cuid())
+  eventId        String
+  assetId        String?
+  jurisdictionId String
+  agencyCode     String
+  role           String   @default("PRIMARY") // PRIMARY | SUPPORT | ESCALATION
+  status         String   @default("ACTIVE") // ACTIVE | REASSIGNED | CLOSED
+  assignedAt     DateTime @default(now())
+  reason         String? // routing rule explanation
+  source         String   @default("ENGINE")
+
+  event        UrbanEvent         @relation(fields: [eventId], references: [id])
+  asset        InfrastructureAsset? @relation(fields: [assetId], references: [id])
+  jurisdiction Jurisdiction       @relation(fields: [jurisdictionId], references: [id])
+
+  @@index([eventId])
+  @@index([agencyCode])
+}
+
+model ActionItem {
+  id         String   @id @default(cuid())
+  eventId    String
+  agencyCode String?
+  assetId    String?
+  kind       String // INSPECT | DESILT | DEPLOY_PUMP | BARRICADE | REPAIR | ESCALATE | NOTIFY | MONITOR
+  instruction String
+  priority   String   @default("MEDIUM") // LOW | MEDIUM | HIGH | URGENT
+  status     String   @default("RECOMMENDED") // RECOMMENDED | ASSIGNED | IN_PROGRESS | COMPLETED | FAILED
+  assignedAt DateTime?
+  dueAt      DateTime?
+  completedAt DateTime?
+  assignedTo String? // officer/unit label
+  outcome    String?
+  createdAt  DateTime @default(now())
+
+  event UrbanEvent          @relation(fields: [eventId], references: [id])
+  asset InfrastructureAsset? @relation(fields: [assetId], references: [id])
+
+  @@index([eventId])
+  @@index([status])
+}
+
+model Verification {
+  id            String   @id @default(cuid())
+  eventId       String
+  stage         String // ASSIGNED | DISPATCHED | OBSERVED | EVIDENCE_UPLOADED | ACTION_RECORDED | VERIFIED | CLOSED
+  observedSeverity String?
+  waterDepthCm  Int?
+  notes         String?
+  verifiedBy    String   @default("FIELD_TEAM")
+  verifiedAt    DateTime @default(now())
+  beforeEvidenceId String?
+  afterEvidenceId  String?
+  reopenReason  String?
+  createdAt     DateTime @default(now())
+
+  event   UrbanEvent @relation(fields: [eventId], references: [id])
+  evidence Evidence[]
+
+  @@index([eventId])
+}
+
+model RiskAssessment {
+  id            String   @id @default(cuid())
+  eventId       String
+  score         Int
+  band          String
+  factorsJson   String // [{key,label,value,weight,contribution}]
+  modelVersion  String
+  provider      String   @default("RULE") // RULE | GLM | MOCK
+  computedAt    DateTime @default(now())
+
+  event UrbanEvent @relation(fields: [eventId], references: [id])
+
+  @@index([eventId])
+}
+
+// ---------------------------------------------------------------------------
+// Observability & research instrumentation
+// ---------------------------------------------------------------------------
+
+model ModelRun {
+  id          String   @id @default(cuid())
+  modelId     String // classify | cluster | risk | pipeline | analytics
+  version     String
+  provider    String // GLM | MOCK | RULE | ENGINE
+  status      String   @default("RUNNING") // RUNNING | SUCCEEDED | FAILED
+  inputCount  Int      @default(0)
+  outputCount Int      @default(0)
+  latencyMs   Int?
+  startedAt   DateTime @default(now())
+  finishedAt  DateTime?
+  error       String?
+  notes       String?
+  itemsJson   String? // summary of outputs (no chain-of-thought ever)
+
+  @@index([modelId, startedAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  at         DateTime @default(now())
+  actor      String   @default("SYSTEM") // SYSTEM | ANALYST | AGENCY | CITIZEN | FIELD_TEAM
+  action     String // REPORT_INGESTED | CLASSIFIED | ... verb tokens
+  entityType String // CitizenReport | UrbanEvent | ...
+  entityId   String
+  beforeJson String?
+  afterJson  String?
+  note       String?
+
+  @@index([entityType, entityId])
+  @@index([at])
+}
+
+model Hotspot {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  lat       Float
+  lng       Float
+  radiusM   Int      @default(250)
+  kind      String   @default("GROUND_TRUTH") // GROUND_TRUTH | COMPUTED
+  score     Float?
+  method    String? // baseline-frequency | proposed-risk | engine-risk
+  evidenceJson String?
+  createdAt DateTime @default(now())
+}

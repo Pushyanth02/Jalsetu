@@ -1,0 +1,787 @@
+     1→import { db } from "@/lib/db";
+     2→import { Rng, hashSeed } from "@/lib/rng";
+     3→import { jitter, pointInPolygon, distanceM } from "@/lib/geo";
+     4→import { AGENCIES, ASSETS, DESCRIPTIONS, HOTSPOTS, JURISDICTIONS, STATIONS, type HotspotDef } from "./delhi";
+     5→import { syntheticPhoto } from "./photo";
+     6→import { ingestReport } from "@/lib/engine/pipeline";
+     7→import { audit, finishModelRun, startModelRun, toJson } from "@/lib/json";
+     8→import type { ReportCreateInput } from "@/lib/validation";
+     9→import type { Severity } from "@/lib/types";
+    10→
+    11→// Deterministic Delhi pilot seed. Structure is stable (fixed PRNG seed);
+    12→// timestamps are anchored to execution time so freshness metrics stay live.
+    13→// EVERYTHING here is labelled SYNTHETIC_DEMO.
+    14→
+    15→const SEED = 20351;
+    16→const HOUR = 3600_000;
+    17→const DAY = 24 * HOUR;
+    18→
+    19→function ringOf(j: (typeof JURISDICTIONS)[number]) {
+    20→  return j.ring.map(([lng, lat]) => [lng, lat] as [number, number]);
+    21→}
+    22→
+    23→function insideAnyJurisdiction(p: { lat: number; lng: number }) {
+    24→  return JURISDICTIONS.some((j) =>
+    25→    pointInPolygon(p, [ringOf(j)])
+    26→  );
+    27→}
+    28→
+    29→function minutesAgo(mins: number): Date {
+    30→  return new Date(Date.now() - mins * 60_000);
+    31→}
+    32→
+    33→export async function wipeDatabase() {
+    34→  // delete in FK-safe order
+    35→  await db.evidence.deleteMany();
+    36→  await db.verification.deleteMany();
+    37→  await db.actionItem.deleteMany();
+    38→  await db.responsibilityLink.deleteMany();
+    39→  await db.riskAssessment.deleteMany();
+    40→  await db.citizenReport.deleteMany();
+    41→  await db.urbanEvent.deleteMany();
+    42→  await db.hotspot.deleteMany();
+    43→  await db.maintenanceAction.deleteMany();
+    44→  await db.historicalIncident.deleteMany();
+    45→  await db.weatherObservation.deleteMany();
+    46→  await db.infrastructureAsset.deleteMany();
+    47→  await db.jurisdiction.deleteMany();
+    48→  await db.agency.deleteMany();
+    49→  await db.modelRun.deleteMany();
+    50→  await db.auditLog.deleteMany();
+    51→  await db.user.deleteMany();
+    52→}
+    53→
+    54→export async function seedDatabase(): Promise<{ reports: number; events: number; observations: number }> {
+    55→  const rng = new Rng(SEED);
+    56→  await wipeDatabase();
+    57→
+    58→  const runId = await startModelRun({
+    59→    modelId: "pipeline",
+    60→    version: "seed-1.0",
+    61→    provider: "MOCK",
+    62→    inputCount: 0,
+    63→    notes: "Deterministic seed generation (synthetic demo data)",
+    64→  });
+    65→
+    66→  // --- agencies & jurisdictions ---------------------------------------------
+    67→  for (const a of AGENCIES) {
+    68→    await db.agency.create({ data: { code: a.code, name: a.name, kind: a.kind, hotline: a.hotline, notes: a.notes } });
+    69→  }
+    70→  const jurisdictionIds = new Map<string, string>();
+    71→  for (const j of JURISDICTIONS) {
+    72→    const ring = ringOf(j);
+    73→    const created = await db.jurisdiction.create({
+    74→      data: {
+    75→        code: j.code,
+    76→        name: j.name,
+    77→        kind: j.kind,
+    78→        agencyCode: j.agencyCode,
+    79→        geometryJson: JSON.stringify([ring]),
+    80→        centroidLat: ring.reduce((s, r) => s + r[1], 0) / ring.length,
+    81→        centroidLng: ring.reduce((s, r) => s + r[0], 0) / ring.length,
+    82→        pilot: true,
+    83→      },
+    84→    });
+    85→    jurisdictionIds.set(j.code, created.id);
+    86→    jurisdictionIdMap.set(j.code, created.id);
+    87→  }
+    88→
+    89→  // --- assets + maintenance ---------------------------------------------------
+    90→  const assetIds = new Map<string, string>();
+    91→  for (const a of ASSETS) {
+    92→    const created = await db.infrastructureAsset.create({
+    93→      data: {
+    94→        code: a.code,
+    95→        kind: a.kind,
+    96→        name: a.name,
+    97→        jurisdictionId: jurisdictionIds.get(a.jurisdiction)!,
+    98→        agencyCode: a.agencyCode,
+    99→        lat: a.lat,
+   100→        lng: a.lng,
+   101→        pathJson: a.path ? JSON.stringify(a.path) : null,
+   102→        conditionScore: a.condition,
+   103→        lastInspectedAt: new Date(Date.now() - rng.int(20, 200) * DAY),
+   104→      },
+   105→    });
+   106→    assetIds.set(a.code, created.id);
+   107→
+   108→    const profile = a.maintenanceProfile;
+   109→    if (profile === "RECENT") {
+   110→      await db.maintenanceAction.create({
+   111→        data: {
+   112→          assetId: created.id,
+   113→          jurisdictionId: jurisdictionIds.get(a.jurisdiction)!,
+   114→          agencyCode: a.agencyCode,
+   115→          kind: a.kind === "PUMP_STATION" ? "PUMP_SERVICE" : "DESILTING",
+   116→          status: "COMPLETED",
+   117→          scheduledAt: new Date(Date.now() - 75 * DAY),
+   118→          performedAt: new Date(Date.now() - rng.int(55, 70) * DAY),
+   119→          notes: "Pre-monsoon desilting completed; silt removed and outfall verified.",
+   120→          source: "SYNTHETIC_DEMO",
+   121→        },
+   122→      });
+   123→    } else if (profile === "OVERDUE") {
+   124→      await db.maintenanceAction.create({
+   125→        data: {
+   126→          assetId: created.id,
+   127→          jurisdictionId: jurisdictionIds.get(a.jurisdiction)!,
+   128→          agencyCode: a.agencyCode,
+   129→          kind: a.kind === "PUMP_STATION" ? "PUMP_SERVICE" : "DESILTING",
+   130→          status: "COMPLETED",
+   131→          scheduledAt: new Date(Date.now() - 450 * DAY),
+   132→          performedAt: new Date(Date.now() - rng.int(400, 440) * DAY),
+   133→          notes: "Desilting done last year; pre-monsoon round pending this season.",
+   134→          source: "SYNTHETIC_DEMO",
+   135→        },
+   136→      });
+   137→    } else if (profile === "IN_PROGRESS") {
+   138→      await db.maintenanceAction.create({
+   139→        data: {
+   140→          assetId: created.id,
+   141→          jurisdictionId: jurisdictionIds.get(a.jurisdiction)!,
+   142→          agencyCode: a.agencyCode,
+   143→          kind: "PUMP_SERVICE",
+   144→          status: "IN_PROGRESS",
+   145→          scheduledAt: new Date(Date.now() - 5 * DAY),
+   146→          notes: "Pump overhaul in progress; one of two pumps operational.",
+   147→          source: "SYNTHETIC_DEMO",
+   148→        },
+   149→      });
+   150→      // historical record so gap computation sees the previous service
+   151→      await db.maintenanceAction.create({
+   152→        data: {
+   153→          assetId: created.id,
+   154→          jurisdictionId: jurisdictionIds.get(a.jurisdiction)!,
+   155→          agencyCode: a.agencyCode,
+   156→          kind: "PUMP_SERVICE",
+   157→          status: "COMPLETED",
+   158→          scheduledAt: new Date(Date.now() - 400 * DAY),
+   159→          performedAt: new Date(Date.now() - 395 * DAY),
+   160→          notes: "Annual pump service completed last season.",
+   161→          source: "SYNTHETIC_DEMO",
+   162→        },
+   163→      });
+   164→    }
+   165→  }
+   166→
+   167→  // --- weather: 96h of 3-hourly synthetic observations ------------------------
+   168→  // Monsoon storm: peak centred ~36h ago, σ ≈ 10h, plus diurnal convective noise.
+   169→  const stormPeak = Date.now() - 36 * HOUR;
+   170→  const obsCount = await generateWeather(rng, stormPeak);
+   171→
+   172→  // --- historical incidents ---------------------------------------------------
+   173→  await generateHistoricalIncidents(rng);
+   174→
+   175→  // --- ground truth hotspots --------------------------------------------------
+   176→  for (const h of HOTSPOTS) {
+   177→    await db.hotspot.create({
+   178→      data: {
+   179→        code: h.code,
+   180→        name: h.name,
+   181→        lat: h.lat,
+   182→        lng: h.lng,
+   183→        radiusM: 250,
+   184→        kind: "GROUND_TRUTH",
+   185→        method: "seed",
+   186→        evidenceJson: toJson({
+   187→          note: "Known flood-prone location in the synthetic pilot scenario",
+   188→          historicalIncidents: "see HistoricalIncident rows",
+   189→          jurisdiction: h.jurisdiction,
+   190→          groundTruthAgency: h.groundTruthAgency,
+   191→        }),
+   192→      },
+   193→    });
+   194→  }
+   195→
+   196→  // --- timeline: citizen reports ingested through the REAL engine -------------
+   197→  const timeline = buildReportTimeline(rng);
+   198→
+   199→  let reports = 0;
+   200→  for (const item of timeline.items) {
+   201→    await ingestReport(item.input, "CITIZEN", {
+   202→      at: item.at,
+   203→      forceMockProvider: true,
+   204→      source: "SYNTHETIC_DEMO",
+   205→    });
+   206→    reports += 1;
+   207→  }
+   208→
+   209→  // --- post-seed processing: ground-truth links + case shaping ----------------
+   210→  const events = await db.urbanEvent.findMany();
+   211→  for (const e of events) {
+   212→    const h = nearestHotspot({ lat: e.lat, lng: e.lng });
+   213→    if (h && distanceM({ lat: e.lat, lng: e.lng }, h) <= 160) {
+   214→      await db.urbanEvent.update({
+   215→        where: { id: e.id },
+   216→        data: { groundTruthHotspotId: h.code, groundTruthAgencyCode: h.groundTruthAgency },
+   217→      });
+   218→    }
+   219→  }
+   220→
+   221→  // conflicting-evidence / low-confidence cases
+   222→  const conflictEvent = events.find((e) => distanceM({ lat: e.lat, lng: e.lng }, { lat: 28.7085, lng: 77.1912 }) < 120);
+   223→  if (conflictEvent) {
+   224→    await db.urbanEvent.update({
+   225→      where: { id: conflictEvent.id },
+   226→      data: {
+   227→        confidence: 0.38,
+   228→        confidenceNote:
+   229→          "Conflicting severity evidence across citizen reports (CRITICAL vs LOW at same location). Flagged for field verification.",
+   230→      },
+   231→    });
+   232→    await audit({
+   233→      actor: "SYSTEM",
+   234→      action: "CONFIDENCE_FLAGGED",
+   235→      entityType: "UrbanEvent",
+   236→      entityId: conflictEvent.id,
+   237→      note: "conflicting evidence",
+   238→    });
+   239→  }
+   240→
+   241→  // --- verification workflow progression on selected events -------------------
+   242→  const byHotspot = new Map<string, typeof events>();
+   243→  for (const e of await db.urbanEvent.findMany()) {
+   244→    if (!e.groundTruthHotspotId) continue;
+   245→    const list = byHotspot.get(e.groundTruthHotspotId) ?? [];
+   246→    list.push(e);
+   247→    byHotspot.set(e.groundTruthHotspotId, list);
+   248→  }
+   249→  const pickEvent = (code: string) => {
+   250→    const list = byHotspot.get(code) ?? [];
+   251→    return list.sort((a, b) => b.reportCount - a.reportCount)[0] ?? null;
+   252→  };
+   253→
+   254→  // 1) BKS Marg: full lifecycle → verified → closed (then recurrence report below)
+   255→  const bks = pickEvent("HS-MR-02");
+   256→  if (bks) {
+   257→    await progressLifecycle(bks.id, {
+   258→      assignedAt: 50 ,
+   259→      dispatchedAt: 48 ,
+   260→      observedAt: 46 ,
+   261→      evidenceAt: 45 ,
+   262→      actionAt: 42 ,
+   263→      verifiedAt: 40 ,
+   264→      closedAt: 38 ,
+   265→      depthCm: 22,
+   266→      label: "Baba Kharak Singh Marg",
+   267→    });
+   268→  }
+   269→  // 2) Barapullah outfall: full lifecycle → closed, no recurrence
+   270→  const brp = pickEvent("HS-ITO-02");
+   271→  if (brp) {
+   272→    await progressLifecycle(brp.id, {
+   273→      assignedAt: 44 ,
+   274→      dispatchedAt: 42 ,
+   275→      observedAt: 40 ,
+   276→      evidenceAt: 39 ,
+   277→      actionAt: 34 ,
+   278→      verifiedAt: 30 ,
+   279→      closedAt: 28 ,
+   280→      depthCm: 35,
+   281→      label: "Barapullah outfall",
+   282→    });
+   283→  }
+   284→  // 3) Minto Road underpass: mid-flight IN_PROGRESS with field evidence
+   285→  const minto = pickEvent("HS-MR-01");
+   286→  if (minto) {
+   287→    await progressLifecycle(minto.id, {
+   288→      assignedAt: 26 ,
+   289→      dispatchedAt: 24 ,
+   290→      observedAt: 20 ,
+   291→      evidenceAt: 18 ,
+   292→      label: "Minto Road underpass",
+   293→      depthCm: 40,
+   294→    });
+   295→  }
+   296→  // 4) Model Town underpass: assigned only
+   297→  const mt = pickEvent("HS-MT-01");
+   298→  if (mt) {
+   299→    await progressLifecycle(mt.id, { assignedAt: 14 , label: "Model Town underpass" });
+   300→  }
+   301→  // 5) ITO crossing: assigned + dispatched
+   302→  const ito = pickEvent("HS-ITO-01");
+   303→  if (ito) {
+   304→    await progressLifecycle(ito.id, { assignedAt: 10 , dispatchedAt: 8 , label: "ITO crossing" });
+   305→  }
+   306→
+   307→  // --- recurrence after closure: BKS Marg re-reported ~6h ago ------------------
+   308→  if (bks) {
+   309→    await ingestReport(
+   310→      {
+   311→        description: "Water is back on the same stretch after tonight's rain. Drain blocked again, similar level as last week.",
+   312→        category: "WATERLOGGING",
+   313→        severityReported: "HIGH",
+   314→        lat: 28.6329 + rng.float(-0.0004, 0.0004),
+   315→        lng: 77.2196 + rng.float(-0.0004, 0.0004),
+   316→        addressText: "Baba Kharak Singh Marg",
+   317→        channel: "APP",
+   318→        consentGiven: true,
+   319→      },
+   320→      "CITIZEN",
+   321→      { at: new Date(Date.now() - 6 * HOUR), forceMockProvider: true, source: "SYNTHETIC_DEMO" }
+   322→    );
+   323→    reports += 1;
+   324→  }
+   325→
+   326→  const finalEvents = await db.urbanEvent.findMany();
+   327→  await finishModelRun(runId, {
+   328→    status: "SUCCEEDED",
+   329→    outputCount: finalEvents.length,
+   330→    inputCount: reports,
+   331→    latencyMs: 0,
+   332→    notes: `seeded ${reports} reports → ${finalEvents.length} events, ${obsCount} weather observations`,
+   333→  });
+   334→  await audit({
+   335→    actor: "SYSTEM",
+   336→    action: "SEED_COMPLETED",
+   337→    entityType: "System",
+   338→    entityId: "seed",
+   339→    after: { reports, events: finalEvents.length, observations: obsCount },
+   340→    note: "Synthetic demo dataset generated deterministically",
+   341→  });
+   342→
+   343→  return { reports, events: finalEvents.length, observations: obsCount };
+   344→}
+   345→
+   346→// --- weather -----------------------------------------------------------------
+   347→
+   348→async function generateWeather(rng: Rng, stormPeak: number): Promise<number> {
+   349→  let count = 0;
+   350→  const slots: number[] = [];
+   351→  for (let t = Date.now() - 96 * HOUR; t <= Date.now(); t += 3 * HOUR) slots.push(t);
+   352→  for (const s of STATIONS) {
+   353→    const stationRng = new Rng(hashSeed(s.code));
+   354→    for (const t of slots) {
+   355→      const dt = (t - stormPeak) / HOUR;
+   356→      const storm = 26 * s.amplitude * Math.exp(-(dt * dt) / (2 * 10 * 10));
+   357→      const diurnal = 3.5 * s.amplitude * Math.max(0, Math.sin(((t / HOUR) % 24) / 24 * 2 * Math.PI - Math.PI / 2));
+   358→      const noise = stationRng.float(0, 2.2);
+   359→      const rainfall = Math.max(0, +(storm + diurnal * 0.3 + noise).toFixed(1));
+   360→      await db.weatherObservation.create({
+   361→        data: {
+   362→          stationCode: s.code,
+   363→          stationName: s.name,
+   364→          lat: s.lat,
+   365→          lng: s.lng,
+   366→          observedAt: new Date(t),
+   367→          rainfallMm: rainfall,
+   368→          source: "SYNTHETIC_DEMO",
+   369→        },
+   370→      });
+   371→      count += 1;
+   372→    }
+   373→  }
+   374→  return count;
+   375→}
+   376→
+   377→async function generateHistoricalIncidents(rng: Rng) {
+   378→  for (const h of HOTSPOTS) {
+   379→    const n = rng.int(4, 7);
+   380→    for (let i = 0; i < n; i++) {
+   381→      const year = rng.int(new Date().getFullYear() - 5, new Date().getFullYear() - 1);
+   382→      const month = rng.int(6, 9);
+   383→      const day = rng.int(1, 28);
+   384→      const p = jitter({ lat: h.lat, lng: h.lng }, 90, () => rng.float(0, 1));
+   385→      await db.historicalIncident.create({
+   386→        data: {
+   387→          jurisdictionId: jurisdictionIdFor(h.jurisdiction)!,
+   388→          lat: p.lat,
+   389→          lng: p.lng,
+   390→          occurredOn: new Date(Date.UTC(year, month - 1, day, 9, 30)),
+   391→          severity: rng.weighted([
+   392→            ["LOW", 1],
+   393→            ["MODERATE", 2],
+   394→            ["HIGH", 3],
+   395→            ["CRITICAL", 2],
+   396→          ] as [string, number][]),
+   397→          durationHours: rng.float(2, 11),
+   398→          waterDepthCm: rng.int(15, 80),
+   399→          reportedVia: rng.weighted([
+   400→            ["MEDIA", 2],
+   401→            ["AGENCY", 1],
+   402→            ["HOTLINE", 1],
+   403→          ] as [string, number][]),
+   404→          source: "SYNTHETIC_DEMO",
+   405→        },
+   406→      });
+   407→    }
+   408→  }
+   409→  // background incidents away from hotspots
+   410→  const noise = new Rng(hashSeed("incidents-noise"));
+   411→  let placed = 0;
+   412→  let guard = 0;
+   413→  while (placed < 26 && guard < 400) {
+   414→    guard += 1;
+   415→    const p = {
+   416→      lat: noise.float(28.61, 28.71),
+   417→      lng: noise.float(77.185, 77.26),
+   418→    };
+   419→    if (!insideAnyJurisdiction(p)) continue;
+   420→    if (nearestHotspot(p) && distanceM(p, nearestHotspot(p)!) < 350) continue;
+   421→    const j = JURISDICTIONS.find((x) => pointInPolygon(p, [ringOf(x)]))!;
+   422→    await db.historicalIncident.create({
+   423→      data: {
+   424→        jurisdictionId: jurisdictionIdFor(j.code)!,
+   425→        lat: p.lat,
+   426→        lng: p.lng,
+   427→        occurredOn: new Date(Date.UTC(noise.int(new Date().getFullYear() - 5, new Date().getFullYear() - 1), noise.int(6, 9), noise.int(1, 28), 9, 30)),
+   428→        severity: noise.weighted([
+   429→          ["LOW", 3],
+   430→          ["MODERATE", 2],
+   431→          ["HIGH", 1],
+   432→        ] as [string, number][]),
+   433→        durationHours: noise.float(1, 5),
+   434→        waterDepthCm: noise.int(5, 30),
+   435→        reportedVia: "HOTLINE",
+   436→        source: "SYNTHETIC_DEMO",
+   437→      },
+   438→    });
+   439→    placed += 1;
+   440→  }
+   441→}
+   442→
+   443→// --- report timeline ----------------------------------------------------------
+   444→
+   445→interface TimelineItem {
+   446→  at: Date;
+   447→  input: ReportCreateInput;
+   448→}
+   449→
+   450→function buildReportTimeline(rng: Rng): { items: TimelineItem[] } {
+   451→  const items: TimelineItem[] = [];
+   452→  const HOUR_ = HOUR;
+   453→
+   454→  const push = (
+   455→    at: Date,
+   456→    h: HotspotDef,
+   457→    text: string,
+   458→    severity: Severity,
+   459→    category: string,
+   460→    photo: boolean
+   461→  ) => {
+   462→    const p = jitter({ lat: h.lat, lng: h.lng }, 70, () => rng.float(0, 1));
+   463→    const input: ReportCreateInput = {
+   464→      description: text,
+   465→      category: category as ReportCreateInput["category"],
+   466→      severityReported: severity,
+   467→      lat: p.lat,
+   468→      lng: p.lng,
+   469→      addressText: h.name,
+   470→      channel: rng.weighted([["APP", 2], ["WEB", 2], ["HOTLINE", 1]] as [string, number][]) as ReportCreateInput["channel"],
+   471→      consentGiven: true,
+   472→    };
+   473→    if (photo) {
+   474→      input.photoDataUrl = syntheticPhoto({
+   475→        kind: "citizen",
+   476→        label: h.name,
+   477→        timeLabel: new Date(at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }),
+   478→      });
+   479→      input.photoCaption = "Citizen photo (synthetic)";
+   480→    }
+   481→    items.push({ at, input });
+   482→  };
+   483→
+   484→  // complaint-light hotspots: structurally vulnerable but under-reported this
+   485→  // window (the core research case where frequency-only methods fail)
+   486→  const LIGHT = new Set(["HS-MT-02", "HS-ITO-02"]);
+   487→
+   488→  for (const h of HOTSPOTS) {
+   489→    const texts = DESCRIPTIONS[h.profile];
+   490→    const cat = categoryForProfile(h.profile);
+   491→    if (LIGHT.has(h.code)) {
+   492→      // complaint-light structurally-vulnerable spot: 1-2 reports only;
+   493→      // risk must come from infrastructure + history, not complaint volume
+   494→      if (h.code === "HS-ITO-02") {
+   495→        push(new Date(Date.now() - rng.float(30, 33) * HOUR_), h, texts[1], "CRITICAL", cat, false);
+   496→        push(new Date(Date.now() - rng.float(8, 14) * HOUR_), h, texts[3], "HIGH", cat, false);
+   497→      } else {
+   498→        push(new Date(Date.now() - rng.float(30, 34) * HOUR_), h, texts[rng.int(0, texts.length - 1)], "MEDIUM", cat, false);
+   499→      }
+   500→      continue;
+   501→    }
+   502→    // wave 1: pre-storm (T-70h)
+   503→    push(new Date(Date.now() - (70 + rng.float(-2, 2)) * HOUR_), h, texts[rng.int(0, texts.length - 1)], "MEDIUM", cat, rng.bool(0.2));
+   504→    // wave 2: storm peak (T-38..T-28h)
+   505→    const wave2 = h.profile === "UNDERPASS" ? 5 : 4;
+   506→    for (let i = 0; i < wave2; i++) {
+   507→      const at = new Date(Date.now() - rng.float(28, 38) * HOUR_);
+   508→      const sev: Severity = rng.weighted([["HIGH", 3], ["CRITICAL", 2]] as [Severity, number][]);
+   509→      push(at, h, texts[rng.int(0, texts.length - 1)], sev, cat, rng.bool(0.45));
+   510→    }
+   511→    // wave 3: aftermath (T-22..T-10h)
+   512→    push(new Date(Date.now() - rng.float(10, 22) * HOUR_), h, texts[rng.int(0, texts.length - 1)], rng.bool(0.5) ? "HIGH" : "MEDIUM", cat, rng.bool(0.3));
+   513→  }
+   514→
+   515→  // conflicting-evidence pair at Alipur Road (HS-MT-02): CRITICAL vs LOW
+   516→  const mt2 = HOTSPOTS[1];
+   517→  push(new Date(Date.now() - 33 * HOUR_), mt2, "Knee-deep water on the low stretch, autos stuck, water entering shops.", "CRITICAL", "WATERLOGGING", true);
+   518→  push(new Date(Date.now() - 30 * HOUR_), mt2, "Small puddle on the side of the road, mostly dried now, not a big issue I think.", "LOW", "WATERLOGGING", false);
+   519→
+   520→  // low-confidence ambiguous report near ITO
+   521→  push(
+   522→    new Date(Date.now() - 31 * HOUR_),
+   523→    HOTSPOTS[4],
+   524→    "Not sure, maybe some water collected near the signal, could not see clearly from the bus.",
+   525→    "MEDIUM",
+   526→    "WATERLOGGING",
+   527→    false
+   528→  );
+   529→
+   530→  // complaint magnets: busy visible spots, many minor reports, structurally sound
+   531→  const MAGNETS: { name: string; lat: number; lng: number; texts: string[]; n: number }[] = [
+   532→    {
+   533→      name: "GTB Nagar market approach",
+   534→      lat: 28.7008, lng: 77.2038,
+   535→      texts: [
+   536→        "Water patch at the market corner, autos going around it. Lots of people, minor nuisance only.",
+   537→        "Small puddle near the market gate, footpath edge. Crowd walking around it.",
+   538→        "Shallow water at the approach road, shopkeepers sweeping it away. Not deep.",
+   539→        "Some water collected near the metro exit, many commuters, but it is only ankle deep.",
+   540→      ],
+   541→      n: 4,
+   542→    },
+   543→    {
+   544→      name: "Pragati Maidan metro gate",
+   545→      lat: 28.6121, lng: 77.2471,
+   546→      texts: [
+   547→        "Puddle outside the metro gate, commuters hopping over it. Minor issue.",
+   548→        "Water near the gate after rain, metro staff putting boards. Shallow.",
+   549→        "Footpath wet with a small collection of water near gate 3, crowded but manageable.",
+   550→      ],
+   551→      n: 3,
+   552→    },
+   553→  ];
+   554→  for (const m of MAGNETS) {
+   555→    for (let i = 0; i < m.n; i++) {
+   556→      const p = jitter({ lat: m.lat, lng: m.lng }, 45, () => rng.float(0, 1));
+   557→      items.push({
+   558→        at: new Date(Date.now() - rng.float(6, 40) * HOUR_),
+   559→        input: {
+   560→          description: m.texts[i % m.texts.length],
+   561→          category: "WATERLOGGING",
+   562→          severityReported: rng.bool(0.6) ? "LOW" : "MEDIUM",
+   563→          lat: p.lat,
+   564→          lng: p.lng,
+   565→          addressText: m.name,
+   566→          channel: rng.pick(["WEB", "APP"] as const),
+   567→          consentGiven: true,
+   568→        },
+   569→      });
+   570→    }
+   571→  }
+   572→
+   573→  // noise reports away from hotspots
+   574→  const noiseRng = new Rng(hashSeed("noise-reports"));
+   575→  let placed = 0;
+   576→  let guard = 0;
+   577→  while (placed < 13 && guard < 300) {
+   578→    guard += 1;
+   579→    const p = { lat: noiseRng.float(28.61, 28.715), lng: noiseRng.float(77.185, 77.262) };
+   580→    if (!insideAnyJurisdiction(p)) continue;
+   581→    const nh = nearestHotspot(p);
+   582→    if (nh && distanceM(p, nh) < 400) continue;
+   583→    const j = JURISDICTIONS.find((x) => pointInPolygon(p, [ringOf(x)]))!;
+   584→    const isPothole = noiseRng.bool(0.3);
+   585→    const texts = isPothole ? DESCRIPTIONS.NOISE_POTHOLE : DESCRIPTIONS.NOISE_MINOR;
+   586→    items.push({
+   587→      at: new Date(Date.now() - noiseRng.float(4, 60) * HOUR_),
+   588→      input: {
+   589→        description: texts[noiseRng.int(0, texts.length - 1)],
+   590→        category: isPothole ? "POTHOLE" : "WATERLOGGING",
+   591→        severityReported: noiseRng.weighted([["LOW", 3], ["MEDIUM", 2]] as [Severity, number][]),
+   592→        lat: p.lat,
+   593→        lng: p.lng,
+   594→        addressText: j.name.split("(")[0].trim(),
+   595→        channel: noiseRng.pick(["WEB", "APP"] as const),
+   596→        consentGiven: true,
+   597→      },
+   598→    });
+   599→    placed += 1;
+   600→  }
+   601→
+   602→  items.sort((a, b) => a.at.getTime() - b.at.getTime());
+   603→  return { items };
+   604→}
+   605→
+   606→function categoryForProfile(profile: string): string {
+   607→  switch (profile) {
+   608→    case "DRAIN_OUTFALL":
+   609→      return "DRAIN_OVERFLOW";
+   610→    default:
+   611→      return "WATERLOGGING";
+   612→  }
+   613→}
+   614→
+   615→// --- lifecycle progression ----------------------------------------------------
+   616→
+   617→interface LifecycleTimes {
+   618→  assignedAt?: number; // hours ago
+   619→  dispatchedAt?: number;
+   620→  observedAt?: number;
+   621→  evidenceAt?: number;
+   622→  actionAt?: number;
+   623→  verifiedAt?: number;
+   624→  closedAt?: number;
+   625→  depthCm?: number;
+   626→  label: string;
+   627→}
+   628→
+   629→async function progressLifecycle(eventId: string, t: LifecycleTimes) {
+   630→  const rng = new Rng(hashSeed(eventId));
+   631→  const unit = rng.pick(["PWD Field Unit C-2 (JE: R. Mehra)", "NDMC Field Team 4 (AE: S. Kaushik)", "MCD Drain Squad N-7 (JE: A. Bisht)", "I&FC Outfall Crew 3 (AE: D. Chandra)"]);
+   632→
+   633→  if (t.assignedAt != null) {
+   634→    await db.actionItem.updateMany({
+   635→      where: { eventId, status: "RECOMMENDED" },
+   636→      data: { status: "ASSIGNED", assignedAt: minutesAgo(t.assignedAt * 60), assignedTo: unit },
+   637→    });
+   638→    await db.verification.create({
+   639→      data: {
+   640→        eventId,
+   641→        stage: "ASSIGNED",
+   642→        notes: `Actions assigned to ${unit}.`,
+   643→        verifiedBy: "AGENCY",
+   644→        verifiedAt: minutesAgo(t.assignedAt * 60),
+   645→      },
+   646→    });
+   647→    await db.urbanEvent.update({ where: { id: eventId }, data: { status: "ASSIGNED" } });
+   648→    await audit({ actor: "AGENCY", action: "ACTIONS_ASSIGNED", entityType: "UrbanEvent", entityId: eventId, note: unit });
+   649→  }
+   650→  if (t.dispatchedAt != null) {
+   651→    await db.verification.create({
+   652→      data: {
+   653→        eventId,
+   654→        stage: "DISPATCHED",
+   655→        notes: `Field team dispatched from depot; ETA 40 min (moderate traffic).`,
+   656→        verifiedBy: "AGENCY",
+   657→        verifiedAt: minutesAgo(t.dispatchedAt * 60),
+   658→      },
+   659→    });
+   660→    await audit({ actor: "AGENCY", action: "TEAM_DISPATCHED", entityType: "UrbanEvent", entityId: eventId });
+   661→  }
+   662→  if (t.observedAt != null) {
+   663→    await db.verification.create({
+   664→      data: {
+   665→        eventId,
+   666→        stage: "OBSERVED",
+   667→        observedSeverity: t.depthCm && t.depthCm > 30 ? "HIGH" : "MEDIUM",
+   668→        waterDepthCm: t.depthCm,
+   669→        notes: `Standing water ~${t.depthCm ?? 20}cm. Drain intake partially blocked; pumping required.`,
+   670→        verifiedBy: "FIELD_TEAM",
+   671→        verifiedAt: minutesAgo(t.observedAt * 60),
+   672→      },
+   673→    });
+   674→    await db.urbanEvent.update({ where: { id: eventId }, data: { status: "IN_PROGRESS" } });
+   675→    await audit({ actor: "FIELD_TEAM", action: "FIELD_OBSERVED", entityType: "UrbanEvent", entityId: eventId, after: { depthCm: t.depthCm } });
+   676→  }
+   677→  if (t.evidenceAt != null) {
+   678→    const ev = await db.evidence.create({
+   679→      data: {
+   680→        urbanEventId: eventId,
+   681→        kind: "FIELD_PHOTO",
+   682→        caption: `Before intervention: ${t.label}`,
+   683→        content: syntheticPhoto({
+   684→          kind: "field-before",
+   685→          label: t.label,
+   686→          depthCm: t.depthCm,
+   687→          timeLabel: minutesAgo(t.evidenceAt * 60).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }),
+   688→        }),
+   689→        capturedBy: "FIELD_TEAM",
+   690→        capturedAt: minutesAgo(t.evidenceAt * 60),
+   691→      },
+   692→    });
+   693→    await db.verification.create({
+   694→      data: {
+   695→        eventId,
+   696→        stage: "EVIDENCE_UPLOADED",
+   697→        notes: "Field photo uploaded (synthetic evidence).",
+   698→        verifiedBy: "FIELD_TEAM",
+   699→        verifiedAt: minutesAgo(t.evidenceAt * 60),
+   700→        beforeEvidenceId: ev.id,
+   701→      },
+   702→    });
+   703→    await audit({ actor: "FIELD_TEAM", action: "EVIDENCE_UPLOADED", entityType: "UrbanEvent", entityId: eventId, after: { evidenceId: ev.id } });
+   704→  }
+   705→  if (t.actionAt != null) {
+   706→    const ev = await db.evidence.create({
+   707→      data: {
+   708→        urbanEventId: eventId,
+   709→        kind: "FIELD_PHOTO",
+   710→        caption: `After intervention: ${t.label}`,
+   711→        content: syntheticPhoto({
+   712→          kind: "field-after",
+   713→          label: t.label,
+   714→          timeLabel: minutesAgo(t.actionAt * 60).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }),
+   715→        }),
+   716→        capturedBy: "FIELD_TEAM",
+   717→        capturedAt: minutesAgo(t.actionAt * 60),
+   718→      },
+   719→    });
+   720→    await db.actionItem.updateMany({
+   721→      where: { eventId, status: { in: ["ASSIGNED", "IN_PROGRESS"] } },
+   722→      data: { status: "COMPLETED", completedAt: minutesAgo(t.actionAt * 60), outcome: "Desilted intake; pumped out standing water; road cleared and verified dry." },
+   723→    });
+   724→    await db.verification.create({
+   725→      data: {
+   726→        eventId,
+   727→        stage: "ACTION_RECORDED",
+   728→        notes: "Desilting and pumping completed; discharge verified.",
+   729→        verifiedBy: "FIELD_TEAM",
+   730→        verifiedAt: minutesAgo(t.actionAt * 60),
+   731→        afterEvidenceId: ev.id,
+   732→      },
+   733→    });
+   734→    await audit({ actor: "FIELD_TEAM", action: "ACTION_RECORDED", entityType: "UrbanEvent", entityId: eventId });
+   735→  }
+   736→  if (t.verifiedAt != null) {
+   737→    await db.verification.create({
+   738→      data: {
+   739→        eventId,
+   740→        stage: "VERIFIED",
+   741→        observedSeverity: "LOW",
+   742→        waterDepthCm: 0,
+   743→        notes: "Re-visit confirms water cleared; drain flowing. Closure approved.",
+   744→        verifiedBy: "FIELD_TEAM",
+   745→        verifiedAt: minutesAgo(t.verifiedAt * 60),
+   746→      },
+   747→    });
+   748→    await db.urbanEvent.update({ where: { id: eventId }, data: { status: "VERIFIED" } });
+   749→    await audit({ actor: "FIELD_TEAM", action: "VERIFIED", entityType: "UrbanEvent", entityId: eventId });
+   750→  }
+   751→  if (t.closedAt != null) {
+   752→    await db.verification.create({
+   753→      data: {
+   754→        eventId,
+   755→        stage: "CLOSED",
+   756→        notes: "Event closed after verification. Recurrence watch active (30 days).",
+   757→        verifiedBy: "AGENCY",
+   758→        verifiedAt: minutesAgo(t.closedAt * 60),
+   759→      },
+   760→    });
+   761→    await db.urbanEvent.update({ where: { id: eventId }, data: { status: "CLOSED", closedAt: minutesAgo(t.closedAt * 60) } });
+   762→    await db.actionItem.updateMany({ where: { eventId, status: "ASSIGNED" }, data: { status: "COMPLETED", completedAt: minutesAgo(t.closedAt * 60) } });
+   763→    await db.responsibilityLink.updateMany({ where: { eventId }, data: { status: "CLOSED" } });
+   764→    await audit({ actor: "AGENCY", action: "CLOSED", entityType: "UrbanEvent", entityId: eventId });
+   765→  }
+   766→}
+   767→
+   768→// --- helpers -------------------------------------------------------------------
+   769→
+   770→const jurisdictionIdMap = new Map<string, string>();
+   771→function jurisdictionIdFor(code: string): string | undefined {
+   772→  return jurisdictionIdMap.get(code);
+   773→}
+   774→
+   775→function nearestHotspot(p: { lat: number; lng: number }): HotspotDef | null {
+   776→  let best: HotspotDef | null = null;
+   777→  let bestD = Infinity;
+   778→  for (const h of HOTSPOTS) {
+   779→    const d = distanceM(p, { lat: h.lat, lng: h.lng });
+   780→    if (d < bestD) {
+   781→      bestD = d;
+   782→      best = h;
+   783→    }
+   784→  }
+   785→  return best;
+   786→}
+   787→
