@@ -1,5 +1,5 @@
 import { AppRoot } from "@/components/app/shell/AppRoot";
-import { SITE_URL, SITE_BASE_PATH } from "./layout";
+import { SITE_URL, SITE_BASE_PATH } from "@/lib/site-config";
 
 /**
  * Root route: the single user-visible page. Server-rendered JSON-LD carries

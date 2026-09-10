@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import snapshot from "@/data/snapshot.json";
-import { SITE_URL } from "./layout";
+import { SITE_URL } from "@/lib/site-config";
 
 export const dynamic = "force-static";
 

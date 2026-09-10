@@ -4,13 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Providers } from "@/components/app/providers";
 
-/**
- * Custom-domain-ready base URL: set NEXT_PUBLIC_SITE_URL in production and
- * every canonical, OG and sitemap URL follows automatically. NEXT_PUBLIC_BASE_PATH
- * carries the GitHub Pages subpath (e.g. /repo-name) when deployed there.
- */
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-export const SITE_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH?.replace(/\/+$/, "") ?? "";
+import { SITE_URL, SITE_BASE_PATH } from "@/lib/site-config";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -69,7 +63,7 @@ export const metadata: Metadata = {
     locale: "en_IN",
     images: [
       {
-        url: "/og.jpg",
+        url: `${SITE_BASE_PATH}/og.jpg`,
         width: 1200,
         height: 630,
         alt: "JalSetu control-room map of Delhi with waterlogging risk markers",
@@ -80,7 +74,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
-    images: ["/og.jpg"],
+    images: [`${SITE_BASE_PATH}/og.jpg`],
   },
   robots: {
     index: true,
@@ -116,12 +110,12 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       </head>
       <body
-        className={`${inter.variable} ${plexMono.variable} antialiased bg-background text-foreground min-h-[100dvh]`}
+        className={`${inter.variable} ${plexMono.variable} antialiased bg-background text-foreground min-h-dvh`}
       >
         {/* Skip link — keyboard users jump straight to the view */}
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-slate-900 focus:shadow-lg focus:ring-2 focus:ring-water"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-100 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-slate-900 focus:shadow-lg focus:ring-2 focus:ring-water"
         >
           Skip to content
         </a>
