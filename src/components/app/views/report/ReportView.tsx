@@ -144,7 +144,7 @@ export function ReportView() {
           Citizen Report
         </h1>
         <p className="mt-1 text-xs text-muted-foreground sm:pl-[2.875rem]">
-          Report waterlogging and related issues. Every submission is classified, checked for duplicates, risk-assessed and routed automatically.
+          Report waterlogging and related problems. After you submit, the system reads your report, checks whether it matches an existing incident, scores how urgent it is and routes it to the right agency.
         </p>
       </div>
 
@@ -175,7 +175,7 @@ function TrackReport() {
     <Panel
       title="Track a Report"
       icon={<Search />}
-      actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/70">public reference</span>}
+      actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/70">Public Reference</span>}
     >
       <form
         className="flex gap-2"
@@ -250,7 +250,7 @@ function TrackReport() {
               </Button>
             </div>
           ) : (
-            <p className="mt-3 pt-3 hairline-t text-xs text-muted-foreground">No urban event linked yet. The pipeline is still processing this report.</p>
+            <p className="mt-3 pt-3 hairline-t text-xs text-muted-foreground">No urban event linked yet. The system is still processing this report.</p>
           )}
         </div>
       )}
@@ -434,7 +434,7 @@ function ReportWizard() {
     <Panel
       title="File a New Report"
       icon={<Flag />}
-      actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/70">public · web channel</span>}
+      actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/70">Public · Web Channel</span>}
     >
       {/* step progress: numbered circles, completed shows a check */}
       <ol className="flex items-center gap-0 overflow-x-auto no-scrollbar pb-1" aria-label="Wizard progress">
@@ -571,7 +571,7 @@ function ReportWizard() {
             <ChevronLeft className="size-3.5" aria-hidden /> Back
           </Button>
           <span className="micro-label !text-[0.52rem] text-muted-foreground">
-            {step < 3 ? `${step + 1} of 4` : "final check"}
+            {step < 3 ? `${step + 1} of 4` : "Final Check"}
           </span>
           {step < 3 ? (
             <Button type="button" size="sm" className="group relative overflow-hidden rounded-lg bg-water text-white hover:bg-water-dim" onClick={next}>
@@ -621,7 +621,7 @@ function StepLocation(p: {
         <MapView events={[]} interactive className="size-full" />
         <div className="absolute inset-x-0 bottom-0 bg-white/90 backdrop-blur-sm border-t border-slate-200/70 p-2.5 pointer-events-none">
           <p className="micro-label !text-[0.52rem] text-slate-500">
-            pilot window: central Delhi · place the report with coordinates, GPS or a pilot area below
+            Pilot area: central Delhi · place your report using coordinates, GPS or an area below
           </p>
         </div>
       </div>
@@ -722,7 +722,7 @@ function StepLocation(p: {
               </SelectContent>
             </Select>
           )}
-          <p className="text-[0.62rem] text-muted-foreground">Selecting an area fills the coordinates with its centroid. You can fine-tune them after.</p>
+          <p className="text-[0.62rem] text-muted-foreground">Picking an area fills in its centre coordinates. You can fine-tune them afterwards.</p>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="rep-address" className="text-xs">
@@ -774,7 +774,7 @@ function StepIssue(p: {
   return (
     <div className="space-y-4">
       <fieldset>
-        <legend className="micro-label mb-2.5">what is the issue</legend>
+        <legend className="micro-label mb-2.5">What Is the Issue</legend>
         <RadioGroup value={p.category} onValueChange={p.onCategory} aria-label="Issue category">
           <Stagger className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {CATEGORY_META.map((c) => (
@@ -793,7 +793,7 @@ function StepIssue(p: {
       </fieldset>
 
       <fieldset>
-        <legend className="micro-label mb-2.5">how severe (water depth guide)</legend>
+        <legend className="micro-label mb-2.5">How Severe (Water Depth Guide)</legend>
         <RadioGroup value={p.severity} onValueChange={p.onSeverity} aria-label="Severity">
           <Stagger className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
             {SEVERITY_META.map((s) => (
@@ -883,7 +883,7 @@ function StepEvidence(props: StepEvidenceProps) {
               <X className="size-3" aria-hidden /> Remove
             </Button>
           )}
-          <span className="text-[0.62rem] text-slate-500">Downscaled to at most 1024px jpeg and stored as a data URL in the demo database.</span>
+          <span className="text-[0.62rem] text-slate-500">Photos are shrunk to at most 1024px jpeg and stored in the demo database.</span>
         </div>
         {photoErr && <p className="mt-1.5 text-[0.62rem] text-sev-high" role="alert">{photoErr}</p>}
         {photo && (
@@ -961,19 +961,19 @@ function StepReview(p: {
 }) {
   return (
     <div className="space-y-3">
-      <p className="micro-label">final check before submission</p>
+      <p className="micro-label">Final Check Before Submission</p>
       <dl className="rounded-xl border border-border/70 bg-slate-50/60 divide-y divide-border/60 text-xs">
-        <ReviewRow label="coordinates" value={`${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`} />
-        <ReviewRow label="pilot area" value={p.jurisdictionName ?? "none selected"} />
-        <ReviewRow label="landmark" value={p.addressText || "none"} />
-        <ReviewRow label="category" value={p.category.toLowerCase().replace(/_/g, " ")} />
-        <ReviewRow label="severity reported" value={p.severity.toLowerCase()} />
-        <ReviewRow label="description" value={p.description} multiline />
-        <ReviewRow label="photo" value={p.photo ? `attached (${p.photo.name}, ${dataUrlKb(p.photo.dataUrl)} KB jpeg)` : "none"} />
-        <ReviewRow label="phone" value={p.phone ? "provided (stored hashed)" : "not provided"} />
+        <ReviewRow label="Coordinates" value={`${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`} />
+        <ReviewRow label="Pilot Area" value={p.jurisdictionName ?? "none selected"} />
+        <ReviewRow label="Landmark" value={p.addressText || "none"} />
+        <ReviewRow label="Category" value={p.category.toLowerCase().replace(/_/g, " ")} />
+        <ReviewRow label="Severity Reported" value={p.severity.toLowerCase()} />
+        <ReviewRow label="Description" value={p.description} multiline />
+        <ReviewRow label="Photo" value={p.photo ? `attached (${p.photo.name}, ${dataUrlKb(p.photo.dataUrl)} KB jpeg)` : "none"} />
+        <ReviewRow label="Phone" value={p.phone ? "provided (stored hashed)" : "not provided"} />
       </dl>
       <p className="text-[0.65rem] text-slate-500">
-        On submit the pipeline classifies the report, checks for duplicates within 150m and 48h, computes risk and routes responsibility. The outcome reference lets you track it.
+        When you submit, the system reads your report, checks for duplicates within 150m and the last 48 hours, scores the risk and routes it to the right agencies. Keep your tracking reference to follow the outcome.
       </p>
       {p.submitError && <ErrorNote message={p.submitError} />}
       <div className="flex justify-end">
@@ -1021,7 +1021,7 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
         <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
           <p className="micro-label !text-[0.55rem] text-water flex items-center gap-2">
             <PulseDot color="bg-emerald-500" size={7} />
-            report submitted · tracking reference
+            Report Submitted · Tracking Reference
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <span className="data-mono text-2xl sm:text-[1.7rem] font-bold text-water tracking-tight">{outcome.publicRef}</span>
@@ -1036,7 +1036,7 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
 
       <Reveal delay={0.08}>
         <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="micro-label !text-[0.52rem] text-muted-foreground">pipeline outcome</span>
+          <span className="micro-label !text-[0.52rem] text-muted-foreground">Pipeline Outcome</span>
           <span className={cn("inline-flex rounded-full border px-2.5 py-1 micro-label !text-[0.6rem]", pipe.cls)}>{pipe.label}</span>
         </div>
         <p className="mt-2 text-xs text-slate-600 leading-relaxed">{pipe.explain(outcome)}</p>
@@ -1046,20 +1046,20 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="rounded-xl border border-border/70 bg-white p-3.5 shadow-xs">
             <div className="flex items-center justify-between gap-2">
-              <p className="micro-label !text-[0.52rem]">classification</p>
+              <p className="micro-label !text-[0.52rem]">Classification</p>
               <ProviderChip provider={outcome.classification.provider} model={outcome.classification.modelId} />
             </div>
             <dl className="mt-2.5 space-y-1.5 text-xs">
               <div className="flex justify-between gap-2">
-                <dt className="text-slate-500">category</dt>
+                <dt className="text-slate-500">Category</dt>
                 <dd className="data-mono text-slate-800">{outcome.classification.category.toLowerCase().replace(/_/g, " ")}</dd>
               </div>
               <div className="flex justify-between gap-2">
-                <dt className="text-slate-500">severity</dt>
+                <dt className="text-slate-500">Severity</dt>
                 <dd className="data-mono text-slate-800">{outcome.classification.severity.toLowerCase()}</dd>
               </div>
               <div className="flex justify-between gap-2">
-                <dt className="text-slate-500">confidence</dt>
+                <dt className="text-slate-500">Confidence</dt>
                 <dd className="text-slate-800">
                   <CountUp value={Math.round(outcome.classification.confidence * 100)} suffix="%" />
                 </dd>
@@ -1074,10 +1074,10 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
           </div>
 
           <div className="rounded-xl border border-border/70 bg-white p-3.5 shadow-xs">
-            <p className="micro-label !text-[0.52rem]">risk &amp; routing</p>
+            <p className="micro-label !text-[0.52rem]">Risk &amp; Routing</p>
             <div className="mt-2.5 flex items-center gap-2">
               <RiskBadge band={outcome.risk.band} score={outcome.risk.score} />
-              <span className="text-[0.65rem] text-slate-500">risk score of 100, 7-factor explainable model</span>
+              <span className="text-[0.65rem] text-slate-500">risk score out of 100 · explainable 7-factor model</span>
             </div>
             <AnimatedProgress className="mt-3" value={outcome.risk.score} max={100} fillClassName={RISK_META[outcome.risk.band]?.bar ?? "bg-water-dim"} />
             <ul className="mt-3 space-y-1">
@@ -1098,9 +1098,9 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
 
       <Reveal delay={0.2}>
         <div className="rounded-xl border border-border/70 bg-white p-3.5 shadow-xs flex items-center gap-3 flex-wrap">
-          <span className="micro-label !text-[0.52rem] text-muted-foreground">urban event</span>
+          <span className="micro-label !text-[0.52rem] text-muted-foreground">Urban Event</span>
           <span className="data-mono text-sm font-semibold text-water">{outcome.event.code}</span>
-          <span className="micro-label !text-[0.52rem] text-muted-foreground">status {outcome.event.status.toLowerCase().replace(/_/g, " ")}</span>
+          <span className="micro-label !text-[0.52rem] text-muted-foreground">Status {outcome.event.status.toLowerCase().replace(/_/g, " ")}</span>
           <Button size="sm" className="ml-auto rounded-lg bg-water text-white hover:bg-water-dim" onClick={() => navigate("event", outcome.event.code)}>
             Open event dossier <ChevronRight className="size-3.5" aria-hidden />
           </Button>
@@ -1109,7 +1109,7 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
 
       <Reveal delay={0.26}>
         <div className="flex items-center justify-between gap-2 pt-1">
-          <p className="text-[0.62rem] text-slate-500">The wizard is locked after submission to keep one report per flow.</p>
+          <p className="text-[0.62rem] text-slate-500">The form locks after submitting so each flow files exactly one report.</p>
           <Button variant="outline" size="sm" className="rounded-lg border-border text-slate-600 hover:bg-ink-850" onClick={onReset}>
             File another report
           </Button>

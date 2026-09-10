@@ -7,13 +7,16 @@ import { apiGet, type EventSummary, type HotspotResponse, type JurisdictionRespo
 import { LoadingRows, RiskBadge, SeverityTicks, StatusBadge, TimeAgo, ConfidenceChip } from "../shared/domain";
 import { MapLegend } from "./MapLegend";
 import { MapData, MapCanvas } from "./MapCanvas";
+import { MapLocateControl } from "./MapLocateControl";
 import { X } from "lucide-react";
 import { navigate } from "@/lib/client/store";
 import { cn } from "@/lib/utils";
 
-// SSR-off dynamic map loader with a layout-matched skeleton.
+// SSR-off dynamic map loader with a layout-matched skeleton. The loaded
+// component is the provider orchestrator (Google Maps primary, MapLibre
+// keyless fallback), not a single engine.
 const MapCanvasDyn = dynamic<MapData & { className?: string; compact?: boolean; initialZoom?: number; initialCenter?: [number, number]; interactive?: boolean }>(
-  () => import("./MapCanvas").then((m) => m.MapCanvas),
+  () => import("./MapProviderCanvas").then((m) => m.MapProviderCanvas),
   {
     ssr: false,
     loading: () => (
@@ -125,7 +128,7 @@ export function MapSelectionCard({ events }: { events: EventSummary[] }) {
   );
 }
 
-export function MapWithOverlays({ className, compact, initialZoom, initialCenter, events, weather, hotspots, jurisdictions, assets, showLegend = true, showSelection = true }: {
+export function MapWithOverlays({ className, compact, initialZoom, initialCenter, events, weather, hotspots, jurisdictions, assets, showLegend = true, showSelection = false }: {
   className?: string;
   compact?: boolean;
   initialZoom?: number;
@@ -151,6 +154,7 @@ export function MapWithOverlays({ className, compact, initialZoom, initialCenter
         initialCenter={initialCenter}
       />
       {showLegend && <MapLegend compact={compact} />}
+      {!compact && <MapLocateControl events={events} />}
       {showSelection && <MapSelectionCard events={events} />}
     </div>
   );

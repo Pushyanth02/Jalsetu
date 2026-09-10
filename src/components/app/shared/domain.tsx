@@ -15,7 +15,7 @@ const STATUS_META: Record<string, { label: string; cls: string; dot: string }> =
   DETECTED: { label: "Detected", cls: "text-slate-600 bg-slate-100 border-slate-200", dot: "bg-slate-500" },
   TRIAGED: { label: "Triaged", cls: "text-amber-700 bg-amber-50 border-amber-200", dot: "bg-amber-500" },
   ASSIGNED: { label: "Assigned", cls: "text-blue-700 bg-blue-50 border-blue-200", dot: "bg-blue-500" },
-  IN_PROGRESS: { label: "In field", cls: "text-water bg-blue-50 border-blue-200", dot: "bg-water-dim" },
+  IN_PROGRESS: { label: "In Field", cls: "text-water bg-blue-50 border-blue-200", dot: "bg-water-dim" },
   VERIFIED: { label: "Verified", cls: "text-emerald-700 bg-emerald-50 border-emerald-200", dot: "bg-verified" },
   CLOSED: { label: "Closed", cls: "text-slate-500 bg-slate-50 border-slate-200", dot: "bg-slate-400" },
   REOPENED: { label: "Reopened", cls: "text-red-700 bg-red-50 border-red-200", dot: "bg-sev-critical" },

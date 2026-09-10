@@ -1,0 +1,780 @@
+     1→"use client";
+     2→
+     3→import { useCallback, useEffect, useState, type ReactNode } from "react";
+     4→import { useQuery } from "@tanstack/react-query";
+     5→import { apiGet } from "@/lib/client/api";
+     6→import {
+     7→  LoadingRows, ErrorNote, Panel, EmptyState, TimeAgo, ProviderChip,
+     8→} from "@/components/app/shared/domain";
+     9→import { Reveal, Stagger, StaggerItem, CountUp, HoverLift, PulseDot } from "@/components/motion/kit";
+    10→import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+    11→import { ScrollArea } from "@/components/ui/scroll-area";
+    12→import { BarChart, Bar, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+    13→import { cn } from "@/lib/utils";
+    14→import { motion, useReducedMotion, type Variants } from "framer-motion";
+    15→import {
+    16→  Activity, Database, BrainCircuit, RefreshCw, Gauge, HeartPulse, History, Server,
+    17→  ShieldCheck, AlertTriangle,
+    18→} from "lucide-react";
+    19→
+    20→// DATA & MODEL HEALTH - source freshness, provider state, run log,
+    21→// confidence distribution and live client-side endpoint checks.
+    22→
+    23→interface SourceHealth {
+    24→  key: string;
+    25→  label: string;
+    26→  records: number;
+    27→  lastRecordAt: string | null;
+    28→  freshness: number | null;
+    29→  status: "OK" | "STALE" | "EMPTY";
+    30→  missingness: Record<string, string>;
+    31→  sourceLabel: string;
+    32→}
+    33→
+    34→interface DataHealthResponse {
+    35→  generatedAt: string;
+    36→  overall: "OK" | "EMPTY_DATABASE";
+    37→  note: string;
+    38→  sources: SourceHealth[];
+    39→  pilot: { jurisdictions: number; hotspots: number; groundTruthHotspots: number };
+    40→}
+    41→
+    42→interface ModelRun {
+    43→  id: string;
+    44→  modelId: string;
+    45→  version: string;
+    46→  provider: string;
+    47→  status: string;
+    48→  inputCount: number;
+    49→  outputCount: number;
+    50→  latencyMs: number | null;
+    51→  startedAt: string;
+    52→  finishedAt: string;
+    53→  error: string | null;
+    54→  notes: string | null;
+    55→}
+    56→
+    57→interface ModelHealthResponse {
+    58→  generatedAt: string;
+    59→  provider: {
+    60→    provider: string;
+    61→    modelId: string;
+    62→    available: boolean;
+    63→    lastCheckedAt: string;
+    64→    lastError: string | null;
+    65→    configuredBy: string;
+    66→  };
+    67→  versions: Record<string, string>;
+    68→  runs: ModelRun[];
+    69→  runsSummary: { total: number; succeeded: number; failed: number; successRate: number };
+    70→  confidenceDistribution: {
+    71→    buckets: { range: string; count: number }[];
+    72→    mean: number;
+    73→    min: number;
+    74→    max: number;
+    75→    lowConfidenceFlag: number;
+    76→  };
+    77→  classificationProviders: Record<string, number>;
+    78→  note: string;
+    79→}
+    80→
+    81→interface HealthResponse {
+    82→  status: string;
+    83→  checkedAt: string;
+    84→  db: { reachable: boolean; events: number; reports: number; observations: number };
+    85→  ai: {
+    86→    provider: string;
+    87→    modelId: string;
+    88→    available: boolean;
+    89→    lastCheckedAt: string;
+    90→    lastError: string | null;
+    91→    configuredBy: string;
+    92→    fallback?: string;
+    93→  };
+    94→  lastModelRun: { modelId: string; status: string; provider: string; startedAt: string } | null;
+    95→  latencyMs: number;
+    96→  dataLabel: string;
+    97→}
+    98→
+    99→const BLUE = "#3b82f6";  // at/above confidence flag threshold (blue-500)
+   100→const AMBER = "#f59e0b"; // below confidence flag threshold (amber-500)
+   101→const GRID_STROKE = "#e2e8f0";
+   102→const TICK = { fill: "#94a3b8", fontSize: 9, fontFamily: "var(--font-plex-mono)" };
+   103→const TOOLTIP_STYLE = {
+   104→  background: "#ffffff",
+   105→  border: "1px solid #e2e8f0",
+   106→  borderRadius: 8,
+   107→  fontSize: 11,
+   108→  fontFamily: "var(--font-plex-mono)",
+   109→  boxShadow: "0 4px 12px rgba(15,23,42,0.08)",
+   110→};
+   111→const LABEL_STYLE = { color: "#64748b" };
+   112→const CURSOR_FILL = { fill: "rgba(37, 99, 235, 0.05)" };
+   113→
+   114→const clean = (s: string) => s.replace(/-/g, "-").replace(/-/g, "-");
+   115→
+   116→// client-side endpoint probes (same-origin relative paths)
+   117→const ENDPOINTS = ["/api/health", "/api/data-health", "/api/model-health", "/api/events?limit=1", "/api/weather", "/api/hotspots"];
+   118→
+   119→interface PingState {
+   120→  path: string;
+   121→  status: "pending" | "ok" | "err";
+   122→  ms: number | null;
+   123→  code: number | null;
+   124→}
+   125→
+   126→async function ping(path: string): Promise<PingState> {
+   127→  const t0 = performance.now();
+   128→  try {
+   129→    const res = await fetch(path, { cache: "no-store" });
+   130→    const ms = Math.round(performance.now() - t0);
+   131→    return { path, status: res.ok ? "ok" : "err", ms, code: res.status };
+   132→  } catch {
+   133→    return { path, status: "err", ms: Math.round(performance.now() - t0), code: null };
+   134→  }
+   135→}
+   136→
+   137→const SEVERITY: Record<string, number> = { EMPTY: 0, STALE: 1, OK: 2 };
+   138→
+   139→// motion-enhanced table row (keeps semantic <tr> nesting inside tbody)
+   140→const MotionRow = motion.tr;
+   141→
+   142→export function HealthView() {
+   143→  const dataQ = useQuery({
+   144→    queryKey: ["data-health"],
+   145→    queryFn: () => apiGet<DataHealthResponse>("/api/data-health").then((r) => r.data),
+   146→    refetchInterval: 60_000,
+   147→  });
+   148→  const modelQ = useQuery({
+   149→    queryKey: ["model-health-full"],
+   150→    queryFn: () => apiGet<ModelHealthResponse>("/api/model-health").then((r) => r.data),
+   151→    refetchInterval: 60_000,
+   152→  });
+   153→  const healthQ = useQuery({
+   154→    queryKey: ["health-basic"],
+   155→    queryFn: () => apiGet<HealthResponse>("/api/health").then((r) => r.data),
+   156→    staleTime: 60_000,
+   157→  });
+   158→
+   159→  // --- client endpoint checks ------------------------------------------------
+   160→  const [pings, setPings] = useState<PingState[]>([]);
+   161→  const [pinging, setPinging] = useState(false);
+   162→  const [lastPingAt, setLastPingAt] = useState<number | null>(null);
+   163→  const runPings = useCallback(async () => {
+   164→    setPinging(true);
+   165→    setPings(ENDPOINTS.map((p) => ({ path: p, status: "pending" as const, ms: null, code: null })));
+   166→    await Promise.all(
+   167→      ENDPOINTS.map(async (path) => {
+   168→        const r = await ping(path);
+   169→        setPings((prev) => prev.map((x) => (x.path === path ? r : x)));
+   170→      })
+   171→    );
+   172→    setLastPingAt(Date.now());
+   173→    setPinging(false);
+   174→  }, []);
+   175→  useEffect(() => {
+   176→    runPings();
+   177→  }, [runPings]);
+   178→
+   179→  const dh = dataQ.data;
+   180→  const mh = modelQ.data;
+   181→  const hb = healthQ.data;
+   182→
+   183→  const refetchAll = () => {
+   184→    dataQ.refetch();
+   185→    modelQ.refetch();
+   186→    healthQ.refetch();
+   187→  };
+   188→
+   189→  // staggered table-row entrance variants (respects prefers-reduced-motion)
+   190→  const reduce = useReducedMotion();
+   191→  const rowVariants: Variants = reduce
+   192→    ? { hidden: { opacity: 0 }, show: { opacity: 1, transition: { duration: 0.25 } } }
+   193→    : { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } } };
+   194→
+   195→  return (
+   196→    <div className="flex flex-col flex-1 min-h-0">
+   197→      {/* header strip */}
+   198→      <div className="hairline-b bg-white px-4 sm:px-6 py-3.5">
+   199→        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+   200→          <div>
+   201→            <div className="flex items-center gap-2.5 flex-wrap">
+   202→              <h1 className="font-display text-lg font-bold tracking-tight text-slate-900 leading-tight">Data &amp; Model Health</h1>
+   203→              <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 micro-label !text-[0.58rem] text-water">
+   204→                <HeartPulse className="size-3" aria-hidden /> telemetry
+   205→              </span>
+   206→            </div>
+   207→            <p className="text-[0.7rem] text-muted-foreground mt-0.5">
+   208→              source freshness · provider state · run log · confidence · endpoint checks
+   209→            </p>
+   210→          </div>
+   211→          <button
+   212→            onClick={refetchAll}
+   213→            className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 micro-label !text-[0.58rem] text-water hover:bg-blue-100 hover:border-blue-300 transition-colors"
+   214→          >
+   215→            <RefreshCw className={cn("size-3", (dataQ.isFetching || modelQ.isFetching || healthQ.isFetching) && "animate-spin")} aria-hidden />
+   216→            refresh all
+   217→          </button>
+   218→        </div>
+   219→        <div className="mt-1.5 flex items-center gap-3 flex-wrap">
+   220→          {dh && (
+   221→            <span className="data-mono text-[0.65rem] text-slate-500">
+   222→              data snapshot <TimeAgo iso={dh.generatedAt} />
+   223→            </span>
+   224→          )}
+   225→          {mh && (
+   226→            <span className="data-mono text-[0.65rem] text-slate-500">
+   227→              model snapshot <TimeAgo iso={mh.generatedAt} />
+   228→            </span>
+   229→          )}
+   230→          {hb && <span className="data-mono text-[0.65rem] text-slate-500">{clean(hb.dataLabel)}</span>}
+   231→        </div>
+   232→      </div>
+   233→
+   234→      <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 pb-8 space-y-4">
+   235→        {/* SECTION A - overall status strip (stat cards + system details) */}
+   236→        <Reveal>
+   237→          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3.5 sm:gap-4">
+   238→            {healthQ.isLoading ? (
+   239→              Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-32 rounded-xl shimmer" />)
+   240→            ) : healthQ.isError ? (
+   241→              <div className="col-span-full max-w-lg">
+   242→                <ErrorNote message={(healthQ.error as Error).message} onRetry={() => healthQ.refetch()} />
+   243→              </div>
+   244→            ) : hb ? (
+   245→              <>
+   246→                <StatCard
+   247→                  icon={<Database className="size-5" aria-hidden />}
+   248→                  tint="bg-blue-50 text-water"
+   249→                  value={<CountUp value={hb.db.events} />}
+   250→                  label="Database events"
+   251→                  sub={hb.db.reachable ? `${hb.db.reports} reports · ${hb.db.observations} obs` : "db unreachable"}
+   252→                />
+   253→                <StatCard
+   254→                  icon={<Gauge className="size-5" aria-hidden />}
+   255→                  tint={hb.latencyMs > 5000 ? "bg-amber-50 text-sev-moderate" : "bg-blue-50 text-water"}
+   256→                  value={<CountUp value={hb.latencyMs} suffix=" ms" />}
+   257→                  label="API latency"
+   258→                  sub="health endpoint round-trip"
+   259→                />
+   260→                {dh && (
+   261→                  <StatCard
+   262→                    icon={<ShieldCheck className="size-5" aria-hidden />}
+   263→                    tint={dh.overall === "OK" ? "bg-emerald-50 text-verified" : "bg-amber-50 text-sev-moderate"}
+   264→                    value={
+   265→                      <span className={dh.overall === "OK" ? "text-verified" : "text-sev-moderate"}>
+   266→                        {dh.overall === "OK" ? "OK" : "EMPTY"}
+   267→                      </span>
+   268→                    }
+   269→                    label="Data health"
+   270→                    sub={`${dh.sources.length} sources · ${dh.pilot.jurisdictions} juris · ${dh.pilot.groundTruthHotspots} GT sites`}
+   271→                  />
+   272→                )}
+   273→                <StatCard
+   274→                  icon={<BrainCircuit className="size-5" aria-hidden />}
+   275→                  tint={hb.ai.available ? "bg-emerald-50 text-verified" : "bg-amber-50 text-sev-moderate"}
+   276→                  value={
+   277→                    <span className={cn("inline-flex items-center gap-2", hb.ai.available ? "text-verified" : "text-sev-moderate")}>
+   278→                      {hb.ai.available && <PulseDot color="bg-emerald-500" size={8} />}
+   279→                      {hb.ai.available ? "available" : "fallback"}
+   280→                    </span>
+   281→                  }
+   282→                  label="AI provider"
+   283→                  sub={hb.ai.provider}
+   284→                />
+   285→              </>
+   286→            ) : null}
+   287→          </div>
+   288→        </Reveal>
+   289→
+   290→        <Reveal delay={0.05}>
+   291→          <Panel
+   292→            title="system details"
+   293→            icon={<Activity />}
+   294→            actions={hb && <ProviderChip provider={hb.ai.provider} model={hb.ai.modelId} />}
+   295→          >
+   296→            {healthQ.isLoading ? (
+   297→              <LoadingRows rows={2} />
+   298→            ) : !hb ? null : (
+   299→              <div className="space-y-3">
+   300→                {dh && dh.overall === "EMPTY_DATABASE" ? (
+   301→                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 space-y-1.5">
+   302→                    <p className="text-xs text-amber-800 leading-relaxed flex items-start gap-2.5">
+   303→                      <AlertTriangle className="size-4 text-amber-600 shrink-0 mt-px" aria-hidden />
+   304→                      <span>{clean(dh.note)}</span>
+   305→                    </p>
+   306→                    <p className="data-mono text-[0.65rem] text-amber-700/80">
+   307→                      POST /api/admin/seed · body {"{ confirm: true }"} · header x-demo-role: ADMIN
+   308→                    </p>
+   309→                  </div>
+   310→                ) : (
+   311→                  dh && <p className="micro-label !text-[0.55rem] text-slate-400 !tracking-[0.08em] normal-case">{clean(dh.note)}</p>
+   312→                )}
+   313→
+   314→                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+   315→                  {hb.lastModelRun && (
+   316→                    <span className="data-mono text-[0.65rem] text-slate-500">
+   317→                      last model run: <span className="text-slate-800">{hb.lastModelRun.modelId}</span> ·{" "}
+   318→                      {hb.lastModelRun.status} · {hb.lastModelRun.provider} · <TimeAgo iso={hb.lastModelRun.startedAt} />
+   319→                    </span>
+   320→                  )}
+   321→                  {hb.ai.fallback && (
+   322→                    <span className="micro-label !text-[0.55rem] text-slate-500" title="Used when the AI provider is unavailable">
+   323→                      fallback: {clean(hb.ai.fallback)}
+   324→                    </span>
+   325→                  )}
+   326→                </div>
+   327→              </div>
+   328→            )}
+   329→          </Panel>
+   330→        </Reveal>
+   331→
+   332→        {/* SECTION B - source health table */}
+   333→        <Reveal delay={0.1}>
+   334→          <Panel
+   335→            title={
+   336→              <span className="flex items-center gap-2">
+   337→                source health
+   338→                {dh && <span className="data-mono ml-1 !text-[0.62rem] !tracking-normal !normal-case font-normal text-slate-400">{dh.sources.length} sources</span>}
+   339→              </span>
+   340→            }
+   341→            icon={<Database />}
+   342→            actions={
+   343→              <button
+   344→                onClick={() => dataQ.refetch()}
+   345→                className="micro-label !text-[0.58rem] text-water hover:text-water-dim transition-colors"
+   346→              >
+   347→                refetch
+   348→              </button>
+   349→            }
+   350→            dense
+   351→          >
+   352→            {dataQ.isLoading ? (
+   353→              <LoadingRows rows={6} className="p-4" />
+   354→            ) : dataQ.isError ? (
+   355→              <ErrorNote message={(dataQ.error as Error).message} onRetry={() => dataQ.refetch()} className="m-4" />
+   356→            ) : !dh ? null : dh.sources.length === 0 ? (
+   357→              <EmptyState title="No sources reporting" />
+   358→            ) : (
+   359→              <Stagger className="overflow-x-auto">
+   360→                <Table>
+   361→                  <TableHeader>
+   362→                    <TableRow className="bg-ink-850/60 hover:bg-ink-850/60">
+   363→                      <TableHead className="micro-label !text-[0.55rem] h-8">source</TableHead>
+   364→                      <TableHead className="micro-label !text-[0.55rem] h-8 text-right">records</TableHead>
+   365→                      <TableHead className="micro-label !text-[0.55rem] h-8">freshness</TableHead>
+   366→                      <TableHead className="micro-label !text-[0.55rem] h-8">status</TableHead>
+   367→                      <TableHead className="micro-label !text-[0.55rem] h-8">missingness</TableHead>
+   368→                      <TableHead className="micro-label !text-[0.55rem] h-8 hidden md:table-cell">provenance</TableHead>
+   369→                    </TableRow>
+   370→                  </TableHeader>
+   371→                  <TableBody>
+   372→                    {[...dh.sources]
+   373→                      .sort((a, b) => (SEVERITY[a.status] ?? 3) - (SEVERITY[b.status] ?? 3) || b.records - a.records)
+   374→                      .map((s) => (
+   375→                        <MotionRow key={s.key} variants={rowVariants} className="hover:bg-ink-850/50 border-b transition-colors">
+   376→                          <TableCell className="py-2">
+   377→                            <span className="text-xs text-slate-700">{s.label}</span>
+   378→                            <span className="block data-mono text-[0.58rem] text-slate-400">{s.key}</span>
+   379→                          </TableCell>
+   380→                          <TableCell className="py-2 text-right data-mono text-[0.72rem] text-slate-800">{s.records.toLocaleString("en-IN")}</TableCell>
+   381→                          <TableCell className="py-2">
+   382→                            {s.lastRecordAt ? (
+   383→                              <TimeAgo iso={s.lastRecordAt} />
+   384→                            ) : (
+   385→                              <span className="data-mono text-[0.65rem] text-slate-400">never</span>
+   386→                            )}
+   387→                          </TableCell>
+   388→                          <TableCell className="py-2"><SourceStatusBadge status={s.status} /></TableCell>
+   389→                          <TableCell className="py-2 max-w-56">
+   390→                            {Object.keys(s.missingness).length > 0 ? (
+   391→                              <span className="data-mono text-[0.62rem] text-slate-500" title={Object.entries(s.missingness).map(([k, v]) => `${k}: ${v}`).join(" · ")}>
+   392→                                {Object.entries(s.missingness).map(([k, v]) => `${k}: ${v}`).join(" · ")}
+   393→                              </span>
+   394→                            ) : (
+   395→                              <span className="data-mono text-[0.62rem] text-slate-400">none</span>
+   396→                            )}
+   397→                          </TableCell>
+   398→                          <TableCell className="py-2 hidden md:table-cell">
+   399→                            <span className="micro-label !text-[0.52rem] text-slate-500 !tracking-[0.06em]" title={s.sourceLabel}>
+   400→                              {clean(s.sourceLabel)}
+   401→                            </span>
+   402→                          </TableCell>
+   403→                        </MotionRow>
+   404→                      ))}
+   405→                  </TableBody>
+   406→                </Table>
+   407→              </Stagger>
+   408→            )}
+   409→          </Panel>
+   410→        </Reveal>
+   411→
+   412→        {/* SECTION C - model & provider */}
+   413→        <Reveal delay={0.15}>
+   414→          <Panel
+   415→            title="model & provider"
+   416→            icon={<BrainCircuit />}
+   417→            actions={
+   418→              <button onClick={() => modelQ.refetch()} className="micro-label !text-[0.58rem] text-water hover:text-water-dim transition-colors">
+   419→                refetch
+   420→              </button>
+   421→            }
+   422→          >
+   423→            {modelQ.isLoading ? (
+   424→              <LoadingRows rows={4} />
+   425→            ) : modelQ.isError ? (
+   426→              <ErrorNote message={(modelQ.error as Error).message} onRetry={() => modelQ.refetch()} />
+   427→            ) : !mh ? null : (
+   428→              <div className="space-y-3">
+   429→                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+   430→                  <div className="rounded-xl border border-border bg-ink-850/50 px-3.5 py-3 space-y-2">
+   431→                    <div className="flex items-center gap-2.5 flex-wrap">
+   432→                      <ProviderChip provider={mh.provider.provider} model={mh.provider.modelId} />
+   433→                      <span
+   434→                        className={cn(
+   435→                          "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 micro-label !text-[0.6rem] font-medium",
+   436→                          mh.provider.available
+   437→                            ? "text-emerald-700 border-emerald-200 bg-emerald-50"
+   438→                            : "text-amber-700 border-amber-200 bg-amber-50"
+   439→                        )}
+   440→                      >
+   441→                        {mh.provider.available ? (
+   442→                          <PulseDot color="bg-emerald-500" size={6} />
+   443→                        ) : (
+   444→                          <span aria-hidden className="size-1.5 rounded-full bg-amber-500" />
+   445→                        )}
+   446→                        {mh.provider.available ? "available" : "unavailable"}
+   447→                      </span>
+   448→                    </div>
+   449→                    <div className="flex flex-wrap gap-x-4 gap-y-1">
+   450→                      <span className="data-mono text-[0.65rem] text-slate-500">
+   451→                        model <span className="text-slate-800">{mh.provider.modelId}</span>
+   452→                      </span>
+   453→                      <span className="data-mono text-[0.65rem] text-slate-500">
+   454→                        configured by <span className="text-slate-800">{mh.provider.configuredBy}</span>
+   455→                      </span>
+   456→                      <span className="data-mono text-[0.65rem] text-slate-500">
+   457→                        checked <TimeAgo iso={mh.provider.lastCheckedAt} />
+   458→                      </span>
+   459→                    </div>
+   460→                    {!mh.provider.available && mh.provider.lastError && (
+   461→                      <div role="alert" className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs">
+   462→                        <AlertTriangle className="size-4 text-amber-600 shrink-0 mt-px" aria-hidden />
+   463→                        <span className="text-amber-800 leading-relaxed">{mh.provider.lastError}</span>
+   464→                      </div>
+   465→                    )}
+   466→                  </div>
+   467→
+   468→                  <div className="rounded-xl border border-border bg-ink-850/50 px-3.5 py-3 space-y-1.5">
+   469→                    <p className="micro-label !text-[0.55rem] text-slate-500 mb-1">component versions</p>
+   470→                    {Object.entries(mh.versions).map(([k, v]) => (
+   471→                      <div key={k} className="flex items-baseline justify-between gap-3">
+   472→                        <span className="micro-label !text-[0.52rem] text-slate-500 !tracking-[0.08em]">{k}</span>
+   473→                        <span className="data-mono text-[0.68rem] text-slate-800">{v}</span>
+   474→                      </div>
+   475→                    ))}
+   476→                  </div>
+   477→                </div>
+   478→
+   479→                <div className="rounded-xl border border-border bg-ink-850/50 px-3.5 py-3">
+   480→                  <p className="micro-label !text-[0.55rem] text-slate-500 mb-2">model runs · last 25</p>
+   481→                  <div className="flex flex-wrap divide-x divide-border rounded-lg border border-border bg-white">
+   482→                    <Segment label="total" value={<CountUp value={mh.runsSummary.total} />} tone="plain" border={false} />
+   483→                    <Segment label="succeeded" value={<CountUp value={mh.runsSummary.succeeded} />} tone="teal" border={false} />
+   484→                    <Segment label="failed" value={<CountUp value={mh.runsSummary.failed} />} tone={mh.runsSummary.failed > 0 ? "red" : "plain"} border={false} />
+   485→                    <Segment
+   486→                      label="success rate"
+   487→                      value={`${(mh.runsSummary.successRate * 100).toFixed(0)}%`}
+   488→                      tone={mh.runsSummary.failed > 0 ? "amber" : "teal"}
+   489→                      border={false}
+   490→                    />
+   491→                  </div>
+   492→                </div>
+   493→
+   494→                <p className="micro-label !text-[0.55rem] text-slate-400 !tracking-[0.08em] normal-case leading-relaxed">
+   495→                  {clean(mh.note)}
+   496→                </p>
+   497→              </div>
+   498→            )}
+   499→          </Panel>
+   500→        </Reveal>
+   501→
+   502→        {/* SECTION D - model runs table */}
+   503→        <Reveal delay={0.2}>
+   504→          <Panel
+   505→            title={
+   506→              <span className="flex items-center gap-2">
+   507→                model run log
+   508→                {mh && <span className="data-mono ml-1 !text-[0.62rem] !tracking-normal !normal-case font-normal text-slate-400">{Math.min(25, mh.runs.length)} of {mh.runsSummary.total}</span>}
+   509→              </span>
+   510→            }
+   511→            icon={<History />}
+   512→            dense
+   513→          >
+   514→            {modelQ.isLoading ? (
+   515→              <LoadingRows rows={6} className="p-4" />
+   516→            ) : modelQ.isError ? (
+   517→              <ErrorNote message={(modelQ.error as Error).message} onRetry={() => modelQ.refetch()} className="m-4" />
+   518→            ) : !mh ? null : mh.runs.length === 0 ? (
+   519→              <EmptyState title="No model runs recorded" hint="Runs appear after reports are classified or events reassessed." />
+   520→            ) : (
+   521→              <ScrollArea className="max-h-96">
+   522→                <Table>
+   523→                  <TableHeader>
+   524→                    <TableRow className="bg-ink-850/60 hover:bg-ink-850/60">
+   525→                      <TableHead className="micro-label !text-[0.55rem] h-8">model</TableHead>
+   526→                      <TableHead className="micro-label !text-[0.55rem] h-8">provider</TableHead>
+   527→                      <TableHead className="micro-label !text-[0.55rem] h-8">status</TableHead>
+   528→                      <TableHead className="micro-label !text-[0.55rem] h-8 text-right">in/out</TableHead>
+   529→                      <TableHead className="micro-label !text-[0.55rem] h-8 text-right">latency</TableHead>
+   530→                      <TableHead className="micro-label !text-[0.55rem] h-8">started</TableHead>
+   531→                      <TableHead className="micro-label !text-[0.55rem] h-8 hidden lg:table-cell">notes / error</TableHead>
+   532→                    </TableRow>
+   533→                  </TableHeader>
+   534→                  <TableBody>
+   535→                    {mh.runs.slice(0, 25).map((r) => (
+   536→                      <TableRow key={r.id} className="hover:bg-ink-850/50">
+   537→                        <TableCell className="py-2">
+   538→                          <span className="data-mono text-[0.68rem] text-slate-700">{r.modelId}</span>
+   539→                          <span className="block data-mono text-[0.55rem] text-slate-400">{r.version}</span>
+   540→                        </TableCell>
+   541→                        <TableCell className="py-2 data-mono text-[0.65rem] text-slate-500">{r.provider}</TableCell>
+   542→                        <TableCell className="py-2"><RunStatusBadge status={r.status} /></TableCell>
+   543→                        <TableCell className="py-2 text-right data-mono text-[0.65rem] text-slate-500">
+   544→                          {r.inputCount}<span className="text-slate-400">→</span>{r.outputCount}
+   545→                        </TableCell>
+   546→                        <TableCell className="py-2 text-right data-mono text-[0.65rem] text-slate-500">
+   547→                          {r.latencyMs != null ? `${r.latencyMs} ms` : "-"}
+   548→                        </TableCell>
+   549→                        <TableCell className="py-2"><TimeAgo iso={r.startedAt} /></TableCell>
+   550→                        <TableCell
+   551→                          className={cn("py-2 hidden lg:table-cell max-w-72 truncate text-[0.62rem]", r.error ? "text-sev-critical" : "text-slate-500")}
+   552→                          title={r.error ?? r.notes ?? undefined}
+   553→                        >
+   554→                          {r.error ?? r.notes ?? "-"}
+   555→                        </TableCell>
+   556→                      </TableRow>
+   557→                    ))}
+   558→                  </TableBody>
+   559→                </Table>
+   560→              </ScrollArea>
+   561→            )}
+   562→          </Panel>
+   563→        </Reveal>
+   564→
+   565→        {/* SECTION E - confidence distribution */}
+   566→        <Reveal delay={0.25}>
+   567→          <Panel
+   568→            title="classification confidence distribution"
+   569→            icon={<Gauge />}
+   570→          >
+   571→            {modelQ.isLoading ? (
+   572→              <LoadingRows rows={3} />
+   573→            ) : modelQ.isError ? (
+   574→              <ErrorNote message={(modelQ.error as Error).message} onRetry={() => modelQ.refetch()} />
+   575→            ) : !mh ? null : (
+   576→              <div className="space-y-3">
+   577→                <div className="h-40">
+   578→                  <ResponsiveContainer width="100%" height="100%">
+   579→                    <BarChart
+   580→                      data={mh.confidenceDistribution.buckets.map((b) => {
+   581→                        const [lo, hi] = clean(b.range).split("-").map(Number);
+   582→                        const mid = Number.isFinite(lo) && Number.isFinite(hi) ? (lo + hi) / 2 : 1;
+   583→                        return { range: clean(b.range), count: b.count, low: mid < mh.confidenceDistribution.lowConfidenceFlag };
+   584→                      })}
+   585→                      margin={{ top: 4, right: 8, left: 0, bottom: 0 }}
+   586→                    >
+   587→                      <CartesianGrid stroke={GRID_STROKE} strokeDasharray="3 3" vertical={false} />
+   588→                      <XAxis dataKey="range" tick={TICK} axisLine={{ stroke: GRID_STROKE }} tickLine={false} />
+   589→                      <YAxis allowDecimals={false} width={28} tick={TICK} axisLine={false} tickLine={false} />
+   590→                      <Tooltip
+   591→                        contentStyle={TOOLTIP_STYLE}
+   592→                        labelStyle={LABEL_STYLE}
+   593→                        cursor={CURSOR_FILL}
+   594→                        formatter={(v: number) => [v, "reports"]}
+   595→                      />
+   596→                      <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={22} animationDuration={700}>
+   597→                        {mh.confidenceDistribution.buckets.map((b, i) => {
+   598→                          const [lo, hi] = clean(b.range).split("-").map(Number);
+   599→                          const mid = Number.isFinite(lo) && Number.isFinite(hi) ? (lo + hi) / 2 : 1;
+   600→                          return <Cell key={i} fill={mid < mh.confidenceDistribution.lowConfidenceFlag ? AMBER : BLUE} />;
+   601→                        })}
+   602→                      </Bar>
+   603→                    </BarChart>
+   604→                  </ResponsiveContainer>
+   605→                </div>
+   606→                <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
+   607→                  <span className="flex items-center gap-1.5 micro-label !text-[0.52rem] text-slate-500">
+   608→                    <span className="size-2.5 rounded-[2px]" style={{ background: BLUE }} aria-hidden /> at/above flag threshold
+   609→                  </span>
+   610→                  <span className="flex items-center gap-1.5 micro-label !text-[0.52rem] text-slate-500">
+   611→                    <span className="size-2.5 rounded-[2px]" style={{ background: AMBER }} aria-hidden /> below flag threshold
+   612→                  </span>
+   613→                  <span className="data-mono text-[0.65rem] text-slate-500 ml-auto">
+   614→                    mean <span className="text-slate-800">{mh.confidenceDistribution.mean.toFixed(2)}</span> · min{" "}
+   615→                    <span className="text-slate-800">{mh.confidenceDistribution.min.toFixed(2)}</span> · max{" "}
+   616→                    <span className="text-slate-800">{mh.confidenceDistribution.max.toFixed(2)}</span>
+   617→                  </span>
+   618→                </div>
+   619→                <p className="micro-label !text-[0.55rem] text-slate-400 !tracking-[0.08em] normal-case leading-relaxed">
+   620→                  Classifications below {mh.confidenceDistribution.lowConfidenceFlag} confidence are flagged for review
+   621→                  (see confidence chips in the event queue). The 0.4-0.6 bucket straddles the flag threshold, so its
+   622→                  colouring is indicative only.
+   623→                </p>
+   624→                <div className="hairline-t pt-2.5 flex flex-wrap items-center gap-2">
+   625→                  <span className="micro-label !text-[0.55rem] text-slate-500">classified reports by provider</span>
+   626→                  {Object.entries(mh.classificationProviders).map(([k, count]) => (
+   627→                    <span key={k} className="inline-flex items-center gap-1.5">
+   628→                      <ProviderChip provider={k} />
+   629→                      <span className="data-mono text-[0.62rem] text-slate-500">×{count}</span>
+   630→                    </span>
+   631→                  ))}
+   632→                </div>
+   633→              </div>
+   634→            )}
+   635→          </Panel>
+   636→        </Reveal>
+   637→
+   638→        {/* SECTION F - client-side endpoint checks */}
+   639→        <Reveal delay={0.3}>
+   640→          <Panel
+   641→            title={
+   642→              <span className="flex items-center gap-2">
+   643→                api endpoint checks
+   644→                <span className="micro-label !text-[0.5rem] text-slate-400">client-side · same-origin</span>
+   645→              </span>
+   646→            }
+   647→            icon={<Server />}
+   648→            actions={
+   649→              <div className="flex items-center gap-3">
+   650→                {lastPingAt != null && (
+   651→                  <span className="data-mono text-[0.62rem] text-slate-500">
+   652→                    checked {Math.max(0, Math.round((Date.now() - lastPingAt) / 1000))}s ago
+   653→                  </span>
+   654→                )}
+   655→                <button
+   656→                  onClick={() => runPings()}
+   657→                  disabled={pinging}
+   658→                  className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 micro-label !text-[0.58rem] text-water hover:bg-blue-100 hover:border-blue-300 transition-colors disabled:opacity-50"
+   659→                >
+   660→                  <RefreshCw className={cn("size-3", pinging && "animate-spin")} aria-hidden />
+   661→                  refresh checks
+   662→                </button>
+   663→              </div>
+   664→            }
+   665→            dense
+   666→          >
+   667→            {pings.length === 0 ? (
+   668→              <LoadingRows rows={4} className="p-4" />
+   669→            ) : (
+   670→              <div aria-busy={pinging}>
+   671→                <Stagger>
+   672→                  {pings.map((p) => (
+   673→                  <StaggerItem key={p.path} className="flex items-center gap-3 px-4 py-2.5 hairline-b last:border-0">
+   674→                    {p.status === "ok" ? (
+   675→                      <PulseDot color="bg-emerald-500" size={7} />
+   676→                    ) : p.status === "err" ? (
+   677→                      <PulseDot color="bg-red-500" size={7} />
+   678→                    ) : (
+   679→                      <span aria-hidden className="size-[7px] rounded-full bg-slate-400 animate-pulse shrink-0" />
+   680→                    )}
+   681→                    <span className="data-mono text-[0.7rem] text-slate-700 flex-1 truncate">{p.path}</span>
+   682→                    {p.status === "err" && p.code != null && (
+   683→                      <span className="data-mono text-[0.62rem] text-sev-critical">HTTP {p.code}</span>
+   684→                    )}
+   685→                    <span className="data-mono text-[0.68rem] text-slate-500 w-16 text-right shrink-0">
+   686→                      {p.ms != null ? `${p.ms} ms` : "-"}
+   687→                    </span>
+   688→                    <span
+   689→                      className={cn(
+   690→                        "micro-label !text-[0.55rem] w-14 text-right shrink-0",
+   691→                        p.status === "ok" ? "text-verified" : p.status === "err" ? "text-sev-critical" : "text-slate-500"
+   692→                      )}
+   693→                    >
+   694→                      {p.status === "ok" ? "ok" : p.status === "err" ? "error" : "checking"}
+   695→                    </span>
+   696→                  </StaggerItem>
+   697→                  ))}
+   698→                </Stagger>
+   699→              </div>
+   700→            )}
+   701→            <p className="micro-label !text-[0.55rem] text-slate-400 !tracking-[0.08em] normal-case leading-relaxed px-4 py-2.5 hairline-t">
+   702→              Latency is measured client-side from this browser session. /api/health probes the AI provider, so its check
+   703→              can take several seconds.
+   704→            </p>
+   705→          </Panel>
+   706→        </Reveal>
+   707→      </div>
+   708→    </div>
+   709→  );
+   710→}
+   711→
+   712→// --- local primitives -----------------------------------------------------------
+   713→
+   714→function StatCard({ icon, tint, value, label, sub }: {
+   715→  icon: ReactNode;
+   716→  tint: string;
+   717→  value: ReactNode;
+   718→  label: string;
+   719→  sub?: ReactNode;
+   720→}) {
+   721→  return (
+   722→    <HoverLift className="h-full">
+   723→      <div className="panel rounded-xl h-full p-4">
+   724→        <span className={cn("grid size-10 place-items-center rounded-lg shrink-0", tint)}>{icon}</span>
+   725→        <p className="mt-3 font-display text-2xl font-bold tabular-nums text-slate-900 leading-none">{value}</p>
+   726→        <p className="mt-1.5 text-[0.72rem] font-medium text-slate-500 leading-snug">{label}</p>
+   727→        {sub && <p className="mt-1 data-mono text-[0.6rem] text-slate-400 leading-relaxed">{sub}</p>}
+   728→      </div>
+   729→    </HoverLift>
+   730→  );
+   731→}
+   732→
+   733→function Segment({ label, value, tone = "plain", border = true }: { label: string; value: ReactNode; tone?: "plain" | "teal" | "amber" | "red"; border?: boolean }) {
+   734→  return (
+   735→    <div className={cn("px-3.5 py-2 min-w-fit flex-1", border && "border-l border-border first:border-l-0")}>
+   736→      <p className="micro-label !text-[0.5rem] text-slate-500 !tracking-[0.08em]">{label}</p>
+   737→      <p
+   738→        className={cn(
+   739→          "data-mono text-[0.72rem] mt-0.5",
+   740→          tone === "teal" ? "text-verified" : tone === "amber" ? "text-sev-moderate" : tone === "red" ? "text-sev-critical" : "text-slate-800"
+   741→        )}
+   742→      >
+   743→        {value}
+   744→      </p>
+   745→    </div>
+   746→  );
+   747→}
+   748→
+   749→function SourceStatusBadge({ status }: { status: string }) {
+   750→  const meta =
+   751→    status === "OK"
+   752→      ? { label: "OK", cls: "text-emerald-700 border-emerald-200 bg-emerald-50", dot: "bg-emerald-500" }
+   753→      : status === "STALE"
+   754→        ? { label: "STALE", cls: "text-amber-700 border-amber-200 bg-amber-50", dot: "bg-amber-500" }
+   755→        : { label: "EMPTY", cls: "text-red-700 border-red-200 bg-red-50", dot: "bg-red-500" };
+   756→  return (
+   757→    <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 micro-label !text-[0.6rem] !tracking-[0.1em] font-medium", meta.cls)}>
+   758→      <span aria-hidden className={cn("size-1.5 rounded-full", meta.dot)} />
+   759→      {meta.label}
+   760→    </span>
+   761→  );
+   762→}
+   763→
+   764→function RunStatusBadge({ status }: { status: string }) {
+   765→  const meta =
+   766→    status === "SUCCEEDED"
+   767→      ? { label: "succeeded", cls: "text-emerald-700 border-emerald-200 bg-emerald-50", dot: "bg-emerald-500" }
+   768→      : status === "FAILED"
+   769→        ? { label: "failed", cls: "text-red-700 border-red-200 bg-red-50", dot: "bg-red-500" }
+   770→        : status === "RUNNING"
+   771→          ? { label: "running", cls: "text-water border-blue-200 bg-blue-50", dot: "bg-water-dim" }
+   772→          : { label: status.toLowerCase(), cls: "text-slate-600 border-slate-200 bg-slate-100", dot: "bg-slate-400" };
+   773→  return (
+   774→    <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 micro-label !text-[0.6rem] !tracking-[0.08em] font-medium", meta.cls)}>
+   775→      <span aria-hidden className={cn("size-1.5 rounded-full", meta.dot)} />
+   776→      {meta.label}
+   777→    </span>
+   778→  );
+   779→}
+   780→

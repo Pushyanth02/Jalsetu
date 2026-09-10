@@ -41,6 +41,7 @@ interface UiState {
   filters: MapFilters;
   layers: LayerToggles;
   mapFocus: { lat: number; lng: number; zoom?: number; key: number } | null;
+  userPos: { lat: number; lng: number; accuracy: number; key: number } | null;
   setView: (v: ViewId) => void;
   openEvent: (codeOrId: string) => void;
   selectEvent: (id: string | null) => void;
@@ -48,6 +49,7 @@ interface UiState {
   toggleLayer: (k: keyof LayerToggles) => void;
   setLayers: (l: Partial<LayerToggles>) => void;
   focusMap: (lat: number, lng: number, zoom?: number) => void;
+  setUserPos: (p: { lat: number; lng: number; accuracy: number }) => void;
 }
 
 export const useUi = create<UiState>((set) => ({
@@ -55,6 +57,7 @@ export const useUi = create<UiState>((set) => ({
   eventId: null,
   selectedEventId: null,
   mapFocus: null,
+  userPos: null,
   filters: { status: "ALL", riskBand: "ALL", category: "ALL", hours: "ALL", jurisdictionId: "ALL" },
   layers: { events: true, hotspots: true, groundTruth: true, rainfall: true, assets: true, jurisdictions: true },
   setView: (v) => {
@@ -72,6 +75,7 @@ export const useUi = create<UiState>((set) => ({
   toggleLayer: (k) => set((s) => ({ layers: { ...s.layers, [k]: !s.layers[k] } })),
   setLayers: (l) => set((s) => ({ layers: { ...s.layers, ...l } })),
   focusMap: (lat, lng, zoom) => set({ mapFocus: { lat, lng, zoom, key: Date.now() } }),
+  setUserPos: (p) => set({ userPos: { ...p, key: Date.now() } }),
 }));
 
 // --- hash router -------------------------------------------------------------

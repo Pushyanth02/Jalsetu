@@ -1,17 +1,20 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { Map as MlMap, Marker, NavigationControl, LngLat, type StyleSpecification } from "maplibre-gl";
+import { useEffect, useRef, useState } from "react";
+import { Map as MlMap, Marker, Popup, NavigationControl, LngLat, type StyleSpecification } from "maplibre-gl";
 import Supercluster from "supercluster";
 import { useUi } from "@/lib/client/store";
 import { cn } from "@/lib/utils";
 import type { EventSummary, HotspotResponse, JurisdictionResponse, AssetResponse, WeatherResponse } from "@/lib/client/api";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { severityFill, eventPopupHTML, bindPopupDelegation, latLngCircle } from "./map-utils";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-// Real MapLibre GL rendering: raster dark basemap (CARTO/OSM, no API key),
+// Keyless MapLibre GL fallback engine: raster dark basemap (Esri, no API key),
 // GeoJSON layers for jurisdictions/drain/hotspots, HTML markers for events
-// with supercluster clustering, weather stations sized by rainfall.
+// with supercluster clustering, weather stations sized by rainfall, anchored
+// InfoWindow popups and a live location dot. Contract-compatible with the
+// Google Maps primary engine.
 
 const DELHI_CENTER: [number, number] = [77.222, 28.635];
 
@@ -40,14 +43,6 @@ export const BASEMAP_STYLE: StyleSpecification = {
   ],
 };
 
-function severityFill(sev: number, status: string): string {
-  if (status === "VERIFIED" || status === "CLOSED") return "#5c7076";
-  if (sev >= 4) return "#dc2626";
-  if (sev === 3) return "#ea580c";
-  if (sev === 2) return "#d97706";
-  return "#64748b";
-}
-
 export interface MapData {
   events: EventSummary[];
   hotspots?: HotspotResponse;
@@ -74,6 +69,7 @@ export function MapCanvas({ events, hotspots, jurisdictions, assets, weather, cl
   const eventsRef = useRef<EventSummary[]>(events);
   const renderRef = useRef<() => void>(() => {});
   const weatherRenderRef = useRef<((w?: WeatherResponse) => void)>(() => {});
+  const unbindPopupRef = useRef<(() => void) | null>(null);
   const reduced = useReducedMotion();
 
   const selectedEventId = useUi((s) => s.selectedEventId);
@@ -81,6 +77,10 @@ export function MapCanvas({ events, hotspots, jurisdictions, assets, weather, cl
   const selectEvent = useUi((s) => s.selectEvent);
   const focusMap = useUi((s) => s.mapFocus);
   const openEvent = useUi((s) => s.openEvent);
+  const userPos = useUi((s) => s.userPos);
+  const popupRef = useRef<Popup | null>(null);
+  const userMarkerRef = useRef<Marker | null>(null);
+  const [styleReady, setStyleReady] = useState(false);
 
   // keep latest values accessible to imperative map code (refs written in effects)
   useEffect(() => {
@@ -112,10 +112,23 @@ export function MapCanvas({ events, hotspots, jurisdictions, assets, weather, cl
     map.on("moveend", onMove);
     map.on("load", () => {
       addStaticLayers(map);
+      setStyleReady(true);
       renderRef.current();
     });
 
+    unbindPopupRef.current = bindPopupDelegation(containerRef.current, {
+      openEvent: (code) => useUi.getState().openEvent(code),
+      zoomEvent: (e) => useUi.getState().focusMap(e.lat, e.lng, 15.5),
+      lookup: () => eventsRef.current,
+    });
+
     return () => {
+      unbindPopupRef.current?.();
+      unbindPopupRef.current = null;
+      popupRef.current?.remove();
+      popupRef.current = null;
+      userMarkerRef.current?.remove();
+      userMarkerRef.current = null;
       map.remove();
       mapRef.current = null;
       markersRef.current.clear();
@@ -142,6 +155,14 @@ export function MapCanvas({ events, hotspots, jurisdictions, assets, weather, cl
     renderRef.current();
   }, [events]);
 
+  // --- markers re-render whenever data or style readiness changes -----------------
+  // (data frequently resolves BEFORE the tile style finishes loading, so the
+  // 'load' event flips styleReady and this effect re-renders everything)
+  useEffect(() => {
+    if (!styleReady) return;
+    renderRef.current();
+  }, [styleReady, events, compact]);
+
   // --- selection highlight ------------------------------------------------------
   useEffect(() => {
     for (const [id, marker] of markersRef.current) {
@@ -154,7 +175,7 @@ export function MapCanvas({ events, hotspots, jurisdictions, assets, weather, cl
   // --- layer visibility -----------------------------------------------------------
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map || !styleReady) return;
     const setVisible = (ids: string[], on: boolean) =>
       ids.forEach((id) => {
         if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", on ? "visible" : "none");
@@ -163,12 +184,12 @@ export function MapCanvas({ events, hotspots, jurisdictions, assets, weather, cl
     setVisible(["hotspot-heat", "hotspot-circles"], layers.hotspots);
     setVisible(["gt-halos", "gt-circles"], layers.groundTruth);
     setVisible(["drain-lines", "asset-points", "pump-points"], layers.assets);
-  }, [layers]);
+  }, [layers, styleReady]);
 
   // --- static geojson data ----------------------------------------------------------
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map || !styleReady) return;
     setGeoJson(map, "jurisdictions", jurisdictionsToGeo(jurisdictions ?? []));
     setGeoJson(map, "hotspots", hotspotsToGeo(hotspots?.computed ?? []));
     setGeoJson(map, "groundtruth", gtToGeo(hotspots?.groundTruth ?? []));
@@ -177,7 +198,7 @@ export function MapCanvas({ events, hotspots, jurisdictions, assets, weather, cl
     setGeoJson(map, "assets", points);
     weatherRenderRef.current(weather);
      
-  }, [jurisdictions, hotspots, assets, weather]);
+  }, [jurisdictions, hotspots, assets, weather, styleReady]);
 
   // --- focus -----------------------------------------------------------------------
   useEffect(() => {
@@ -190,10 +211,40 @@ export function MapCanvas({ events, hotspots, jurisdictions, assets, weather, cl
      
   }, [focusMap?.key]);
 
+  // --- live location ------------------------------------------------------------
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !userPos || !styleReady) return;
+    const src = map.getSource("user-accuracy") as import("maplibre-gl").GeoJSONSource | undefined;
+    if (src) {
+      src.setData({
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            properties: {},
+            geometry: { type: "Polygon", coordinates: [latLngCircle(userPos.lat, userPos.lng, Math.max(30, userPos.accuracy))] },
+          },
+        ],
+      });
+    }
+    if (!userMarkerRef.current) {
+      const el = document.createElement("div");
+      el.className = "user-dot";
+      el.setAttribute("role", "img");
+      el.setAttribute("aria-label", "Your current location");
+      userMarkerRef.current = new Marker({ element: el, anchor: "center" })
+        .setLngLat([userPos.lng, userPos.lat])
+        .addTo(map);
+    } else {
+      userMarkerRef.current.setLngLat([userPos.lng, userPos.lat]);
+    }
+  }, [userPos?.key, styleReady]);
+
   // --- event marker rendering (clustered) --------------------------------------------
   function renderEventMarkers() {
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map) return;
     const index = clusterIndexRef.current;
     const current = eventsRef.current;
     const byId = new Map(current.map((e) => [e.id, e]));
@@ -266,6 +317,7 @@ export function MapCanvas({ events, hotspots, jurisdictions, assets, weather, cl
         el.addEventListener("click", (ev) => {
           ev.stopPropagation();
           selectEvent(e.id);
+          openPopupFor(e);
         });
         el.addEventListener("dblclick", (ev) => {
           ev.stopPropagation();
@@ -296,6 +348,21 @@ export function MapCanvas({ events, hotspots, jurisdictions, assets, weather, cl
     }
   }
 
+  /** Anchored InfoWindow popup (MapLibre Popup) for an event marker. */
+  function openPopupFor(e: EventSummary) {
+    const map = mapRef.current;
+    if (!map) return;
+    popupRef.current?.remove();
+    const popup = new Popup({ closeButton: true, closeOnClick: true, offset: 14, maxWidth: "300px" })
+      .setLngLat([e.lng, e.lat])
+      .setHTML(eventPopupHTML(e))
+      .addTo(map);
+    popupRef.current = popup;
+    popup.once("close", () => {
+      if (popupRef.current === popup) popupRef.current = null;
+    });
+  }
+
   function renderWeatherMarker(station: WeatherResponse["stations"][number]) {
     const map = mapRef.current;
     if (!map) return;
@@ -317,6 +384,14 @@ export function MapCanvas({ events, hotspots, jurisdictions, assets, weather, cl
     if (!weather || !mapRef.current) return;
     for (const s of weather.stations) renderWeatherMarker(s);
   }
+
+  // latest-ref bindings: keep the imperative renderers addressable from the
+  // map 'load'/'moveend' listeners and data effects (re-bound every render
+  // so closures always see current events/filters).
+  useEffect(() => {
+    renderRef.current = renderEventMarkers;
+    weatherRenderRef.current = renderWeatherMarkers;
+  });
 
   return <div ref={containerRef} role="application" aria-label="Delhi pilot map with waterlogging events, hotspots, rainfall and infrastructure layers" className={cn("size-full", className)} />;
 }
@@ -511,6 +586,21 @@ function addStaticLayers(map: MlMap) {
       "circle-stroke-color": "#0a0f11",
       "circle-stroke-width": 1,
     },
+  });
+
+  // user accuracy circle
+  map.addSource("user-accuracy", { type: "geojson", data: emptyFC() });
+  map.addLayer({
+    id: "user-accuracy-fill",
+    type: "fill",
+    source: "user-accuracy",
+    paint: { "fill-color": "#2563eb", "fill-opacity": 0.1 },
+  });
+  map.addLayer({
+    id: "user-accuracy-line",
+    type: "line",
+    source: "user-accuracy",
+    paint: { "line-color": "#2563eb", "line-opacity": 0.35, "line-width": 1 },
   });
 
   // clickable jurisdiction polygons → spatial filter

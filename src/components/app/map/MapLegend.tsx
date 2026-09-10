@@ -35,9 +35,10 @@ export function MapLegend({ compact }: { compact?: boolean }) {
         <LegendRow color="#60a5fa" shape="dot-lg" label="pump station" />
         <LegendRow color="#d97706" shape="halo" label="ground-truth hotspot" />
         <LegendRow color="#3b82f6" shape="glow" label="rainfall gauge (mm)" />
+        <LegendRow color="#2563eb" shape="dot-lg" label="your location (Locate Me)" />
       </ul>
       <p className="mt-2.5 pt-2 hairline-t micro-label !text-[0.52rem] text-slate-400 leading-relaxed">
-        marker size ∝ risk score
+        marker size ∝ risk score · tap a marker for details
       </p>
     </div>
   );

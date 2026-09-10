@@ -100,9 +100,9 @@ type ClusterMutation = UseMutationResult<{ data: ClusterResponse; meta: Record<s
 type RiskMutation = UseMutationResult<RiskResponse, Error, string>;
 
 const TOOLS: { id: ToolId; label: string; hint: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: "classify", label: "Classification", hint: "categorise + severity + duplicate suspicion", icon: Sparkles },
-  { id: "cluster", label: "Duplicate clustering", hint: "proximity clusters over the last 72h", icon: GitMerge },
-  { id: "risk", label: "Risk assessment", hint: "factor model + structured AI advisory", icon: Gauge },
+  { id: "classify", label: "Classification", hint: "Sorts a report into a category, rates severity and flags possible duplicates", icon: Sparkles },
+  { id: "cluster", label: "Duplicate Clustering", hint: "Groups nearby reports from the last 72 hours", icon: GitMerge },
+  { id: "risk", label: "Risk Assessment", hint: "Scores urgency from 7 factors, plus structured AI advice", icon: Gauge },
 ];
 
 const SEVERITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
@@ -189,7 +189,7 @@ export function InvestigateView() {
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <span className="flex items-center gap-2 shrink-0">
             <Radio className="size-3.5 text-water" aria-hidden />
-            <span className="micro-label !text-[0.62rem] text-slate-600">ai investigation</span>
+            <span className="micro-label !text-[0.62rem] text-slate-600">AI Investigation</span>
           </span>
           {health ? (
             <>
@@ -211,7 +211,7 @@ export function InvestigateView() {
           ) : healthQ.isLoading ? (
             <span className="micro-label !text-[0.52rem] text-muted-foreground/60">probing provider…</span>
           ) : (
-            <span className="micro-label !text-[0.52rem] text-sev-critical">provider health unavailable</span>
+            <span className="micro-label !text-[0.52rem] text-sev-critical">Provider Health Unavailable</span>
           )}
           <span className="micro-label ml-auto !text-[0.5rem] text-muted-foreground/60 hidden sm:inline">
             structured output only · no chain-of-thought exposed
@@ -315,7 +315,7 @@ function ClassifyInput({ classify }: { classify: ClassifyMutation }) {
               mode === m ? "bg-ink-900 text-water shadow-sm" : "text-slate-500 hover:text-slate-700"
             )}
           >
-            {m === "queue" ? "report queue" : "ad-hoc text"}
+            {m === "queue" ? "Report Queue" : "Ad-Hoc Text"}
           </button>
         ))}
       </div>
@@ -335,7 +335,7 @@ function ClassifyInput({ classify }: { classify: ClassifyMutation }) {
               className="bg-ink-900 border-border text-xs leading-relaxed"
               maxLength={600}
             />
-            <p className="text-[0.6rem] text-muted-foreground/70">min 12 characters · no personal identifiers</p>
+            <p className="text-[0.6rem] text-muted-foreground/70">At least 12 characters · please do not include personal details</p>
           </div>
           <div className="grid grid-cols-3 gap-2">
             <div className="space-y-1">
@@ -374,7 +374,7 @@ function ClassifyInput({ classify }: { classify: ClassifyMutation }) {
             <Shine />
           </Button>
           <p className="text-[0.6rem] text-muted-foreground/70 leading-relaxed">
-            Delhi bounds: lat 28.3 to 28.9, lng 76.8 to 77.6. Coordinates outside Delhi are rejected by validation.
+            Only Delhi locations are accepted: latitude 28.3 to 28.9, longitude 76.8 to 77.6. Anything outside Delhi is rejected.
           </p>
         </div>
       )}
@@ -401,12 +401,12 @@ function ReportQueue({ pending, onClassify }: { pending: boolean; onClassify: (r
 
   const reports = reportsQ.data ?? [];
   if (reports.length === 0)
-    return <EmptyState title="No reports in the queue" hint="Citizen reports appear here as they arrive." />;
+    return <EmptyState title="No Reports in the Queue" hint="Citizen reports appear here as they arrive." />;
 
   return (
     <div>
       <p className="micro-label !text-[0.52rem] text-muted-foreground/70 mb-2">
-        recent reports · newest first · {reports.length}
+        Recent Reports · Newest First · {reports.length}
       </p>
       <Stagger>
         {reports.map((r) => (
@@ -444,7 +444,7 @@ function ReportQueue({ pending, onClassify }: { pending: boolean; onClassify: (r
 function ClassifyResults({ m }: { m: ClassifyMutation }) {
   if (m.isPending) {
     return (
-      <Panel title="classification · result" icon={<Sparkles />}>
+      <Panel title="Classification · Result" icon={<Sparkles />}>
         <LoadingRows rows={5} />
         <p className="micro-label !text-[0.52rem] text-muted-foreground/60 mt-2">
           running provider call for {m.variables?.reportRef ?? "ad-hoc text"}…
@@ -454,7 +454,7 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
   }
   if (m.isError) {
     return (
-      <Panel title="classification · result" icon={<Sparkles />}>
+      <Panel title="Classification · Result" icon={<Sparkles />}>
         <ErrorNote
           message={(m.error as Error).message}
           onRetry={m.variables ? () => m.mutate(m.variables!) : undefined}
@@ -464,10 +464,10 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
   }
   if (!m.data) {
     return (
-      <Panel title="classification · result" icon={<Sparkles />}>
+      <Panel title="Classification · Result" icon={<Sparkles />}>
         <EmptyState
           icon={<Sparkles className="size-7" />}
-          title="No classification run yet"
+          title="No Classification Run Yet"
           hint="Pick a report from the queue, or switch to ad-hoc text mode, then run the classifier."
         />
       </Panel>
@@ -483,21 +483,21 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
     <>
       <Reveal key={`cl-main-${rkey}`}>
         <Panel
-          title={`classification · ${r._label}`}
+          title={`Classification · ${r._label}`}
           icon={<Sparkles />}
           actions={<ProviderChip provider={prov.provider} model={prov.modelId} />}
         >
           {/* verdict headline */}
           <div className="rounded-lg border border-blue-100 bg-blue-50/70 px-3.5 py-2.5 mb-3">
-            <p className="micro-label !text-[0.5rem] text-water">analysis result</p>
+            <p className="micro-label !text-[0.5rem] text-water">Analysis Result</p>
             <p className="mt-0.5 text-[0.95rem] font-semibold text-slate-900 leading-snug">
               {cl.category.toLowerCase().replace(/_/g, " ")}
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-            <Readout label="severity" value={cl.severity.toLowerCase()} tone={sevTone(cl.severity)} />
+            <Readout label="Severity" value={cl.severity.toLowerCase()} tone={sevTone(cl.severity)} />
             <Readout
-              label="confidence"
+              label="Confidence"
               value={
                 <span className="flex items-baseline gap-0.5">
                   <CountUp value={cl.confidence * 100} className="text-xl font-semibold text-water" />
@@ -524,7 +524,7 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
                 {cl.duplicateReason ? `: ${cl.duplicateReason}` : ""}
               </span>
             ) : (
-              <span className="micro-label !text-[0.52rem] text-muted-foreground">no duplicate suspected by model</span>
+              <span className="micro-label !text-[0.52rem] text-muted-foreground">No duplicate suspected by model</span>
             )}
           </div>
           <p className="mt-3 micro-label !text-[0.5rem] text-muted-foreground/60">
@@ -535,13 +535,13 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
 
       {/* provenance */}
       <Reveal key={`cl-prov-${rkey}`} delay={0.07}>
-        <Panel title="provenance" icon={<ShieldAlert />}>
+        <Panel title="Provenance" icon={<ShieldAlert />}>
           <div className="space-y-2.5">
-            <FactRow label="provider"><ProviderChip provider={prov.provider} model={prov.modelId} /></FactRow>
-            <FactRow label="model id"><span className="data-mono text-[0.62rem] break-all">{prov.modelId}</span></FactRow>
-            <FactRow label="version"><span className="data-mono text-[0.62rem]">{prov.version}</span></FactRow>
-            <FactRow label="latency"><span className="data-mono text-[0.62rem]">{prov.latencyMs} ms</span></FactRow>
-            <FactRow label="fallback">
+            <FactRow label="Provider"><ProviderChip provider={prov.provider} model={prov.modelId} /></FactRow>
+            <FactRow label="Model ID"><span className="data-mono text-[0.62rem] break-all">{prov.modelId}</span></FactRow>
+            <FactRow label="Version"><span className="data-mono text-[0.62rem]">{prov.version}</span></FactRow>
+            <FactRow label="Latency"><span className="data-mono text-[0.62rem]">{prov.latencyMs} ms</span></FactRow>
+            <FactRow label="Fallback">
               <span className={cn("micro-label !text-[0.55rem]", prov.fallbackUsed ? "text-sev-moderate" : "text-verified")}>
                 {prov.fallbackUsed ? "used" : "not used"}
               </span>
@@ -552,8 +552,8 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
               </p>
             )}
             <div className="hairline-t pt-2.5 space-y-2">
-              <p className="micro-label !text-[0.5rem] text-muted-foreground/60">provider health at run time</p>
-              <FactRow label="status">
+              <p className="micro-label !text-[0.5rem] text-muted-foreground/60">Provider Health at Run Time</p>
+              <FactRow label="Status">
                 <span className={cn("micro-label !text-[0.55rem] flex items-center gap-1.5", prov.providerHealth.available ? "text-verified" : "text-sev-high")}>
                   <span aria-hidden className={cn("size-1.5 rounded-full", prov.providerHealth.available ? "bg-verified" : "bg-sev-high")} />
                   {prov.providerHealth.provider} {prov.providerHealth.available ? "available" : "unavailable"}
@@ -571,26 +571,26 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
 
       {/* context */}
       <Reveal key={`cl-ctx-${rkey}`} delay={0.14}>
-        <Panel title="evidence context · fed to the model" icon={<Brain />}>
+        <Panel title="Evidence Context · Fed to the Model" icon={<Brain />}>
           <ul className="space-y-2.5">
-            <EvidenceCheck label="rainfall 24h / 72h">
+            <EvidenceCheck label="Rainfall 24h / 72h">
               <span className="text-water">{Math.round(r.context.rainfall24hMm ?? 0)} / {Math.round(r.context.rainfall72hMm ?? 0)} mm</span>
             </EvidenceCheck>
             {r.context.nearestStation && (
-              <EvidenceCheck label="nearest gauge">
+              <EvidenceCheck label="Nearest Gauge">
                 {r.context.nearestStation.name} · {(r.context.nearestStation.distanceM / 1000).toFixed(1)}km
               </EvidenceCheck>
             )}
-            <EvidenceCheck label="historical incidents">
+            <EvidenceCheck label="Historical Incidents">
               {r.context.historicalIncidentsNearby} within 200m
             </EvidenceCheck>
-            <EvidenceCheck label="nearby open events">
+            <EvidenceCheck label="Nearby Open Events">
               {r.context.nearbyOpenEvents} within 150m / 48h
             </EvidenceCheck>
           </ul>
           {r.context.nearestAssets.length > 0 && (
             <div className="mt-3 hairline-t pt-2.5">
-              <p className="micro-label !text-[0.5rem] text-muted-foreground/60 mb-1.5">nearest assets</p>
+              <p className="micro-label !text-[0.5rem] text-muted-foreground/60 mb-1.5">Nearest Assets</p>
               <ul className="space-y-1.5">
                 {r.context.nearestAssets.map((a) => (
                   <li key={a.code} className="flex items-baseline gap-2.5 text-xs">
@@ -607,9 +607,9 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
 
       {/* duplicate signals */}
       <Reveal key={`cl-dup-${rkey}`} delay={0.21}>
-        <Panel title="duplicate signals · engine candidates" icon={<GitMerge />}>
+        <Panel title="Duplicate Signals · Engine Candidates" icon={<GitMerge />}>
           {r.duplicateSignals.length === 0 ? (
-            <EmptyState title="No duplicate candidates" hint="No events within 150m active in the last 48h." />
+            <EmptyState title="No Duplicate Candidates" hint="No active incidents within 150m in the last 48 hours." />
           ) : (
             <ul className="space-y-2">
               {r.duplicateSignals.map((d, i) => (
@@ -618,7 +618,7 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
                     {d.code}
                   </button>
                   <span className="data-mono text-[0.62rem] text-slate-500">{Math.round(d.distanceM)}m · {d.hoursApart.toFixed(1)}h apart</span>
-                  {d.recurrence && <span className="rounded-full bg-red-50 border border-red-200 px-2 py-0.5 micro-label !text-[0.5rem] text-sev-high">recurrence</span>}
+                  {d.recurrence && <span className="rounded-full bg-red-50 border border-red-200 px-2 py-0.5 micro-label !text-[0.5rem] text-sev-high" title="The same spot has flooded again">Recurrence</span>}
                   <span className="flex-1 min-w-40 text-slate-600">{d.reason}</span>
                 </li>
               ))}
@@ -666,7 +666,7 @@ function ClusterInput({ cluster, radius, setRadius }: { cluster: ClusterMutation
         <Shine />
       </Button>
       <p className="text-[0.6rem] text-muted-foreground/70 leading-relaxed">
-        Evaluates all reports from the last 72 hours. Deterministic union-find method with no model call: identical inputs always produce identical clusters.
+        Looks at all reports from the last 72 hours. It uses a fixed, deterministic method with no AI call, so the same inputs always produce the same groups.
       </p>
       {cluster.isError && (
         <p className="micro-label !text-[0.52rem] text-sev-critical" role="alert">
@@ -680,7 +680,7 @@ function ClusterInput({ cluster, radius, setRadius }: { cluster: ClusterMutation
 function ClusterResults({ m }: { m: ClusterMutation }) {
   if (m.isPending) {
     return (
-      <Panel title="duplicate clustering · result" icon={<GitMerge />}>
+      <Panel title="Duplicate Clustering · Result" icon={<GitMerge />}>
         <LoadingRows rows={5} />
         <p className="micro-label !text-[0.52rem] text-muted-foreground/60 mt-2">union-find over last-72h reports…</p>
       </Panel>
@@ -688,17 +688,17 @@ function ClusterResults({ m }: { m: ClusterMutation }) {
   }
   if (m.isError) {
     return (
-      <Panel title="duplicate clustering · result" icon={<GitMerge />}>
+      <Panel title="Duplicate Clustering · Result" icon={<GitMerge />}>
         <ErrorNote message={(m.error as Error).message} onRetry={() => m.mutate(m.variables ?? 150)} />
       </Panel>
     );
   }
   if (!m.data) {
     return (
-      <Panel title="duplicate clustering · result" icon={<GitMerge />}>
+      <Panel title="Duplicate Clustering · Result" icon={<GitMerge />}>
         <EmptyState
           icon={<GitMerge className="size-7" />}
-          title="No clustering run yet"
+          title="No Clustering Run Yet"
           hint="Pick a radius and run the clustering to group nearby reports from the last 72 hours."
         />
       </Panel>
@@ -711,7 +711,7 @@ function ClusterResults({ m }: { m: ClusterMutation }) {
   return (
     <Reveal key={`clu-${rkey}`}>
       <Panel
-        title={`duplicate clusters · ${data.clusters.length}`}
+        title={`Duplicate Clusters · ${data.clusters.length}`}
         icon={<GitMerge />}
         actions={
           <span className="data-mono text-[0.62rem] text-slate-500">
@@ -723,7 +723,7 @@ function ClusterResults({ m }: { m: ClusterMutation }) {
           {String(meta.method ?? `union-find proximity clustering, radius ${radius}m`)} · {String(meta.version ?? "cluster-1.1-demo")}
         </p>
         {data.clusters.length === 0 ? (
-          <EmptyState title="No multi-report clusters found" hint="All reports in the 72h window are singletons at this radius." />
+          <EmptyState title="No Multi-Report Clusters Found" hint="At this radius, every report from the last 72 hours stands alone with no repeats nearby." />
         ) : (
           <Stagger className="space-y-3">
             {data.clusters.map((c) => (
@@ -734,7 +734,7 @@ function ClusterResults({ m }: { m: ClusterMutation }) {
                     <span className="data-mono text-[0.62rem] text-slate-500">
                       {c.size} reports · spread {c.spatialDiameterM}m
                     </span>
-                    <span className="ml-auto data-mono text-[0.6rem] text-slate-400 hidden sm:inline" title="cluster centroid">
+                    <span className="ml-auto data-mono text-[0.6rem] text-slate-400 hidden sm:inline" title="Cluster centroid">
                       {c.centroid.lat.toFixed(4)}, {c.centroid.lng.toFixed(4)}
                     </span>
                   </div>
@@ -812,7 +812,7 @@ function RiskInput({ risk }: { risk: RiskMutation }) {
         ) : eventsQ.isError ? (
           <div className="p-2"><ErrorNote message={(eventsQ.error as Error).message} onRetry={() => eventsQ.refetch()} /></div>
         ) : filtered.length === 0 ? (
-          <EmptyState title="No events match" hint="Try a different code or title fragment." />
+          <EmptyState title="No Events Match" hint="Try searching a different code or title." />
         ) : (
           <ul>
             {filtered.slice(0, 40).map((e) => {
@@ -860,7 +860,7 @@ function RiskInput({ risk }: { risk: RiskMutation }) {
         <Shine />
       </Button>
       <p className="text-[0.6rem] text-muted-foreground/70 leading-relaxed">
-        Runs the transparent 7-factor risk engine and requests a structured AI advisory. The assessment is persisted to the event dossier.
+        Re-scores the incident with the transparent 7-factor risk engine and asks the AI for a structured advisory (a written second opinion). The result is saved to the event dossier.
       </p>
       {risk.isError && (
         <p className="micro-label !text-[0.52rem] text-sev-critical" role="alert">
@@ -874,7 +874,7 @@ function RiskInput({ risk }: { risk: RiskMutation }) {
 function RiskResults({ m }: { m: RiskMutation }) {
   if (m.isPending) {
     return (
-      <Panel title="risk assessment · result" icon={<Gauge />}>
+      <Panel title="Risk Assessment · Result" icon={<Gauge />}>
         <LoadingRows rows={5} />
         <p className="micro-label !text-[0.52rem] text-muted-foreground/60 mt-2">computing factors + advisory…</p>
       </Panel>
@@ -882,7 +882,7 @@ function RiskResults({ m }: { m: RiskMutation }) {
   }
   if (m.isError) {
     return (
-      <Panel title="risk assessment · result" icon={<Gauge />}>
+      <Panel title="Risk Assessment · Result" icon={<Gauge />}>
         <ErrorNote
           message={(m.error as Error).message}
           onRetry={m.variables ? () => m.mutate(m.variables!) : undefined}
@@ -892,11 +892,11 @@ function RiskResults({ m }: { m: RiskMutation }) {
   }
   if (!m.data) {
     return (
-      <Panel title="risk assessment · result" icon={<Gauge />}>
+      <Panel title="Risk Assessment · Result" icon={<Gauge />}>
         <EmptyState
           icon={<Gauge className="size-7" />}
-          title="No risk assessment run yet"
-          hint="Search for an event, select it, then run the assessment."
+          title="No Risk Assessment Run Yet"
+          hint="Search for an incident, pick one, then run the assessment."
         />
       </Panel>
     );
@@ -910,7 +910,7 @@ function RiskResults({ m }: { m: RiskMutation }) {
     <>
       <Reveal key={`rk-main-${rkey}`}>
         <Panel
-          title={`risk assessment · ${r.event.code}`}
+          title={`Risk Assessment · ${r.event.code}`}
           icon={<Gauge />}
           actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/70">{r.risk.modelVersion}</span>}
         >
@@ -940,14 +940,14 @@ function RiskResults({ m }: { m: RiskMutation }) {
             ))}
           </div>
           <p className="mt-3 text-[0.68rem] text-slate-500">
-            Score = Σ(factor value × weight) × 100. Every factor, weight and contribution is returned by the engine: no black boxes.
+            The score adds up each factor (value × weight) and scales the total to 0–100. Every factor, weight and contribution is returned by the engine: no black boxes.
           </p>
         </Panel>
       </Reveal>
 
       <Reveal key={`rk-adv-${rkey}`} delay={0.08}>
         <Panel
-          title="ai advisory · structured output"
+          title="AI Advisory · Structured Output"
           icon={<Brain />}
           actions={<ProviderChip provider={r.advisory.provider} model={r.advisory.modelId} />}
         >
@@ -977,7 +977,7 @@ function RiskResults({ m }: { m: RiskMutation }) {
           )}
           {r.advisory.output.recommendedInvestigation && (
             <p className="mt-3 text-xs text-water">
-              <span className="micro-label !text-[0.55rem] mr-1.5">recommended</span>{" "}
+              <span className="micro-label !text-[0.55rem] mr-1.5">Recommended</span>{" "}
               {r.advisory.output.recommendedInvestigation}
             </p>
           )}
@@ -988,16 +988,16 @@ function RiskResults({ m }: { m: RiskMutation }) {
       </Reveal>
 
       <Reveal key={`rk-prov-${rkey}`} delay={0.16}>
-        <Panel title="provenance" icon={<ShieldAlert />}>
+        <Panel title="Provenance" icon={<ShieldAlert />}>
           <dl className="space-y-2 text-xs">
-            <FactRow label="risk engine"><span className="data-mono text-[0.62rem]">{r.provenance.riskModelVersion}</span></FactRow>
-            <FactRow label="advisory provider"><ProviderChip provider={r.advisory.provider} model={r.advisory.modelId} /></FactRow>
-            <FactRow label="fallback">
+            <FactRow label="Risk Engine"><span className="data-mono text-[0.62rem]">{r.provenance.riskModelVersion}</span></FactRow>
+            <FactRow label="Advisory Provider"><ProviderChip provider={r.advisory.provider} model={r.advisory.modelId} /></FactRow>
+            <FactRow label="Fallback">
               <span className={cn("micro-label !text-[0.55rem]", r.advisory.fallbackUsed ? "text-sev-moderate" : "text-verified")}>
                 {r.advisory.fallbackUsed ? "used" : "not used"}
               </span>
             </FactRow>
-            <FactRow label="event">
+            <FactRow label="Event">
               <button onClick={() => navigate("event", r.event.code)} className="data-mono text-[0.62rem] text-water hover:text-water-dim transition-colors">
                 {r.event.code} →
               </button>

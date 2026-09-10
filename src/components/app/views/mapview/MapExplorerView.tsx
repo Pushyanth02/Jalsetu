@@ -2,33 +2,47 @@
 
 import { useUi, navigate } from "@/lib/client/store";
 import { useMapData, MapWithOverlays } from "@/components/app/map/MapView";
+import type { WeatherResponse } from "@/lib/client/api";
 import { EventRow } from "../command/CommandCenterView";
 import { LoadingRows, ErrorNote, EmptyState, TimeAgo } from "@/components/app/shared/domain";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { SlidersHorizontal, Users, CloudRain, GitBranch, MapPin, Droplets, Landmark, X } from "lucide-react";
 import { Reveal, Stagger, StaggerItem, CountUp, PulseDot } from "@/components/motion/kit";
 
-// WATERLOGGING MAP - full-bleed dark ops map with white filter rail,
-// spatial selection (click jurisdiction), event list synced to filters.
+// WATERLOGGING MAP - full-bleed dark ops map with white filter rail on
+// desktop and a drag-handle bottom sheet on mobile (<1024px). Spatial
+// selection (click jurisdiction), event list synced to filters, Locate Me,
+// anchored InfoWindow popups with plain-language guidance.
 
 const TIME_WINDOWS = [
-  { value: "ALL", label: "All time" },
-  { value: "6", label: "Last 6h" },
-  { value: "24", label: "Last 24h" },
-  { value: "72", label: "Last 72h" },
+  { value: "ALL", label: "All Time" },
+  { value: "6", label: "Last 6 Hours" },
+  { value: "24", label: "Last 24 Hours" },
+  { value: "72", label: "Last 72 Hours" },
 ] as const;
 
 const RISK_BANDS = ["ALL", "LOW", "MODERATE", "HIGH", "CRITICAL"] as const;
 const STATUSES = ["ALL", "DETECTED", "TRIAGED", "ASSIGNED", "IN_PROGRESS", "VERIFIED", "CLOSED", "REOPENED"] as const;
 const CATEGORIES = ["ALL", "WATERLOGGING", "DRAIN_OVERFLOW", "SEWER_BACKUP", "POTHOLE", "DEBRIS_BLOCKAGE"] as const;
 
+const CATEGORY_LABELS: Record<(typeof CATEGORIES)[number], string> = {
+  ALL: "All Categories",
+  WATERLOGGING: "Waterlogging",
+  DRAIN_OVERFLOW: "Drain Overflow",
+  SEWER_BACKUP: "Sewer Backup",
+  POTHOLE: "Pothole",
+  DEBRIS_BLOCKAGE: "Debris Blockage",
+};
+
 export function MapExplorerView() {
   const filters = useUi((s) => s.filters);
   const setFilters = useUi((s) => s.setFilters);
   const { eventsQ, hotspotsQ, jurisdictionsQ, assetsQ, weatherQ } = useMapData();
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   // spatial selection via map jurisdiction click
   useEffect(() => {
@@ -42,6 +56,12 @@ export function MapExplorerView() {
   }, [jurisdictionsQ.data, setFilters]);
 
   const selectedJurisdiction = jurisdictionsQ.data?.find((j) => j.id === filters.jurisdictionId);
+  const activeFilterCount =
+    (filters.status !== "ALL" ? 1 : 0) +
+    (filters.riskBand !== "ALL" ? 1 : 0) +
+    (filters.category !== "ALL" ? 1 : 0) +
+    (filters.hours !== "ALL" ? 1 : 0) +
+    (filters.jurisdictionId !== "ALL" ? 1 : 0);
 
   return (
     <div className="flex flex-1 min-h-0 flex-col">
@@ -50,7 +70,7 @@ export function MapExplorerView() {
         <div>
           <h1 className="font-display text-lg font-bold tracking-tight text-slate-900 leading-tight">Map Explorer</h1>
           <p className="text-[0.7rem] text-muted-foreground mt-0.5">
-            Spatial operations view · click a jurisdiction to filter the pilot
+            See every waterlogging incident on one map. Click a shaded area to focus on that zone.
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2.5">
@@ -67,129 +87,66 @@ export function MapExplorerView() {
         </div>
       </Reveal>
 
+      {/* mobile: filters open the bottom sheet (44px touch target) */}
+      <div className="lg:hidden hairline-b bg-white px-4 py-2 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setSheetOpen(true)}
+          className="min-h-11 flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-ink-850 transition-colors"
+          aria-label="Open filters and layers"
+          aria-expanded={sheetOpen}
+        >
+          <SlidersHorizontal className="size-4 text-water" aria-hidden />
+          Filters &amp; Layers
+          {activeFilterCount > 0 && (
+            <span className="grid size-5 place-items-center rounded-full bg-blue-50 text-water data-mono text-[0.6rem] font-semibold">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate("report")}
+          className="min-h-11 rounded-lg bg-water px-4 text-xs font-semibold text-white hover:bg-water-dim transition-colors"
+        >
+          Report
+        </button>
+      </div>
+
       <div className="flex flex-1 min-h-0 flex-col lg:flex-row">
-        {/* filter rail */}
+        {/* desktop filter rail */}
         <Reveal
           delay={0.06}
-          className="lg:w-72 shrink-0 hairline-b lg:hairline-b-0 lg:hairline-r bg-white flex flex-col max-h-64 lg:max-h-none overflow-y-auto"
+          className="hidden lg:flex lg:w-72 shrink-0 hairline-r bg-white flex-col overflow-y-auto"
         >
-          <div className="px-4 py-3 flex items-center gap-2 hairline-b lg:hidden">
-            <SlidersHorizontal className="size-3.5 text-water" aria-hidden />
-            <span className="micro-label">filters & layers</span>
-          </div>
-
-          <div className="p-4 space-y-4">
-            <FilterGroup label="severity window">
-              <Select value={String(filters.hours)} onValueChange={(v) => setFilters({ hours: v === "ALL" ? "ALL" : Number(v) })}>
-                <SelectTrigger aria-label="Time window" className="h-8 text-xs bg-white border-border"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {TIME_WINDOWS.map((t) => (
-                    <SelectItem key={t.value} value={t.value} className="text-xs">{t.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FilterGroup>
-
-            <FilterGroup label="risk band">
-              <div className="grid grid-cols-5 gap-1">
-                {RISK_BANDS.map((b) => (
-                  <button
-                    key={b}
-                    onClick={() => setFilters({ riskBand: b })}
-                    aria-pressed={filters.riskBand === b}
-                    className={cn(
-                      "rounded-lg border micro-label !text-[0.55rem] py-1.5 transition-colors",
-                      filters.riskBand === b
-                        ? b === "CRITICAL"
-                          ? "border-red-200 bg-red-50 text-sev-critical"
-                          : b === "HIGH"
-                            ? "border-orange-200 bg-orange-50 text-sev-high"
-                            : "border-blue-200 bg-blue-50 text-water"
-                        : "border-border text-slate-500 hover:bg-ink-850 hover:text-slate-700"
-                    )}
-                  >
-                    {b === "ALL" ? "all" : b.slice(0, 4).toLowerCase()}
-                  </button>
-                ))}
-              </div>
-            </FilterGroup>
-
-            <FilterGroup label="status">
-              <div className="flex flex-wrap gap-1">
-                {STATUSES.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => setFilters({ status: s })}
-                    aria-pressed={filters.status === s}
-                    className={cn(
-                      "rounded-lg border micro-label !text-[0.55rem] px-1.5 py-1 transition-colors",
-                      filters.status === s
-                        ? "border-blue-200 bg-blue-50 text-water"
-                        : "border-border text-slate-500 hover:bg-ink-850 hover:text-slate-700"
-                    )}
-                  >
-                    {s === "IN_PROGRESS" ? "field" : s.toLowerCase()}
-                  </button>
-                ))}
-              </div>
-            </FilterGroup>
-
-            <FilterGroup label="category">
-              <Select value={filters.category} onValueChange={(v) => setFilters({ category: v })}>
-                <SelectTrigger aria-label="Category" className="h-8 text-xs bg-white border-border"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map((c) => (
-                    <SelectItem key={c} value={c} className="text-xs">
-                      {c === "ALL" ? "All categories" : c.toLowerCase().replace(/_/g, " ")}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FilterGroup>
-
-            <FilterGroup label="jurisdiction (spatial)">
-              {selectedJurisdiction ? (
-                <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-2">
-                  <MapPin className="size-3 text-water shrink-0" aria-hidden />
-                  <span className="text-xs text-water flex-1 leading-tight font-medium">{selectedJurisdiction.name}</span>
-                  <button onClick={() => setFilters({ jurisdictionId: "ALL" })} aria-label="Clear jurisdiction filter" className="rounded-lg p-0.5 text-slate-400 hover:text-slate-700 hover:bg-white transition-colors">
-                    <X className="size-3.5" />
-                  </button>
-                </div>
-              ) : (
-                <p className="text-[0.68rem] text-muted-foreground leading-relaxed">
-                  Click a jurisdiction polygon on the map, or events are shown pilot-wide.
-                </p>
-              )}
-            </FilterGroup>
-
-            <div className="hairline-t pt-3">
-              <p className="micro-label mb-2">layers</p>
-              <div className="space-y-1">
-                <LayerToggle k="events" label="Events" icon={Users} />
-                <LayerToggle k="hotspots" label="Risk hotspots" icon={Droplets} />
-                <LayerToggle k="groundTruth" label="Ground-truth sites" icon={MapPin} />
-                <LayerToggle k="rainfall" label="Rainfall gauges" icon={CloudRain} />
-                <LayerToggle k="assets" label="Drains & assets" icon={GitBranch} />
-                <LayerToggle k="jurisdictions" label="Jurisdiction bounds" icon={Landmark} />
-              </div>
-            </div>
-
-            {weatherQ.data && (
-              <div className="hairline-t pt-3">
-                <p className="micro-label mb-2">rainfall (72h, synthetic)</p>
-                <ul className="space-y-1">
-                  {weatherQ.data.stations.map((s) => (
-                    <li key={s.code} className="flex items-baseline justify-between text-xs">
-                      <span className="data-mono text-water">{s.code}</span>
-                      <span className="text-muted-foreground">{s.totalMm.toFixed(0)} mm</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
+          <FilterRailContent
+            filters={filters}
+            setFilters={setFilters}
+            selectedJurisdiction={selectedJurisdiction}
+            weather={weatherQ.data}
+          />
         </Reveal>
+
+        {/* mobile bottom sheet (vaul): same rail content, drag handle + snap */}
+        <Drawer open={sheetOpen} onOpenChange={setSheetOpen}>
+          <DrawerContent className="max-h-[85dvh]">
+            <DrawerHeader className="text-left pb-0">
+              <DrawerTitle className="text-sm font-bold font-display text-slate-900">Filters &amp; Layers</DrawerTitle>
+              <DrawerDescription className="text-xs text-muted-foreground">
+                Narrow the map to what you care about. Changes apply instantly.
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="overflow-y-auto px-4 pb-6 pt-2">
+              <FilterRailContent
+                filters={filters}
+                setFilters={setFilters}
+                selectedJurisdiction={selectedJurisdiction}
+                weather={weatherQ.data}
+                onDone={() => setSheetOpen(false)}
+              />
+            </div>
+          </DrawerContent>
+        </Drawer>
 
         {/* map + list */}
         <div className="flex-1 min-w-0 min-h-0 flex flex-col">
@@ -224,7 +181,7 @@ export function MapExplorerView() {
               </ul>
             ) : (
               <EmptyState
-                title="No events match these filters"
+                title="No Events Match These Filters"
                 hint="Loosen the severity, status, or time window filters."
                 action={
                   <button onClick={() => setFilters({ status: "ALL", riskBand: "ALL", category: "ALL", hours: "ALL", jurisdictionId: "ALL" })} className="micro-label !text-[0.6rem] text-water hover:text-water-dim transition-colors mt-1">
@@ -240,12 +197,158 @@ export function MapExplorerView() {
               <CountUp value={eventsQ.data?.length ?? 0} className="text-slate-700" /> events shown
               {eventsQ.dataUpdatedAt ? <span> · updated <TimeAgo iso={new Date(eventsQ.dataUpdatedAt).toISOString()} title={false} /></span> : null}
             </span>
-            <button onClick={() => navigate("report")} className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 micro-label !text-[0.58rem] text-slate-600 hover:bg-ink-850 hover:text-slate-900 transition-colors">
+            <button onClick={() => navigate("report")} className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 min-h-8 micro-label !text-[0.58rem] text-slate-600 hover:bg-ink-850 hover:text-slate-900 transition-colors">
               report waterlogging →
             </button>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Shared filter/layer rail used by the desktop aside and the mobile sheet. */
+function FilterRailContent({
+  filters,
+  setFilters,
+  selectedJurisdiction,
+  weather,
+  onDone,
+}: {
+  filters: ReturnType<typeof useUi.getState>["filters"];
+  setFilters: ReturnType<typeof useUi.getState>["setFilters"];
+  selectedJurisdiction: { name: string } | undefined;
+  weather: WeatherResponse | undefined;
+  onDone?: () => void;
+}) {
+  return (
+    <div className="p-4 space-y-4">
+      <FilterGroup label="Time Window">
+        <Select value={String(filters.hours)} onValueChange={(v) => setFilters({ hours: v === "ALL" ? "ALL" : Number(v) })}>
+          <SelectTrigger aria-label="Time window" className="h-11 lg:h-8 text-xs bg-white border-border"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {TIME_WINDOWS.map((t) => (
+              <SelectItem key={t.value} value={t.value} className="text-xs">{t.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FilterGroup>
+
+      <FilterGroup label="Risk Band">
+        <div className="grid grid-cols-5 gap-1">
+          {RISK_BANDS.map((b) => (
+            <button
+              key={b}
+              onClick={() => setFilters({ riskBand: b })}
+              aria-pressed={filters.riskBand === b}
+              className={cn(
+                "rounded-lg border micro-label !text-[0.55rem] py-2 lg:py-1.5 transition-colors",
+                filters.riskBand === b
+                  ? b === "CRITICAL"
+                    ? "border-red-200 bg-red-50 text-sev-critical"
+                    : b === "HIGH"
+                      ? "border-orange-200 bg-orange-50 text-sev-high"
+                      : "border-blue-200 bg-blue-50 text-water"
+                  : "border-border text-slate-500 hover:bg-ink-850 hover:text-slate-700"
+              )}
+            >
+              {b === "ALL" ? "all" : b.slice(0, 4).toLowerCase()}
+            </button>
+          ))}
+        </div>
+      </FilterGroup>
+
+      <FilterGroup label="Status">
+        <div className="flex flex-wrap gap-1">
+          {STATUSES.map((s) => (
+            <button
+              key={s}
+              onClick={() => setFilters({ status: s })}
+              aria-pressed={filters.status === s}
+              className={cn(
+                "rounded-lg border micro-label !text-[0.55rem] px-2 py-1.5 lg:px-1.5 lg:py-1 transition-colors",
+                filters.status === s
+                  ? "border-blue-200 bg-blue-50 text-water"
+                  : "border-border text-slate-500 hover:bg-ink-850 hover:text-slate-700"
+              )}
+            >
+              {s === "IN_PROGRESS" ? "field" : s.toLowerCase()}
+            </button>
+          ))}
+        </div>
+      </FilterGroup>
+
+      <FilterGroup label="Category">
+        <div className="flex flex-wrap gap-1" role="group" aria-label="Category filter toggles">
+          {CATEGORIES.map((c) => (
+            <button
+              key={c}
+              onClick={() => setFilters({ category: c })}
+              aria-pressed={filters.category === c}
+              className={cn(
+                "rounded-lg border px-2.5 py-1.5 lg:py-1 text-[0.65rem] font-medium transition-colors",
+                filters.category === c
+                  ? "border-blue-200 bg-blue-50 text-water"
+                  : "border-border text-slate-500 hover:bg-ink-850 hover:text-slate-700"
+              )}
+            >
+              {CATEGORY_LABELS[c]}
+            </button>
+          ))}
+        </div>
+      </FilterGroup>
+
+      <FilterGroup label="Jurisdiction (Spatial)">
+        {selectedJurisdiction ? (
+          <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-2">
+            <MapPin className="size-3 text-water shrink-0" aria-hidden />
+            <span className="text-xs text-water flex-1 leading-tight font-medium">{selectedJurisdiction.name}</span>
+            <button onClick={() => setFilters({ jurisdictionId: "ALL" })} aria-label="Clear jurisdiction filter" className="rounded-lg p-1 text-slate-400 hover:text-slate-700 hover:bg-white transition-colors">
+              <X className="size-3.5" />
+            </button>
+          </div>
+        ) : (
+          <p className="text-[0.68rem] text-muted-foreground leading-relaxed">
+            Click a shaded zone on the map to focus on it. Without a selection, incidents from the whole pilot area are shown.
+          </p>
+        )}
+      </FilterGroup>
+
+      <div className="hairline-t pt-3">
+        <p className="micro-label mb-2">Layers</p>
+        <div className="space-y-1">
+          <LayerToggle k="events" label="Events" icon={Users} />
+          <LayerToggle k="hotspots" label="Risk Hotspots" icon={Droplets} />
+          <LayerToggle k="groundTruth" label="Ground-Truth Sites" icon={MapPin} />
+          <LayerToggle k="rainfall" label="Rainfall Gauges" icon={CloudRain} />
+          <LayerToggle k="assets" label="Drains &amp; Assets" icon={GitBranch} />
+          <LayerToggle k="jurisdictions" label="Jurisdiction Bounds" icon={Landmark} />
+        </div>
+      </div>
+
+      {weather && (
+        <div className="hairline-t pt-3">
+          <p className="micro-label mb-2">Rainfall (72h, Synthetic)</p>
+          <ul className="space-y-1">
+            {weather.stations.map((s) => (
+              <li key={s.code} className="flex items-baseline justify-between text-xs">
+                <span className="data-mono text-water">{s.code}</span>
+                <span className="text-muted-foreground">{s.totalMm.toFixed(0)} mm</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {onDone && (
+        <button
+          type="button"
+          onClick={onDone}
+          className="w-full min-h-11 rounded-lg bg-water text-white text-xs font-semibold hover:bg-water-dim transition-colors"
+        >
+          Show {filters.category === "ALL" ? "All" : CATEGORY_LABELS[filters.category as keyof typeof CATEGORY_LABELS]} Events
+        </button>
+      )}
     </div>
   );
 }
@@ -263,7 +366,7 @@ function LayerToggle({ k, label, icon: Icon }: { k: keyof ReturnType<typeof useU
   const layers = useUi((s) => s.layers);
   const toggleLayer = useUi((s) => s.toggleLayer);
   return (
-    <label className="flex items-center gap-2.5 py-1 px-1.5 -mx-1.5 rounded-lg cursor-pointer select-none hover:bg-ink-850/60 transition-colors">
+    <label className="flex min-h-9 items-center gap-2.5 py-1 px-1.5 -mx-1.5 rounded-lg cursor-pointer select-none hover:bg-ink-850/60 transition-colors">
       <Switch checked={layers[k]} onCheckedChange={() => toggleLayer(k)} aria-label={label} className="scale-90 data-[state=checked]:bg-water" />
       <Icon className={cn("size-3.5", layers[k] ? "text-water" : "text-slate-400")} aria-hidden />
       <span className={cn("text-xs", layers[k] ? "text-slate-700" : "text-slate-500")}>{label}</span>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useUi, useHashRouter, navigate, type ViewId } from "@/lib/client/store";
+import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import { apiGet, type OverviewResponse, type WeatherResponse } from "@/lib/client/api";
 import { cn } from "@/lib/utils";
@@ -35,7 +36,7 @@ export function BrandLockup({ compact = false }: { compact?: boolean }) {
   return (
     <span className="flex items-center gap-2.5">
       { }
-      <img src="/img/jalsetu-mark.svg" alt="" width={34} height={34} className="shrink-0 rounded-[10px]" />
+      <img src="/img/jalsetu-mark.svg" alt="JalSetu brand mark" width={34} height={34} className="shrink-0 rounded-[10px]" />
       <span className="min-w-0">
         <span className="block font-display text-[1.05rem] font-bold leading-none text-white">JalSetu</span>
         {!compact && (
@@ -139,12 +140,14 @@ function WeatherWidget() {
 
   return (
     <div className="shrink-0 border-t border-sidebar-border p-4">
-      <div className="relative overflow-hidden rounded-xl">
+      <div className="relative overflow-hidden rounded-xl h-24">
         { }
-        <img
+        <Image
           src="/img/weather-delhi.png"
           alt="Delhi skyline in monsoon rain (illustrative)"
-          className="h-24 w-full object-cover"
+          fill
+          sizes="280px"
+          className="object-cover"
           loading="lazy"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-sb-900/90 via-sb-900/30 to-transparent" aria-hidden />

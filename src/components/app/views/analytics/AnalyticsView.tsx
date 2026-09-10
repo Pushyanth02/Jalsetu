@@ -96,9 +96,9 @@ const FALLBACK_LABEL =
 const METRIC_ROWS: { key: keyof Metrics; label: string; hint: string }[] = [
   { key: "precision", label: "Precision", hint: "Share of predicted hotspots matched to ground truth within 250m" },
   { key: "recall", label: "Recall", hint: "Share of ground-truth hotspots matched by a prediction within 250m" },
-  { key: "f1", label: "F1 score", hint: "Harmonic mean of precision and recall at the operating point" },
+  { key: "f1", label: "F1 Score", hint: "Harmonic mean of precision and recall at the operating point" },
   { key: "auc", label: "AUC", hint: "Rank-based area under curve over all candidate cells" },
-  { key: "spatialHitRate", label: "Spatial hit rate", hint: "Ground-truth hotspots with any prediction within 250m" },
+  { key: "spatialHitRate", label: "Spatial Hit Rate", hint: "Ground-truth hotspots with any prediction within 250m" },
 ];
 
 export function AnalyticsView() {
@@ -158,7 +158,7 @@ export function AnalyticsView() {
           >
             <AlertTriangle className="size-4 text-amber-600 shrink-0 mt-0.5" aria-hidden />
             <div className="min-w-0">
-              <p className="micro-label !text-[0.62rem] !text-amber-700">research integrity notice</p>
+              <p className="micro-label !text-[0.62rem] !text-amber-700">Research Integrity Notice</p>
               <p className="text-xs text-amber-800 leading-relaxed mt-0.5">{evaluationLabel}</p>
             </div>
             {proposed && (
@@ -177,11 +177,11 @@ export function AnalyticsView() {
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="font-display text-lg font-bold tracking-tight text-slate-900 leading-tight">Baseline vs Proposed</h1>
               <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 micro-label !text-[0.58rem] text-water">
-                <Scale className="size-3" aria-hidden /> research evaluation
+                <Scale className="size-3" aria-hidden /> Research Evaluation
               </span>
             </div>
             <p className="text-[0.7rem] text-muted-foreground mt-0.5">
-              evidence-integrated ranking against complaint frequency alone
+              Does combining many kinds of evidence find flooding hotspots better than counting complaints alone?
               {snapshotAt && (
                 <span className="data-mono ml-1.5 text-slate-400">
                   snapshot <TimeAgo iso={snapshotAt} />
@@ -224,7 +224,7 @@ export function AnalyticsView() {
         </div>
       ) : !baseline || !proposed ? (
         <div className="flex-1 grid place-items-center">
-          <EmptyState title="Evaluation data unavailable" hint="Both analytics endpoints are required for this view." />
+          <EmptyState title="Evaluation Data Unavailable" hint="This view needs both analytics data sources to load." />
         </div>
       ) : (
         <Tabs defaultValue="comparison" className="flex-1 min-h-0 flex-col gap-0">
@@ -234,7 +234,7 @@ export function AnalyticsView() {
               <TabsTrigger value="byk" className="text-xs data-[state=active]:text-water">Detection by K</TabsTrigger>
               <TabsTrigger value="operational" className="text-xs data-[state=active]:text-water">Operational</TabsTrigger>
               <TabsTrigger value="methodology" className="text-xs data-[state=active]:text-water">Methodology</TabsTrigger>
-              <TabsTrigger value="truth" className="text-xs data-[state=active]:text-water">Predictions vs truth</TabsTrigger>
+              <TabsTrigger value="truth" className="text-xs data-[state=active]:text-water">Predictions vs Truth</TabsTrigger>
             </TabsList>
           </div>
 
@@ -245,14 +245,14 @@ export function AnalyticsView() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <ApproachCard
                     tone="baseline"
-                    label="baseline"
+                    label="Baseline"
                     name={clean(baseline.description.split(":")[0])}
                     body={clean(baseline.description.slice(baseline.description.indexOf(":") + 1).trim())}
                     metrics={baseline.metrics}
                   />
                   <ApproachCard
                     tone="proposed"
-                    label="proposed"
+                    label="Proposed"
                     name={clean(proposed.description.split(":")[0])}
                     body={clean(proposed.description.slice(proposed.description.indexOf(":") + 1).trim())}
                     metrics={proposed.metrics}
@@ -261,14 +261,14 @@ export function AnalyticsView() {
               </Reveal>
 
               <Reveal delay={0.05}>
-                <Panel title="headline comparison · hotspot detection quality" icon={<BarChart3 />} dense>
+                <Panel title="Headline Comparison · Hotspot Detection Quality" icon={<BarChart3 />} dense>
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-ink-850/60 hover:bg-ink-850/60">
-                        <TableHead className="micro-label !text-[0.55rem] h-8">metric</TableHead>
-                        <TableHead className="micro-label !text-[0.55rem] h-8 text-right">baseline</TableHead>
-                        <TableHead className="micro-label !text-[0.55rem] h-8 text-right">proposed</TableHead>
-                        <TableHead className="micro-label !text-[0.55rem] h-8 text-right">delta</TableHead>
+                        <TableHead className="micro-label !text-[0.55rem] h-8">Metric</TableHead>
+                        <TableHead className="micro-label !text-[0.55rem] h-8 text-right">Baseline</TableHead>
+                        <TableHead className="micro-label !text-[0.55rem] h-8 text-right">Proposed</TableHead>
+                        <TableHead className="micro-label !text-[0.55rem] h-8 text-right">Delta</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -314,7 +314,7 @@ export function AnalyticsView() {
               </Reveal>
 
               <Reveal delay={0.1}>
-                <Panel title="what this means" icon={<FlaskConical />} bodyClassName="space-y-2">
+                <Panel title="What This Means" icon={<FlaskConical />} bodyClassName="space-y-2">
                   {whatThisMeans(baseline, proposed).map((para, i) => (
                     <p key={i} className="text-xs leading-relaxed text-slate-600">{clean(para)}</p>
                   ))}
@@ -329,13 +329,13 @@ export function AnalyticsView() {
             <TabsContent value="byk" className="space-y-4">
               <Reveal>
                 <Panel
-                  title="detection quality by K"
+                  title="Detection Quality by K"
                   icon={<BarChart3 />}
                   actions={<LegendSwatches />}
                   bodyClassName="space-y-4 pt-4"
                 >
                   <div>
-                    <p className="micro-label !text-[0.55rem] text-slate-500 mb-2">hotspot-level F1 at top-k</p>
+                    <p className="micro-label !text-[0.55rem] text-slate-500 mb-2">Hotspot-Level F1 at Top-K</p>
                     <div className="h-44">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={byKRows} margin={{ top: 4, right: 8, left: 0, bottom: 0 }} barGap={3}>
@@ -355,7 +355,7 @@ export function AnalyticsView() {
                     </div>
                   </div>
                   <div className="hairline-t pt-3">
-                    <p className="micro-label !text-[0.55rem] text-slate-500 mb-2">spatial hit rate at top-k</p>
+                    <p className="micro-label !text-[0.55rem] text-slate-500 mb-2">Spatial Hit Rate at Top-K</p>
                     <div className="h-40">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={byKRows} margin={{ top: 4, right: 8, left: 0, bottom: 0 }} barGap={3}>
@@ -398,7 +398,7 @@ export function AnalyticsView() {
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                   {/* duplicate clustering */}
                   <Panel
-                    title="duplicate clustering · ingestion"
+                    title="Duplicate Clustering · Ingestion"
                     icon={<GitMerge />}
                     bodyClassName="space-y-3"
                   >
@@ -406,7 +406,7 @@ export function AnalyticsView() {
                       <span className="data-mono text-2xl font-semibold text-slate-900">
                         <CountUp value={proposed.duplicateClustering.ari} decimals={3} />
                       </span>
-                      <span className="micro-label !text-[0.55rem] text-slate-500">adjusted Rand index (ARI)</span>
+                      <span className="micro-label !text-[0.55rem] text-slate-500" title="A score for how well the found groups match the real groups (1.0 = perfect match)">Adjusted Rand Index (ARI)</span>
                     </div>
                     <AnimatedProgress
                       value={proposed.duplicateClustering.ari}
@@ -414,16 +414,16 @@ export function AnalyticsView() {
                       fillClassName="bg-water"
                     />
                     <div className="grid grid-cols-3 gap-2">
-                      <MiniStat label="true groups" value={proposed.duplicateClustering.groupsTrue} />
-                      <MiniStat label="predicted groups" value={proposed.duplicateClustering.groupsPredicted} />
-                      <MiniStat label="baseline ARI" value={baseline.duplicateClusteringAri.toFixed(3)} />
+                      <MiniStat label="True Groups" value={proposed.duplicateClustering.groupsTrue} />
+                      <MiniStat label="Predicted Groups" value={proposed.duplicateClustering.groupsPredicted} />
+                      <MiniStat label="Baseline ARI" value={baseline.duplicateClusteringAri.toFixed(3)} />
                     </div>
                     <p className="text-[0.7rem] leading-relaxed text-slate-600">{clean(proposed.duplicateClustering.note)}</p>
                   </Panel>
 
                   {/* responsibility routing */}
                   <Panel
-                    title="responsibility routing · proposed"
+                    title="Responsibility Routing · Proposed"
                     icon={<Network />}
                     bodyClassName="space-y-3"
                   >
@@ -432,7 +432,7 @@ export function AnalyticsView() {
                         <CountUp value={proposed.responsibilityRouting.accuracy * 100} decimals={1} suffix="%" />
                       </span>
                       <span className="micro-label !text-[0.55rem] text-slate-500">
-                        routing accuracy · {proposed.responsibilityRouting.evaluated} events evaluated
+                        Routing Accuracy · {proposed.responsibilityRouting.evaluated} Events Evaluated
                       </span>
                     </div>
                     {proposed.responsibilityRouting.mismatches.length > 0 ? (
@@ -440,9 +440,9 @@ export function AnalyticsView() {
                         <Table>
                           <TableHeader>
                             <TableRow className="bg-ink-850/60 hover:bg-ink-850/60">
-                              <TableHead className="micro-label !text-[0.5rem] h-7">event</TableHead>
-                              <TableHead className="micro-label !text-[0.5rem] h-7">expected</TableHead>
-                              <TableHead className="micro-label !text-[0.5rem] h-7">assigned</TableHead>
+                              <TableHead className="micro-label !text-[0.5rem] h-7">Event</TableHead>
+                              <TableHead className="micro-label !text-[0.5rem] h-7">Expected</TableHead>
+                              <TableHead className="micro-label !text-[0.5rem] h-7">Assigned</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -469,18 +469,18 @@ export function AnalyticsView() {
 
                   {/* assignment delay */}
                   <Panel
-                    title="assignment delay · counterfactual queue simulation"
+                    title="Assignment Delay · Counterfactual Queue Simulation"
                     icon={<Clock />}
                     bodyClassName="space-y-3"
                   >
                     <DelayRow
-                      label="baseline"
+                      label="Baseline"
                       value={baseline.assignmentDelay}
                       max={Math.max(baseline.assignmentDelay, proposed.assignmentDelay)}
                       barClass="bg-slate-400"
                     />
                     <DelayRow
-                      label="proposed"
+                      label="Proposed"
                       value={proposed.assignmentDelay}
                       max={Math.max(baseline.assignmentDelay, proposed.assignmentDelay)}
                       barClass="bg-water"
@@ -494,7 +494,7 @@ export function AnalyticsView() {
 
                   {/* intervention verification */}
                   <Panel
-                    title="intervention verification · proposed"
+                    title="Intervention Verification · Proposed"
                     icon={<CheckCircle2 />}
                     bodyClassName="space-y-3"
                   >
@@ -505,7 +505,7 @@ export function AnalyticsView() {
                             <CountUp value={proposed.verifiedResolution.rate * 100} suffix="%" />
                           </span>
                         </div>
-                        <p className="micro-label !text-[0.55rem] text-slate-500 mt-0.5">verified-resolution rate</p>
+                        <p className="micro-label !text-[0.55rem] text-slate-500 mt-0.5">Verified-Resolution Rate</p>
                         <p className="data-mono text-[0.65rem] text-slate-500 mt-1">
                           {proposed.verifiedResolution.verifiedClosures} verified of {proposed.verifiedResolution.closed} closed
                         </p>
@@ -517,7 +517,7 @@ export function AnalyticsView() {
                           </span>
                         </div>
                         <p className="micro-label !text-[0.55rem] text-slate-500 mt-0.5 flex items-center gap-1">
-                          <RotateCcw className="size-2.5" aria-hidden /> recurrence after closure
+                          <RotateCcw className="size-2.5" aria-hidden /> Recurrence After Closure
                         </p>
                         <p className="data-mono text-[0.65rem] text-slate-500 mt-1">
                           {proposed.recurrenceAfterClosure.reopened} reopened of {proposed.recurrenceAfterClosure.closedWithRecurrenceWatch} watched
@@ -536,7 +536,7 @@ export function AnalyticsView() {
             <TabsContent value="methodology" className="space-y-4">
               <Reveal>
                 <Panel
-                  title="methodology"
+                  title="Methodology"
                   icon={<BookOpen />}
                   bodyClassName="space-y-2.5"
                 >
@@ -550,21 +550,21 @@ export function AnalyticsView() {
               </Reveal>
 
               <Reveal delay={0.05}>
-                <Panel title="evaluation dataset" icon={<Database />} dense>
+                <Panel title="Evaluation Dataset" icon={<Database />} dense>
                   <div className="flex flex-wrap divide-x divide-border">
-                    <DatasetStat label="citizen reports" value={baseline.dataset.reports.toLocaleString("en-IN")} />
-                    <DatasetStat label="events" value={baseline.dataset.events.toLocaleString("en-IN")} />
-                    <DatasetStat label="GT hotspots" value={baseline.dataset.groundTruthHotspots.toLocaleString("en-IN")} />
-                    <DatasetStat label="candidate cells" value={baseline.dataset.candidateCells.toLocaleString("en-IN")} />
-                    <DatasetStat label="positive cells" value={baseline.dataset.positives.toLocaleString("en-IN")} />
+                    <DatasetStat label="Citizen Reports" value={baseline.dataset.reports.toLocaleString("en-IN")} />
+                    <DatasetStat label="Events" value={baseline.dataset.events.toLocaleString("en-IN")} />
+                    <DatasetStat label="GT Hotspots" value={baseline.dataset.groundTruthHotspots.toLocaleString("en-IN")} />
+                    <DatasetStat label="Candidate Cells" value={baseline.dataset.candidateCells.toLocaleString("en-IN")} />
+                    <DatasetStat label="Positive Cells" value={baseline.dataset.positives.toLocaleString("en-IN")} />
                   </div>
                 </Panel>
               </Reveal>
 
               <Reveal delay={0.1}>
-                <Panel title="research traceability" icon={<Scale />} bodyClassName="space-y-3">
+                <Panel title="Research Traceability" icon={<Scale />} bodyClassName="space-y-3">
                   <div>
-                    <p className="micro-label !text-[0.55rem] text-water mb-1">research question</p>
+                    <p className="micro-label !text-[0.55rem] text-water mb-1">Research Question</p>
                     <p className="text-sm leading-relaxed text-slate-800 font-display">
                       Can heterogeneous spatial-temporal evidence produce better hotspot identification, responsibility
                       routing and intervention verification than complaint frequency alone?
@@ -572,15 +572,15 @@ export function AnalyticsView() {
                   </div>
                   <div className="space-y-1.5">
                     <TraceRow
-                      label="hotspot identification"
+                      label="Hotspot Identification"
                       value={`headline precision / recall / F1 / AUC / spatial hit rate plus the by-K curves (proposed F1 ${proposed.metrics.f1.toFixed(2)} vs baseline ${baseline.metrics.f1.toFixed(2)})`}
                     />
                     <TraceRow
-                      label="responsibility routing"
+                      label="Responsibility Routing"
                       value={`routing accuracy ${(proposed.responsibilityRouting.accuracy * 100).toFixed(0)}% over ${proposed.responsibilityRouting.evaluated} evaluated events with mismatch audit`}
                     />
                     <TraceRow
-                      label="intervention verification"
+                      label="Intervention Verification"
                       value={`verified-resolution rate ${(proposed.verifiedResolution.rate * 100).toFixed(0)}% and recurrence-after-closure rate ${(proposed.recurrenceAfterClosure.rate * 100).toFixed(0)}%`}
                     />
                   </div>
@@ -592,7 +592,7 @@ export function AnalyticsView() {
             <TabsContent value="truth" className="space-y-4">
               <Reveal>
                 <Panel
-                  title="computed hotspots vs ground truth"
+                  title="Computed Hotspots vs Ground Truth"
                   icon={<MapPin />}
                   actions={
                     <span className="micro-label !text-[0.55rem] text-slate-500">
@@ -606,14 +606,14 @@ export function AnalyticsView() {
                   ) : hotspotsQ.isError ? (
                     <ErrorNote message={(hotspotsQ.error as Error).message} onRetry={() => hotspotsQ.refetch()} />
                   ) : hotspotMatch.computed.length === 0 && hotspotMatch.groundTruth.length === 0 ? (
-                    <EmptyState title="No hotspot data" hint="Computed hotspots and ground truth come from /api/hotspots." />
+                    <EmptyState title="No Hotspot Data" hint="Both lists come from the /api/hotspots data source." />
                   ) : (
                     <>
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         {/* computed */}
                         <div>
                           <p className="micro-label !text-[0.55rem] text-slate-500 mb-2 flex items-center gap-2">
-                            <span className="size-2 rounded-[2px] bg-water" aria-hidden /> computed · engine risk grid (NMS 400m)
+                            <span className="size-2 rounded-[2px] bg-water" aria-hidden /> Computed · Engine Risk Grid (NMS 400m)
                           </p>
                           <div className="rounded-xl border border-border overflow-hidden">
                             <Stagger>
@@ -648,7 +648,7 @@ export function AnalyticsView() {
                         {/* ground truth */}
                         <div>
                           <p className="micro-label !text-[0.55rem] text-slate-500 mb-2 flex items-center gap-2">
-                            <span className="size-2 rounded-[2px] bg-sev-moderate" aria-hidden /> ground truth · seeded known sites
+                            <span className="size-2 rounded-[2px] bg-sev-moderate" aria-hidden /> Ground Truth · Seeded Known Sites
                           </p>
                           <div className="rounded-xl border border-border overflow-hidden">
                             <Stagger>
@@ -726,7 +726,7 @@ function ApproachCard({ tone, label, name, body, metrics }: {
           <div className="hairline-t mt-3.5 pt-3 grid grid-cols-3 gap-2">
             <MetricStat label="F1" value={metrics.f1} accent={proposed} />
             <MetricStat label="AUC" value={metrics.auc} accent={proposed} />
-            <MetricStat label="hit rate" value={metrics.spatialHitRate} accent={proposed} />
+            <MetricStat label="Hit Rate" value={metrics.spatialHitRate} accent={proposed} />
           </div>
         </div>
       </SpotlightCard>
@@ -749,10 +749,10 @@ function LegendSwatches() {
   return (
     <span className="flex items-center gap-4">
       <span className="flex items-center gap-1.5 micro-label !text-[0.52rem] text-slate-500">
-        <span className="size-2.5 rounded-[2px]" style={{ background: SLATE_BAR }} aria-hidden /> baseline
+        <span className="size-2.5 rounded-[2px]" style={{ background: SLATE_BAR }} aria-hidden /> Baseline
       </span>
       <span className="flex items-center gap-1.5 micro-label !text-[0.52rem] text-slate-500">
-        <span className="size-2.5 rounded-[2px]" style={{ background: BLUE }} aria-hidden /> proposed
+        <span className="size-2.5 rounded-[2px]" style={{ background: BLUE }} aria-hidden /> Proposed
       </span>
     </span>
   );

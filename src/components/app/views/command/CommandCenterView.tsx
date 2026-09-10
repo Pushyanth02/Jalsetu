@@ -1,6 +1,7 @@
 "use client";
 
 import { useUi, navigate } from "@/lib/client/store";
+import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import { apiGet, type OverviewResponse, type WeatherResponse, type EventSummary } from "@/lib/client/api";
 import { useMapData, MapWithOverlays } from "@/components/app/map/MapView";
@@ -47,7 +48,7 @@ export function CommandCenterView() {
           <div>
             <h1 className="font-display text-lg font-bold tracking-tight text-slate-900 leading-tight">Command Center</h1>
             <p className="text-[0.7rem] text-muted-foreground mt-0.5">
-              Cross-agency waterlogging operations · live pilot view
+              One shared screen for every agency handling waterlogging · live pilot view
               {d && <span className="data-mono ml-1.5 text-slate-400">updated {timeAgo(d.generatedAt)}</span>}
             </p>
           </div>
@@ -76,7 +77,7 @@ export function CommandCenterView() {
                 icon={<Droplets className="size-5" aria-hidden />}
                 tint="bg-blue-50 text-water"
                 to="map"
-                hint="total events in the pilot window"
+                hint="Total incidents currently active in the pilot window"
               />
               <KpiCard
                 label="High Risk Hotspots"
@@ -86,7 +87,7 @@ export function CommandCenterView() {
                 tint="bg-red-50 text-sev-critical"
                 to="map"
                 filterRisk="HIGH"
-                hint="risk band high or critical"
+                hint="Rated High Risk or Critical on the 0-100 risk scale"
               />
               <KpiCard
                 label="Unresolved Events"
@@ -95,7 +96,7 @@ export function CommandCenterView() {
                 icon={<ClipboardCheck className="size-5" aria-hidden />}
                 tint="bg-amber-50 text-sev-moderate"
                 to="verify"
-                hint="detected or triaged, not yet assigned"
+                hint="Spotted or sorted, but no crew assigned yet"
               />
               <KpiCard
                 label="Under Verification"
@@ -104,7 +105,7 @@ export function CommandCenterView() {
                 icon={<CheckCircle2 className="size-5" aria-hidden />}
                 tint="bg-emerald-50 text-verified"
                 to="verify"
-                hint="assigned or in progress in the field"
+                hint="A crew has been assigned or is already on site"
               />
             </div>
           ) : (
@@ -157,11 +158,11 @@ export function CommandCenterView() {
                       <li key={a.code} className="flex items-center gap-3 px-4 py-2.5 hairline-b last:border-0 hover:bg-ink-850/60 transition-colors">
                         <span className="data-mono text-xs font-semibold text-water w-10 shrink-0">{a.code}</span>
                         <span className="text-xs text-slate-600 flex-1 truncate">{a.name}</span>
-                        <span className="data-mono text-[0.65rem] text-slate-500" title="active events">{a.active}<span className="text-slate-400"> act</span></span>
-                        <span className="data-mono text-[0.65rem] text-verified flex items-center gap-1" title="verified/closed">
+                        <span className="data-mono text-[0.65rem] text-slate-500" title="Active events right now">{a.active}<span className="text-slate-400"> act</span></span>
+                        <span className="data-mono text-[0.65rem] text-verified flex items-center gap-1" title="Verified or closed events">
                           <CheckCircle2 className="size-3" aria-hidden />{a.verified}
                         </span>
-                        {a.highRisk > 0 && <span className="data-mono text-[0.65rem] text-sev-high" title="high risk">{a.highRisk} hi</span>}
+                        {a.highRisk > 0 && <span className="data-mono text-[0.65rem] text-sev-high" title="High-risk events">{a.highRisk} hi</span>}
                       </li>
                     ))}
                   </ul>
@@ -231,7 +232,7 @@ function DeltaPill({ delta }: { delta: number }) {
         "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.6rem] font-semibold",
         flat ? "bg-slate-100 text-slate-500" : up ? "bg-red-50 text-sev-critical" : "bg-emerald-50 text-verified"
       )}
-      title="new events in last 24h vs prior 24h (computed from pilot data)"
+      title="Change in new incidents over the last 24 hours compared with the day before (computed from pilot data)"
     >
       {flat ? <Minus className="size-3" aria-hidden /> : up ? <TrendingUp className="size-3" aria-hidden /> : <TrendingDown className="size-3" aria-hidden />}
       {delta > 0 ? "+" : ""}{delta}%
@@ -271,12 +272,12 @@ function LayersPanel() {
   const layers = useUi((s) => s.layers);
   const toggleLayer = useUi((s) => s.toggleLayer);
   const labels: { key: keyof typeof layers; label: string }[] = [
-    { key: "events", label: "Waterlogging events" },
-    { key: "hotspots", label: "Risk hotspots" },
-    { key: "rainfall", label: "Rainfall gauges" },
-    { key: "assets", label: "Drainage network" },
-    { key: "jurisdictions", label: "Jurisdiction boundaries" },
-    { key: "groundTruth", label: "Ground truth (research)" },
+    { key: "events", label: "Waterlogging Events" },
+    { key: "hotspots", label: "Risk Hotspots" },
+    { key: "rainfall", label: "Rainfall Gauges" },
+    { key: "assets", label: "Drainage Network" },
+    { key: "jurisdictions", label: "Jurisdiction Boundaries" },
+    { key: "groundTruth", label: "Ground Truth (Research)" },
   ];
   return (
     <div className="absolute z-20 top-3 left-3">
@@ -294,7 +295,7 @@ function LayersPanel() {
           >
             <div className="flex items-center justify-between mb-2">
               <p className="micro-label !text-[0.56rem] text-slate-500 flex items-center gap-1.5">
-                <Layers className="size-3" aria-hidden /> layers
+                <Layers className="size-3" aria-hidden /> Layers
               </p>
               <button onClick={() => setOpen(false)} className="micro-label !text-[0.55rem] text-slate-400 hover:text-slate-600" aria-label="Hide layers panel">
                 hide
@@ -406,9 +407,11 @@ function RecentReportsPanel() {
                       aria-label={`Report ${r.publicRef}`}
                     >
                       { }
-                      <img
+                      <Image
                         src={r.category === "UNDERPASS" ? "/img/ito-underpass.png" : "/img/street-flood.png"}
-                        alt=""
+                        alt={`${r.publicRef} report thumbnail: ${r.category === "UNDERPASS" ? "flooded underpass" : "waterlogged street"} (illustrative)`}
+                        width={56}
+                        height={44}
                         className="h-11 w-14 rounded-lg object-cover shrink-0 ring-1 ring-border"
                         loading="lazy"
                       />
@@ -436,7 +439,7 @@ function RecentReportsPanel() {
           </p>
         </>
       ) : (
-        <EmptyState title="No reports yet" hint="Citizen submissions will appear here as they arrive." />
+        <EmptyState title="No Reports Yet" hint="Citizen submissions will appear here as they arrive." />
       )}
     </Panel>
   );
@@ -474,7 +477,7 @@ function OperationalAlertsPanel() {
         <div className="p-4"><ErrorNoteInline message={err.message} onRetry={() => overviewQ.refetch()} /></div>
       ) : d ? (
         d.alerts.length === 0 ? (
-          <EmptyState title="No active alerts" hint="Alerts trigger on critical risk, response delay, or recurrence." />
+          <EmptyState title="No Active Alerts" hint="Alerts appear here for critical risk, slow responses, or repeat flooding." />
         ) : (
           <ul>
             {d.alerts.map((a, i) => (
@@ -540,7 +543,7 @@ function ActiveEventQueue({ eventsQ, total }: { eventsQ: { data?: EventSummary[]
           ))}
         </ul>
       ) : (
-        <EmptyState title="No events match current filters" hint="Adjust filters on the map view." />
+        <EmptyState title="No Events Match Current Filters" hint="Try widening the filters on the Map view." />
       )}
     </Panel>
   );

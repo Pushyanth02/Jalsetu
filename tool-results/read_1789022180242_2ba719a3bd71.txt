@@ -1,0 +1,562 @@
+     1→"use client";
+     2→
+     3→import { useUi, navigate } from "@/lib/client/store";
+     4→import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+     5→import { apiGet, apiPost, apiPut, ApiClientError, type EventSummary } from "@/lib/client/api";
+     6→import {
+     7→  LoadingRows, ErrorNote, Panel, EmptyState, StatusBadge, RiskBadge, RiskMeter, SeverityTicks,
+     8→  TimeAgo, ConfidenceChip, SourceBadge, ProviderChip, fmtDateTime, timeAgo,
+     9→} from "@/components/app/shared/domain";
+    10→import { MapView } from "@/components/app/map/MapView";
+    11→import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+    12→import { Button } from "@/components/ui/button";
+    13→import { Textarea } from "@/components/ui/textarea";
+    14→import { Input } from "@/components/ui/input";
+    15→import { Label } from "@/components/ui/label";
+    16→import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+    17→import { useToast } from "@/hooks/use-toast";
+    18→import { cn } from "@/lib/utils";
+    19→import { motion, useReducedMotion } from "framer-motion";
+    20→import { Reveal, Stagger, StaggerItem, CountUp, PulseDot, AnimatedProgress } from "@/components/motion/kit";
+    21→import {
+    22→  ArrowLeft, RefreshCw, Camera, MapPin, Umbrella, HardHat, History, FileWarning, GitMerge, Network,
+    23→  MessageSquare, Wrench, Upload, FileSearch, Gauge, Sparkles, ListChecks, ClipboardCheck, ScrollText,
+    24→} from "lucide-react";
+    25→import { useState, useRef } from "react";
+    26→
+    27→// URBAN EVENT DETAIL - full dossier: evidence, AI investigation, risk
+    28→// breakdown, responsibility, verification workflow, audit history.
+    29→
+    30→interface EventDetailResponse {
+    31→  event: {
+    32→    id: string; code: string; title: string; category: string; status: string; severity: number;
+    33→    lat: number; lng: number; locationText: string; jurisdictionId: string | null; agencyCode: string | null;
+    34→    firstReportedAt: string; lastActivityAt: string; reportCount: number; recurrenceCount: number;
+    35→    riskScore: number; riskBand: string; riskModelVersion: string | null; riskAssessedAt: string | null;
+    36→    confidence: number; confidenceNote: string | null; classificationProvider: string | null; modelVersion: string | null;
+    37→    rainfall24hMm: number | null; rainfall72hMm: number | null; closedAt: string | null; reopenedAt: string | null;
+    38→    groundTruthHotspotId: string | null; groundTruthAgencyCode: string | null; source: string;
+    39→    jurisdiction: { id: string; code: string; name: string; kind: string; agencyCode: string | null } | null;
+    40→    reports: {
+    41→      id: string; publicRef: string; description: string; category: string; severityReported: string;
+    42→      submittedAt: string; channel: string; status: string; isDuplicate: boolean; source: string;
+    43→      classificationProvider: string | null; classificationConfidence: number | null;
+    44→      classification: {
+    45→        category: string; severity: string; confidence: number; summary: string;
+    46→        factors: string[]; isDuplicateSuspected: boolean; duplicateReason?: string;
+    47→      } | null;
+    48→    }[];
+    49→    evidence: {
+    50→      id: string; kind: string; caption: string | null; content: string; mediaType: string;
+    51→      capturedAt: string; capturedBy: string; lat: number | null; lng: number | null; source: string;
+    52→    }[];
+    53→    links: {
+    54→      id: string; agencyCode: string; role: string; status: string; reason: string | null;
+    55→      assignedAt: string; source: string;
+    56→      asset: { code: string; name: string; kind: string; conditionScore: number } | null;
+    57→    }[];
+    58→    actions: {
+    59→      id: string; kind: string; instruction: string; priority: string; status: string;
+    60→      agencyCode: string | null; assignedTo: string | null; assignedAt: string | null;
+    61→      dueAt: string | null; completedAt: string | null; outcome: string | null;
+    62→    }[];
+    63→    verifications: {
+    64→      id: string; stage: string; observedSeverity: string | null; waterDepthCm: number | null;
+    65→      notes: string | null; verifiedBy: string; verifiedAt: string;
+    66→    }[];
+    67→    riskFactors: { key: string; label: string; value: number; weight: number; contribution: number; raw: string }[];
+    68→  };
+    69→  context: {
+    70→    assets: { code: string; name: string; kind: string; agencyCode: string; lat: number; lng: number; conditionScore: number; lastInspectedAt: string | null }[];
+    71→    historicalIncidents: { id: string; lat: number; lng: number; occurredOn: string; severity: string; durationHours: number | null; waterDepthCm: number | null; reportedVia: string }[];
+    72→    maintenance: { kind: string; status: string; performedAt: string | null; scheduledAt: string; notes: string | null; agencyCode: string; asset: { code: string; name: string } | null }[];
+    73→    rainfallSeries: { t: string; mm: number }[];
+    74→  };
+    75→  riskHistory: { score: number; band: string; computedAt: string; provider: string; factors: { key: string; label: string; value: number; weight: number; contribution: number; raw: string }[] }[];
+    76→  auditHistory: { id: string; at: string; actor: string; action: string; note: string | null }[];
+    77→}
+    78→
+    79→export function EventDetailView() {
+    80→  const eventId = useUi((s) => s.eventId);
+    81→  const { toast } = useToast();
+    82→  const qc = useQueryClient();
+    83→  const [tab, setTab] = useState("overview");
+    84→
+    85→  const detailQ = useQuery({
+    86→    queryKey: ["event", eventId],
+    87→    queryFn: () => apiGet<EventDetailResponse>(`/api/events/${eventId}`).then((r) => r.data),
+    88→    enabled: !!eventId,
+    89→  });
+    90→
+    91→  const invalidate = () => {
+    92→    qc.invalidateQueries({ queryKey: ["event", eventId] });
+    93→    qc.invalidateQueries({ queryKey: ["events"] });
+    94→    qc.invalidateQueries({ queryKey: ["overview"] });
+    95→    qc.invalidateQueries({ queryKey: ["risk"] });
+    96→  };
+    97→
+    98→  const reassess = useMutation({
+    99→    mutationFn: () => apiPost<{ event: { riskScore: number; riskBand: string }; advisory: { provider: string } | null }>(`/api/events/${eventId}/reassess`, { useProvider: true }, "ANALYST"),
+   100→    onSuccess: (r) => {
+   101→      invalidate();
+   102→      toast({ title: "Risk reassessed", description: `New score ${r.data.event.riskScore} (${r.data.event.riskBand}). Advisory provider: ${r.data.advisory?.provider ?? "rule engine"}.` });
+   103→    },
+   104→    onError: (e) => toast({ title: "Reassessment failed", description: (e as ApiClientError).message, variant: "destructive" }),
+   105→  });
+   106→
+   107→  if (!eventId) {
+   108→    return (
+   109→      <div className="flex-1 grid place-items-center">
+   110→        <EmptyState icon={<FileWarning className="size-8" />} title="No event selected" hint="Open an event from the command center or map." action={
+   111→          <Button variant="outline" size="sm" onClick={() => navigate("command")} className="mt-2 rounded-lg">← Command Center</Button>
+   112→        } />
+   113→      </div>
+   114→    );
+   115→  }
+   116→  if (detailQ.isLoading) return <div className="p-6"><LoadingRows rows={8} /></div>;
+   117→  if (detailQ.isError)
+   118→    return (
+   119→      <div className="p-6 max-w-lg">
+   120→        <ErrorNote message={(detailQ.error as Error).message} onRetry={() => detailQ.refetch()} />
+   121→        <Button variant="outline" size="sm" className="mt-3 rounded-lg" onClick={() => navigate("command")}>← Back to Command Center</Button>
+   122→      </div>
+   123→    );
+   124→
+   125→  if (!detailQ.data) return null;
+   126→  const { event, context, riskHistory, auditHistory } = detailQ.data;
+   127→  const d = { event, context, riskHistory, auditHistory } satisfies { event: EventDetailResponse["event"]; context: EventDetailResponse["context"]; riskHistory: EventDetailResponse["riskHistory"]; auditHistory: EventDetailResponse["auditHistory"] };
+   128→
+   129→
+   130→  return (
+   131→    <div className="flex-1 min-h-0 flex flex-col">
+   132→      {/* header */}
+   133→      <Reveal className="hairline-b bg-white px-4 sm:px-6 py-3.5">
+   134→        <div className="flex items-start gap-3 flex-wrap">
+   135→          <button onClick={() => navigate(useUi.getState().view === "event" ? "command" : "map")} className="p-1.5 -ml-1.5 mt-0.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-ink-850 transition-colors" aria-label="Back">
+   136→            <ArrowLeft className="size-4" />
+   137→          </button>
+   138→          <div className="min-w-0 flex-1">
+   139→            <div className="flex items-center gap-2 flex-wrap">
+   140→              <h1 className="data-mono text-sm font-semibold text-water">{event.code}</h1>
+   141→              <StatusBadge status={event.status} />
+   142→              <RiskBadge band={event.riskBand} score={event.riskScore} />
+   143→              <ConfidenceChip confidence={event.confidence} note={event.confidenceNote} />
+   144→              <SourceBadge source={event.source} />
+   145→            </div>
+   146→            <h2 className="mt-1.5 text-base sm:text-lg font-medium leading-snug text-slate-900">{event.title}</h2>
+   147→            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+   148→              <span className="inline-flex items-center gap-1"><MapPin className="size-3" aria-hidden /> {event.locationText}</span>
+   149→              <span className="data-mono">{event.lat.toFixed(4)}, {event.lng.toFixed(4)}</span>
+   150→              <span className="inline-flex items-center gap-1"><HardHat className="size-3" aria-hidden /> {event.agencyCode ?? "unassigned"}</span>
+   151→              <span>first report <TimeAgo iso={event.firstReportedAt} /></span>
+   152→              {event.status !== "CLOSED" && (
+   153→                <span className="inline-flex items-center gap-1.5" title="last activity">
+   154→                  <PulseDot size={6} color="bg-verified" /> activity <TimeAgo iso={event.lastActivityAt} />
+   155→                </span>
+   156→              )}
+   157→              {event.jurisdiction && <span className="hidden sm:inline">{event.jurisdiction.name}</span>}
+   158→            </div>
+   159→          </div>
+   160→          <div className="flex items-center gap-2">
+   161→            <Button
+   162→              size="sm" variant="outline"
+   163→              onClick={() => {
+   164→                useUi.getState().focusMap(event.lat, event.lng, 15);
+   165→                navigate("map");
+   166→              }}
+   167→              className="border-border rounded-lg"
+   168→            >
+   169→              <MapPin className="size-3.5" /> <span className="hidden sm:inline">Locate on map</span>
+   170→            </Button>
+   171→            <Button size="sm" onClick={() => reassess.mutateAsync()} disabled={reassess.isPending} className="rounded-lg bg-water text-white hover:bg-water-dim">
+   172→              <RefreshCw className={cn("size-3.5", reassess.isPending && "animate-spin")} />
+   173→              {reassess.isPending ? "Reassessing…" : "Reassess risk"}
+   174→            </Button>
+   175→          </div>
+   176→        </div>
+   177→        {event.confidenceNote && (
+   178→          <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700" role="note">
+   179→            {event.confidenceNote}
+   180→          </p>
+   181→        )}
+   182→      </Reveal>
+   183→
+   184→      {/* body: mini map + tabs */}
+   185→      <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-[340px_1fr] overflow-y-auto xl:overflow-hidden">
+   186→        <Reveal delay={0.06} className="xl:hairline-r bg-white flex flex-col xl:min-h-0">
+   187→          <div className="relative h-52 xl:h-64 shrink-0">
+   188→            <MapView events={[{
+   189→              id: event.id, code: event.code, title: event.title, category: event.category,
+   190→              status: event.status, severity: event.severity, lat: event.lat, lng: event.lng,
+   191→              locationText: event.locationText, jurisdictionId: event.jurisdictionId, agencyCode: event.agencyCode,
+   192→              firstReportedAt: event.firstReportedAt, lastActivityAt: event.lastActivityAt,
+   193→              reportCount: event.reportCount, recurrenceCount: event.recurrenceCount,
+   194→              riskScore: event.riskScore, riskBand: event.riskBand as EventSummary["riskBand"],
+   195→              riskModelVersion: event.riskModelVersion, riskAssessedAt: event.riskAssessedAt,
+   196→              confidence: event.confidence, confidenceNote: event.confidenceNote,
+   197→              classificationProvider: event.classificationProvider, modelVersion: event.modelVersion,
+   198→              rainfall24hMm: event.rainfall24hMm, rainfall72hMm: event.rainfall72hMm,
+   199→              closedAt: event.closedAt, reopenedAt: event.reopenedAt,
+   200→              groundTruthHotspotId: event.groundTruthHotspotId, source: event.source,
+   201→            }]} initialZoom={14.2} />
+   202→            <div className="absolute top-2 left-2 rounded-md bg-white/95 px-2 py-1 shadow-sm ring-1 ring-border/70 pointer-events-none">
+   203→              <p className="micro-label !text-[0.55rem]">event focus</p>
+   204→            </div>
+   205→          </div>
+   206→          <QuickFacts d={d} />
+   207→        </Reveal>
+   208→
+   209→        <Reveal delay={0.1} className="min-h-0 overflow-y-auto xl:overflow-hidden p-3 sm:p-4">
+   210→          <Tabs value={tab} onValueChange={setTab} className="flex flex-col h-full min-h-0">
+   211→            <TabsList className="bg-ink-850 w-full justify-start overflow-x-auto rounded-lg no-scrollbar h-9">
+   212→              <DossierTab value="overview" current={tab}>Overview</DossierTab>
+   213→              <DossierTab value="evidence" current={tab}>Evidence ({event.evidence.length})</DossierTab>
+   214→              <DossierTab value="investigation" current={tab}>AI Investigation</DossierTab>
+   215→              <DossierTab value="response" current={tab}>Response & Verification</DossierTab>
+   216→              <DossierTab value="audit" current={tab}>Audit</DossierTab>
+   217→            </TabsList>
+   218→
+   219→            <div className="flex-1 min-h-0 overflow-y-auto mt-3 pr-0.5">
+   220→              <TabsContent value="overview" className="mt-0 space-y-3">
+   221→                <OverviewTab d={d} />
+   222→              </TabsContent>
+   223→              <TabsContent value="evidence" className="mt-0 space-y-3">
+   224→                <EvidenceTab d={d} onMutated={invalidate} />
+   225→              </TabsContent>
+   226→              <TabsContent value="investigation" className="mt-0 space-y-3">
+   227→                <InvestigationTab d={d} />
+   228→              </TabsContent>
+   229→              <TabsContent value="response" className="mt-0 space-y-3">
+   230→                <ResponseTab d={d} onMutated={invalidate} />
+   231→              </TabsContent>
+   232→              <TabsContent value="audit" className="mt-0 space-y-3">
+   233→                <AuditTab d={d} />
+   234→              </TabsContent>
+   235→            </div>
+   236→          </Tabs>
+   237→        </Reveal>
+   238→      </div>
+   239→    </div>
+   240→  );
+   241→}
+   242→
+   243→/** Tab trigger with an OriginKit-style sliding white pill (layout animation). */
+   244→function DossierTab({ value, current, children }: { value: string; current: string; children: React.ReactNode }) {
+   245→  const reduce = useReducedMotion();
+   246→  const active = value === current;
+   247→  return (
+   248→    <TabsTrigger
+   249→      value={value}
+   250→      className={cn(
+   251→        "relative rounded-md text-xs font-medium text-slate-500 hover:text-slate-700 data-[state=active]:text-slate-900",
+   252→        reduce
+   253→          ? "data-[state=active]:bg-white data-[state=active]:shadow-sm"
+   254→          : "data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+   255→      )}
+   256→    >
+   257→      {active && !reduce && (
+   258→        <motion.span
+   259→          layoutId="dossier-tab-indicator"
+   260→          className="absolute inset-0 rounded-md bg-white shadow-sm"
+   261→          aria-hidden
+   262→          transition={{ type: "spring", stiffness: 420, damping: 34 }}
+   263→        />
+   264→      )}
+   265→      <span className="relative z-10">{children}</span>
+   266→    </TabsTrigger>
+   267→  );
+   268→}
+   269→
+   270→type D = { event: EventDetailResponse["event"]; context: EventDetailResponse["context"]; riskHistory: EventDetailResponse["riskHistory"]; auditHistory: EventDetailResponse["auditHistory"] };
+   271→
+   272→function QuickFacts({ d }: { d: D }) {
+   273→  const e = d.event;
+   274→  return (
+   275→    <div className="p-4 space-y-4 xl:overflow-y-auto">
+   276→      <div>
+   277→        <p className="micro-label mb-1.5">risk</p>
+   278→        <RiskMeter score={e.riskScore} band={e.riskBand} />
+   279→        <p className="mt-1 micro-label !text-[0.52rem] text-muted-foreground/70">
+   280→          {e.riskModelVersion} · assessed {e.riskAssessedAt ? timeAgo(e.riskAssessedAt) : "-"}
+   281→        </p>
+   282→      </div>
+   283→      <dl className="space-y-2 text-xs">
+   284→        <Fact label="severity" value={<SeverityTicks severity={e.severity} />} />
+   285→        <Fact label="reports" value={<span className="data-mono"><CountUp value={e.reportCount} /> ({e.reports.filter((r) => r.isDuplicate).length} merged)</span>} />
+   286→        <Fact label="recurrence" value={<span className="data-mono"><CountUp value={e.recurrenceCount} />×</span>} />
+   287→        <Fact label="rainfall 24h/72h" value={<span className="data-mono text-water">{Math.round(e.rainfall24hMm ?? 0)} / {Math.round(e.rainfall72hMm ?? 0)} mm</span>} />
+   288→        <Fact label="category" value={<span className="data-mono">{e.category.toLowerCase()}</span>} />
+   289→        <Fact label="classification" value={<ProviderChip provider={e.classificationProvider ?? "-"} model={e.modelVersion} />} />
+   290→        {e.groundTruthHotspotId && (
+   291→          <Fact label="ground truth" value={<span className="text-[0.65rem] text-sev-moderate">{e.groundTruthHotspotId} · {e.groundTruthAgencyCode} (synthetic)</span>} />
+   292→        )}
+   293→      </dl>
+   294→    </div>
+   295→  );
+   296→}
+   297→
+   298→function Fact({ label, value }: { label: string; value: React.ReactNode }) {
+   299→  return (
+   300→    <div className="flex items-center justify-between gap-2">
+   301→      <dt className="micro-label !text-[0.55rem]">{label}</dt>
+   302→      <dd className="flex items-center">{value}</dd>
+   303→    </div>
+   304→  );
+   305→}
+   306→
+   307→// --- Overview tab -----------------------------------------------------------------
+   308→
+   309→function OverviewTab({ d }: { d: D }) {
+   310→  const { event: e, context } = d;
+   311→  const nearbyAssets = context.assets
+   312→    .map((a) => ({ ...a, d: Math.round(hav({ lat: e.lat, lng: e.lng }, a)) }))
+   313→    .filter((a) => a.d <= 600)
+   314→    .sort((a, b) => a.d - b.d)
+   315→    .slice(0, 6);
+   316→  const nearIncidents = context.historicalIncidents
+   317→    .map((i) => ({ ...i, d: Math.round(hav({ lat: e.lat, lng: e.lng }, i)) }))
+   318→    .filter((i) => i.d <= 300)
+   319→    .sort((a, b) => b.occurredOn.localeCompare(a.occurredOn))
+   320→    .slice(0, 5);
+   321→  const nearMaint = context.maintenance
+   322→    .filter((m) => m.asset && nearbyAssets.some((a) => a.code === m.asset?.code))
+   323→    .slice(0, 4);
+   324→
+   325→  return (
+   326→    <>
+   327→      <Reveal>
+   328→        <Panel title={`citizen reports · ${e.reportCount}`} icon={<MessageSquare />}>
+   329→          <Stagger className="divide-y divide-border/60">
+   330→            {e.reports.map((r) => (
+   331→              <StaggerItem key={r.id} className="py-2.5 first:pt-0 last:pb-0">
+   332→                <div className="flex items-center gap-2 flex-wrap">
+   333→                  <span className="data-mono text-[0.65rem] text-water">{r.publicRef}</span>
+   334→                  <span className="micro-label !text-[0.52rem]">{r.channel.toLowerCase()}</span>
+   335→                  {r.isDuplicate && <span className="micro-label !text-[0.52rem] text-sev-moderate">merged as duplicate</span>}
+   336→                  <TimeAgo iso={r.submittedAt} />
+   337→                </div>
+   338→                <p className="mt-1 text-[0.82rem] text-slate-700 leading-relaxed">{r.description}</p>
+   339→                {r.classification && (
+   340→                  <div className="mt-1.5 flex items-center gap-2 flex-wrap text-[0.65rem] text-muted-foreground">
+   341→                    <span>assessed <span className={cn("font-medium", sevClass(r.classification.severity))}>{r.classification.severity.toLowerCase()}</span></span>
+   342→                    <span className="data-mono">conf {Math.round(r.classification.confidence * 100)}%</span>
+   343→                    {r.classificationProvider && <ProviderChip provider={r.classificationProvider} />}
+   344→                  </div>
+   345→                )}
+   346→              </StaggerItem>
+   347→            ))}
+   348→          </Stagger>
+   349→        </Panel>
+   350→      </Reveal>
+   351→
+   352→      <Reveal delay={0.06}>
+   353→        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+   354→          <Panel title="infrastructure context · within 600m" icon={<Network />}>
+   355→            {nearbyAssets.length === 0 ? (
+   356→              <EmptyState title="No assets recorded nearby" hint="Asset registry covers pilot jurisdictions only (synthetic)." />
+   357→            ) : (
+   358→              <ul className="space-y-2">
+   359→                {nearbyAssets.map((a) => (
+   360→                  <li key={a.code} className="flex items-center gap-2.5 text-xs">
+   361→                    <span className="data-mono text-[0.62rem] text-muted-foreground w-12 shrink-0">{a.d}m</span>
+   362→                    <span className={cn("size-2 rounded-full shrink-0", a.conditionScore < 45 ? "bg-sev-high" : a.conditionScore < 65 ? "bg-sev-moderate" : "bg-verified")} aria-hidden />
+   363→                    <span className="flex-1 min-w-0">
+   364→                      <span className="block truncate text-slate-700">{a.name}</span>
+   365→                      <span className="micro-label !text-[0.5rem]">{a.kind.toLowerCase().replace(/_/g, " ")} · {a.agencyCode} · condition {a.conditionScore}</span>
+   366→                    </span>
+   367→                  </li>
+   368→                ))}
+   369→              </ul>
+   370→            )}
+   371→          </Panel>
+   372→
+   373→          <Panel title="historical incidents · within 300m" icon={<History />}>
+   374→            {nearIncidents.length === 0 ? (
+   375→              <EmptyState title="No historical incidents nearby" hint="Synthetic archive covers the pilot jurisdictions." />
+   376→            ) : (
+   377→              <ul className="space-y-2">
+   378→                {nearIncidents.map((i) => (
+   379→                  <li key={i.id} className="flex items-baseline gap-2.5 text-xs">
+   380→                    <span className="data-mono text-[0.62rem] text-muted-foreground shrink-0 w-20">{new Date(i.occurredOn).toLocaleDateString("en-IN", { month: "short", year: "numeric" })}</span>
+   381→                    <span className={cn("font-medium shrink-0", sevClass(i.severity))}>{i.severity.toLowerCase()}</span>
+   382→                    <span className="text-muted-foreground truncate">{i.waterDepthCm ?? "?"}cm · {i.durationHours?.toFixed(0) ?? "?"}h · {i.reportedVia.toLowerCase()}</span>
+   383→                  </li>
+   384→                ))}
+   385→              </ul>
+   386→            )}
+   387→          </Panel>
+   388→        </div>
+   389→      </Reveal>
+   390→
+   391→      <Reveal delay={0.12}>
+   392→        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+   393→          <Panel title="maintenance nearby" icon={<Wrench />}>
+   394→            {nearMaint.length === 0 ? (
+   395→              <EmptyState title="No maintenance records for nearby assets" />
+   396→            ) : (
+   397→              <ul className="space-y-2">
+   398→                {nearMaint.map((m, i) => (
+   399→                  <li key={i} className="flex items-baseline gap-2.5 text-xs">
+   400→                    <span className="data-mono text-[0.62rem] text-muted-foreground w-20 shrink-0">
+   401→                      {m.performedAt ? new Date(m.performedAt).toLocaleDateString("en-IN", { month: "short", year: "numeric" }) : "scheduled"}
+   402→                    </span>
+   403→                    <span className="flex-1 truncate text-slate-700">{m.asset?.name ?? "asset"} · {m.kind.toLowerCase()}</span>
+   404→                    <span className={cn("micro-label !text-[0.5rem]", m.status === "COMPLETED" ? "text-verified" : "text-water")}>{m.status.toLowerCase()}</span>
+   405→                  </li>
+   406→                ))}
+   407→              </ul>
+   408→            )}
+   409→          </Panel>
+   410→
+   411→          <Panel title="rainfall · 72h (synthetic)" icon={<Umbrella />}>
+   412→            <ul className="space-y-1.5 text-xs">
+   413→              {context.rainfallSeries.slice(-12).map((s, i) => (
+   414→                <li key={i} className="flex items-center gap-2">
+   415→                  <span className="data-mono text-[0.6rem] text-muted-foreground w-11 shrink-0">{new Date(s.t).toLocaleTimeString("en-IN", { hour: "2-digit", hour12: false })}</span>
+   416→                  <AnimatedProgress value={Math.min(100, s.mm * 3)} max={100} className="flex-1 h-1.5" fillClassName="bg-water-dim" delay={i * 0.04} />
+   417→                  <span className="data-mono text-[0.62rem]">{s.mm}mm</span>
+   418→                </li>
+   419→              ))}
+   420→            </ul>
+   421→          </Panel>
+   422→        </div>
+   423→      </Reveal>
+   424→    </>
+   425→  );
+   426→}
+   427→
+   428→// --- Evidence tab ------------------------------------------------------------------
+   429→
+   430→function EvidenceTab({ d, onMutated }: { d: D; onMutated: () => void }) {
+   431→  const { event: e } = d;
+   432→  const { toast } = useToast();
+   433→  const fileRef = useRef<HTMLInputElement>(null);
+   434→  const [caption, setCaption] = useState("");
+   435→  const [kind, setKind] = useState<"FIELD_PHOTO" | "FIELD_NOTE">("FIELD_PHOTO");
+   436→  const [noteText, setNoteText] = useState("");
+   437→  const [uploading, setUploading] = useState(false);
+   438→
+   439→  const upload = useMutation({
+   440→    mutationFn: async (payload: { kind: string; caption: string; content: string; mediaType: string }) =>
+   441→      apiPost(`/api/events/${e.id}/verify`, { stage: "EVIDENCE_UPLOADED", notes: payload.caption, photoDataUrl: kind === "FIELD_PHOTO" ? payload.content : undefined, photoCaption: payload.caption }, "FIELD_TEAM"),
+   442→    onSuccess: () => {
+   443→      onMutated();
+   444→      toast({ title: "Evidence attached", description: "Field evidence recorded in the event dossier." });
+   445→      setCaption("");
+   446→      setNoteText("");
+   447→    },
+   448→    onError: (err) => toast({ title: "Upload failed", description: (err as ApiClientError).message, variant: "destructive" }),
+   449→  });
+   450→
+   451→  const onFile = async (file: File) => {
+   452→    setUploading(true);
+   453→    try {
+   454→      const dataUrl = await fileToDataUrl(file, 1024, 0.7);
+   455→      upload.mutate({ kind: "FIELD_PHOTO", caption: caption || `Field photo (${file.name})`, content: dataUrl, mediaType: "image/jpeg" });
+   456→    } finally {
+   457→      setUploading(false);
+   458→      if (fileRef.current) fileRef.current.value = "";
+   459→    }
+   460→  };
+   461→
+   462→  return (
+   463→    <>
+   464→      <Reveal>
+   465→        <Panel title={`evidence chain · ${e.evidence.length} items`} icon={<Camera />}>
+   466→          {e.evidence.length === 0 ? (
+   467→            <EmptyState icon={<Camera className="size-7" />} title="No evidence yet" hint="Field teams can attach photos and notes; the pipeline attaches AI outputs automatically." />
+   468→          ) : (
+   469→            <Stagger className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+   470→              {e.evidence.map((ev) => (
+   471→                <StaggerItem key={ev.id}>
+   472→                  <figure className="group">
+   473→                    <div className="relative rounded-lg overflow-hidden border border-border/70 aspect-[4/3] bg-ink-850">
+   474→                      {ev.mediaType.startsWith("image/") ? (
+   475→                        <img src={ev.content} alt={ev.caption ?? `${ev.kind} evidence`} className="size-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+   476→                      ) : (
+   477→                        <div className="size-full p-2.5 overflow-auto">
+   478→                          <p className="text-[0.6rem] data-mono text-muted-foreground break-words">{ev.content.slice(0, 260)}</p>
+   479→                        </div>
+   480→                      )}
+   481→                      <span className="absolute top-1 left-1 rounded-md bg-white/95 px-1.5 py-0.5 micro-label !text-[0.48rem] text-slate-500 shadow-sm">
+   482→                        {ev.kind.toLowerCase().replace(/_/g, " ")}
+   483→                      </span>
+   484→                    </div>
+   485→                    <figcaption className="mt-1.5 text-[0.65rem] text-muted-foreground leading-snug">
+   486→                      <span className="block truncate">{ev.caption ?? "-"}</span>
+   487→                      <span className="micro-label !text-[0.48rem] !text-muted-foreground/60">{ev.capturedBy.toLowerCase()} · {fmtDateTime(ev.capturedAt)}</span>
+   488→                    </figcaption>
+   489→                  </figure>
+   490→                </StaggerItem>
+   491→              ))}
+   492→            </Stagger>
+   493→          )}
+   494→        </Panel>
+   495→      </Reveal>
+   496→
+   497→      <Reveal delay={0.06}>
+   498→        <Panel title="attach field evidence" icon={<Upload />}>
+   499→          <div className="space-y-3 max-w-lg">
+   500→            <div className="grid grid-cols-2 gap-3">
+   501→              <div className="space-y-1.5">
+   502→                <Label className="text-xs">Type</Label>
+   503→                <Select value={kind} onValueChange={(v) => setKind(v as typeof kind)}>
+   504→                  <SelectTrigger className="h-9 bg-ink-900 border-border text-xs" aria-label="Evidence type"><SelectValue /></SelectTrigger>
+   505→                  <SelectContent>
+   506→                    <SelectItem value="FIELD_PHOTO" className="text-xs">Field photo</SelectItem>
+   507→                    <SelectItem value="FIELD_NOTE" className="text-xs">Field note</SelectItem>
+   508→                  </SelectContent>
+   509→                </Select>
+   510→              </div>
+   511→              <div className="space-y-1.5">
+   512→                <Label htmlFor="ev-caption" className="text-xs">Caption</Label>
+   513→                <Input id="ev-caption" value={caption} onChange={(e2) => setCaption(e2.target.value)} placeholder="e.g. before intervention, drain intake blocked" className="h-9 bg-ink-900 border-border text-xs" maxLength={120} />
+   514→              </div>
+   515→            </div>
+   516→            {kind === "FIELD_PHOTO" ? (
+   517→              <div>
+   518→                <input
+   519→                  ref={fileRef}
+   520→                  type="file"
+   521→                  accept="image/*"
+   522→                  className="sr-only"
+   523→                  id="evidence-file"
+   524→                  onChange={(e2) => e2.target.files?.[0] && onFile(e2.target.files[0])}
+   525→                />
+   526→                <Button type="button" variant="outline" size="sm" disabled={uploading || upload.isPending} onClick={() => fileRef.current?.click()} className="border-border rounded-lg">
+   527→                  <Camera className="size-3.5" /> {uploading || upload.isPending ? "Processing…" : "Select photo"}
+   528→                </Button>
+   529→                <p className="mt-1.5 text-[0.65rem] text-muted-foreground">Images are downscaled to ≤1024px and stored as data URLs in the demo database.</p>
+   530→              </div>
+   531→            ) : (
+   532→              <div className="space-y-1.5">
+   533→                <Label htmlFor="note-text" className="text-xs">Note</Label>
+   534→                <Textarea id="note-text" value={noteText} onChange={(e2) => setNoteText(e2.target.value)} rows={3} className="bg-ink-900 border-border text-xs" placeholder="Field observation…" maxLength={600} />
+   535→                <Button size="sm" disabled={!noteText.trim() || upload.isPending} onClick={() => upload.mutate({ kind: "FIELD_NOTE", caption: caption || "Field note", content: noteText, mediaType: "text/plain" })} className="rounded-lg">
+   536→                  Attach note
+   537→                </Button>
+   538→              </div>
+   539→            )}
+   540→          </div>
+   541→        </Panel>
+   542→      </Reveal>
+   543→    </>
+   544→  );
+   545→}
+   546→
+   547→// --- AI Investigation tab -------------------------------------------------------------
+   548→
+   549→function InvestigationTab({ d }: { d: D }) {
+   550→  const { event: e } = d;
+   551→  const latestReport = e.reports.find((r) => r.classification);
+   552→  const cl = latestReport?.classification ?? null;
+   553→  const riskFactors = e.riskFactors ?? [];
+   554→  const aiEvidence = e.evidence.filter((ev) => ev.kind === "AI_OUTPUT");
+   555→
+   556→  return (
+   557→    <>
+   558→      {cl && (
+   559→        <Reveal>
+   560→          <Panel title="classification · structured model output" icon={<FileSearch />} actions={<ProviderChip provider={latestReport?.classificationProvider ?? "-"} model={e.modelVersion} />}>
+
+[showing lines 1-560 of 1101; use offset=561 with limit to continue reading]

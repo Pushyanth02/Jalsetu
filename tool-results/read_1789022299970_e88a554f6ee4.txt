@@ -1,0 +1,562 @@
+     1→"use client";
+     2→
+     3→import { useMemo, useState } from "react";
+     4→import { useQuery, useMutation, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
+     5→import { motion } from "framer-motion";
+     6→import { apiGet, apiPost, ApiClientError, type EventSummary } from "@/lib/client/api";
+     7→import { navigate } from "@/lib/client/store";
+     8→import {
+     9→  LoadingRows, ErrorNote, Panel, EmptyState, RiskBadge, RiskMeter, TimeAgo,
+    10→  ConfidenceChip, ProviderChip, SourceBadge,
+    11→} from "@/components/app/shared/domain";
+    12→import {
+    13→  CountUp, Reveal, Stagger, StaggerItem, AnimatedProgress, HoverLift, Shine, PulseDot,
+    14→} from "@/components/motion/kit";
+    15→import { Button } from "@/components/ui/button";
+    16→import { Textarea } from "@/components/ui/textarea";
+    17→import { Input } from "@/components/ui/input";
+    18→import { Label } from "@/components/ui/label";
+    19→import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+    20→import { useToast } from "@/hooks/use-toast";
+    21→import { cn } from "@/lib/utils";
+    22→import {
+    23→  Sparkles, GitMerge, Gauge, Search, ChevronRight, Radio, CheckCircle2, Brain, ShieldAlert,
+    24→} from "lucide-react";
+    25→
+    26→// AI INVESTIGATION - three structured assistance tools (classification,
+    27→// duplicate clustering, risk assessment) with honest provenance and honest
+    28→// fallback reporting. Structured output only; no chain-of-thought is ever
+    29→// requested, returned, or displayed.
+    30→
+    31→// --- API types -----------------------------------------------------------------------
+    32→
+    33→interface ReportRow {
+    34→  id: string; publicRef: string; description: string; category: string; severityReported: string;
+    35→  lat: number; lng: number; addressText: string | null; submittedAt: string; channel: string;
+    36→  status: string; isDuplicate: boolean; urbanEventId: string | null; source: string;
+    37→  classificationProvider: string | null; classificationModel: string | null; classificationConfidence: number | null;
+    38→  classification: { provider: string; modelId: string | null; confidence: number | null } | null;
+    39→}
+    40→
+    41→interface ProviderHealthInfo {
+    42→  provider: string; modelId: string; available: boolean;
+    43→  lastCheckedAt: string | null; lastError: string | null; configuredBy: string;
+    44→}
+    45→
+    46→interface ClassifyResponse {
+    47→  classification: {
+    48→    category: string; severity: string; confidence: number;
+    49→    isDuplicateSuspected: boolean; duplicateReason?: string;
+    50→    factors: string[]; summary: string;
+    51→  };
+    52→  provenance: {
+    53→    provider: string; modelId: string; latencyMs: number;
+    54→    fallbackUsed: boolean; fallbackReason: string | null;
+    55→    providerHealth: ProviderHealthInfo; version: string;
+    56→  };
+    57→  context: {
+    58→    rainfall24hMm: number | null; rainfall72hMm: number | null;
+    59→    nearestStation: { code: string; name: string; distanceM: number } | null;
+    60→    historicalIncidentsNearby: number;
+    61→    nearestAssets: { code: string; kind: string; distanceM: number; condition: number | null }[];
+    62→    nearbyOpenEvents: number;
+    63→  };
+    64→  duplicateSignals: { code: string; distanceM: number; hoursApart: number; recurrence: boolean; reason: string }[];
+    65→}
+    66→
+    67→interface ClusterResponse {
+    68→  clusters: {
+    69→    id: string; centroid: { lat: number; lng: number }; size: number; spatialDiameterM: number;
+    70→    members: {
+    71→      id: string; lat: number; lng: number; publicRef: string; category: string;
+    72→      severityReported: string; description: string; submittedAt: string; urbanEventId: string | null;
+    73→    }[];
+    74→  }[];
+    75→  singletons: number;
+    76→}
+    77→
+    78→interface RiskResponse {
+    79→  event: { id: string; code: string; title: string };
+    80→  risk: {
+    81→    score: number; band: string; modelVersion: string; computedAt: string;
+    82→    factors: { key: string; label: string; value: number; weight: number; contribution: number; raw: string }[];
+    83→  };
+    84→  advisory: {
+    85→    output: {
+    86→      narrative: string;
+    87→      factors?: { key: string; label: string; direction: string; weight: number }[];
+    88→      recommendedInvestigation?: string;
+    89→    };
+    90→    provider: string; modelId: string; fallbackUsed: boolean; error: string | null;
+    91→  };
+    92→  provenance: { riskModelVersion: string; advisoryProviderHealth: ProviderHealthInfo };
+    93→}
+    94→
+    95→type ToolId = "classify" | "cluster" | "risk";
+    96→
+    97→type ClassifyVars = { reportId?: string; reportRef?: string; description?: string; severityReported?: string; lat?: number; lng?: number };
+    98→type ClassifyMutation = UseMutationResult<ClassifyResponse & { _label: string }, Error, ClassifyVars>;
+    99→type ClusterMutation = UseMutationResult<{ data: ClusterResponse; meta: Record<string, unknown>; radius: number }, Error, number>;
+   100→type RiskMutation = UseMutationResult<RiskResponse, Error, string>;
+   101→
+   102→const TOOLS: { id: ToolId; label: string; hint: string; icon: React.ComponentType<{ className?: string }> }[] = [
+   103→  { id: "classify", label: "Classification", hint: "categorise + severity + duplicate suspicion", icon: Sparkles },
+   104→  { id: "cluster", label: "Duplicate clustering", hint: "proximity clusters over the last 72h", icon: GitMerge },
+   105→  { id: "risk", label: "Risk assessment", hint: "factor model + structured AI advisory", icon: Gauge },
+   106→];
+   107→
+   108→const SEVERITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
+   109→const RADII = [100, 150, 200, 300] as const;
+   110→
+   111→export function InvestigateView() {
+   112→  const [tool, setTool] = useState<ToolId>("classify");
+   113→  const { toast } = useToast();
+   114→  const qc = useQueryClient();
+   115→
+   116→  const healthQ = useQuery({
+   117→    queryKey: ["ai-health"],
+   118→    queryFn: () => apiGet<{ ai: ProviderHealthInfo }>("/api/health").then((r) => r.data.ai),
+   119→    refetchInterval: 120_000,
+   120→    staleTime: 60_000,
+   121→  });
+   122→
+   123→  // freshest health wins: compare the run-time probe vs the polled snapshot
+   124→  const [toolHealth, setToolHealth] = useState<ProviderHealthInfo | null>(null);
+   125→  const health = useMemo(() => {
+   126→    if (toolHealth && healthQ.data) {
+   127→      const tRun = toolHealth.lastCheckedAt ? Date.parse(toolHealth.lastCheckedAt) : 0;
+   128→      const tPolled = healthQ.data.lastCheckedAt ? Date.parse(healthQ.data.lastCheckedAt) : 0;
+   129→      return tRun >= tPolled ? toolHealth : healthQ.data;
+   130→    }
+   131→    return toolHealth ?? healthQ.data ?? null;
+   132→  }, [toolHealth, healthQ.data]);
+   133→
+   134→  // --- Tool A: classification (stored report or ad-hoc text) ---
+   135→  const classify = useMutation({
+   136→    mutationFn: (vars: ClassifyVars) =>
+   137→      apiPost<ClassifyResponse>("/api/ai/classify", {
+   138→        reportId: vars.reportId,
+   139→        description: vars.description,
+   140→        severityReported: vars.severityReported,
+   141→        lat: vars.lat,
+   142→        lng: vars.lng,
+   143→      }, "ANALYST").then((r) => ({ ...r.data, _label: vars.reportRef ?? "ad-hoc text" })),
+   144→    onSuccess: (d) => {
+   145→      setToolHealth(d.provenance.providerHealth);
+   146→      qc.invalidateQueries({ queryKey: ["reports"] });
+   147→      toast({
+   148→        title: "Classification complete",
+   149→        description: `${d.classification.category.toLowerCase()} · severity ${d.classification.severity.toLowerCase()} · provider ${d.provenance.provider}${d.provenance.fallbackUsed ? " (fallback)" : ""}.`,
+   150→      });
+   151→    },
+   152→    onError: (e) => toast({ title: "Classification failed", description: (e as ApiClientError).message, variant: "destructive" }),
+   153→  });
+   154→
+   155→  // --- Tool B: duplicate clustering ---
+   156→  const [radius, setRadius] = useState<number>(150);
+   157→  const cluster = useMutation({
+   158→    mutationFn: (rm: number) =>
+   159→      apiPost<ClusterResponse>("/api/ai/cluster", { radiusM: rm }, "ANALYST").then((r) => ({ data: r.data, meta: r.meta ?? {}, radius: rm })),
+   160→    onSuccess: (d) => {
+   161→      toast({
+   162→        title: "Clustering complete",
+   163→        description: `${d.data.clusters.length} clusters, ${d.data.singletons} singletons across ${String(d.meta.evaluated ?? "?")} reports (last 72h).`,
+   164→      });
+   165→    },
+   166→    onError: (e) => toast({ title: "Clustering failed", description: (e as ApiClientError).message, variant: "destructive" }),
+   167→  });
+   168→
+   169→  // --- Tool C: risk assessment ---
+   170→  const risk = useMutation({
+   171→    mutationFn: (eventId: string) => apiPost<RiskResponse>("/api/ai/risk", { eventId }, "ANALYST").then((r) => r.data),
+   172→    onSuccess: (d) => {
+   173→      setToolHealth(d.provenance.advisoryProviderHealth);
+   174→      qc.invalidateQueries({ queryKey: ["events"] });
+   175→      qc.invalidateQueries({ queryKey: ["event"] });
+   176→      qc.invalidateQueries({ queryKey: ["overview"] });
+   177→      toast({
+   178→        title: "Risk assessed",
+   179→        description: `Score ${d.risk.score} (${d.risk.band.toLowerCase()}). Advisory provider: ${d.advisory.provider}${d.advisory.fallbackUsed ? " (fallback)" : ""}.`,
+   180→      });
+   181→    },
+   182→    onError: (e) => toast({ title: "Risk assessment failed", description: (e as ApiClientError).message, variant: "destructive" }),
+   183→  });
+   184→
+   185→  return (
+   186→    <div className="flex flex-1 min-h-0 flex-col">
+   187→      {/* provider health summary strip */}
+   188→      <div className="hairline-b bg-ink-900 px-4 sm:px-5 py-2.5">
+   189→        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+   190→          <span className="flex items-center gap-2 shrink-0">
+   191→            <Radio className="size-3.5 text-water" aria-hidden />
+   192→            <span className="micro-label !text-[0.62rem] text-slate-600">ai investigation</span>
+   193→          </span>
+   194→          {health ? (
+   195→            <>
+   196→              <ProviderChip provider={health.provider} model={health.modelId} />
+   197→              <span className={cn("micro-label !text-[0.52rem] flex items-center gap-1.5", health.available ? "text-verified" : "text-sev-high")}>
+   198→                {health.available ? <PulseDot color="bg-verified" size={6} /> : <span aria-hidden className="size-1.5 rounded-full bg-sev-high" />}
+   199→                {health.available ? "available" : "unavailable"}
+   200→              </span>
+   201→              <span className="micro-label !text-[0.52rem] text-muted-foreground/70 flex items-center gap-1.5">
+   202→                configured by {health.configuredBy.toLowerCase()}
+   203→                {health.lastCheckedAt && <>· probed <TimeAgo iso={health.lastCheckedAt} /></>}
+   204→              </span>
+   205→              {health.lastError && (
+   206→                <span className="text-[0.62rem] text-sev-moderate" role="note" title={health.lastError}>
+   207→                  last error: {health.lastError}
+   208→                </span>
+   209→              )}
+   210→            </>
+   211→          ) : healthQ.isLoading ? (
+   212→            <span className="micro-label !text-[0.52rem] text-muted-foreground/60">probing provider…</span>
+   213→          ) : (
+   214→            <span className="micro-label !text-[0.52rem] text-sev-critical">provider health unavailable</span>
+   215→          )}
+   216→          <span className="micro-label ml-auto !text-[0.5rem] text-muted-foreground/60 hidden sm:inline">
+   217→            structured output only · no chain-of-thought exposed
+   218→          </span>
+   219→        </div>
+   220→      </div>
+   221→
+   222→      {/* tool grid: selector + inputs (left) | results (right) */}
+   223→      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[350px_1fr]">
+   224→        <aside className="lg:hairline-r bg-ink-900 flex flex-col min-h-0 border-b lg:border-b-0">
+   225→          {/* tool selector: 3 cards with a sliding active highlight */}
+   226→          <div className="grid grid-cols-3 lg:grid-cols-1 gap-2 p-3 hairline-b shrink-0">
+   227→            {TOOLS.map((t) => {
+   228→              const active = tool === t.id;
+   229→              return (
+   230→                <HoverLift key={t.id}>
+   231→                  <button
+   232→                    onClick={() => setTool(t.id)}
+   233→                    aria-pressed={active}
+   234→                    className={cn(
+   235→                      "relative w-full text-left rounded-lg border overflow-hidden p-2.5 lg:p-3 transition-colors",
+   236→                      active ? "border-water" : "border-border bg-ink-900 hover:bg-ink-850"
+   237→                    )}
+   238→                  >
+   239→                    {active && (
+   240→                      <motion.span
+   241→                        layoutId="investigate-tool-highlight"
+   242→                        className="absolute inset-0 rounded-[inherit] bg-blue-50"
+   243→                        transition={{ type: "spring", stiffness: 420, damping: 34 }}
+   244→                        aria-hidden
+   245→                      />
+   246→                    )}
+   247→                    <span className="relative flex items-center gap-2.5 lg:gap-3">
+   248→                      <span
+   249→                        className={cn(
+   250→                          "grid size-9 lg:size-10 place-items-center rounded-lg shrink-0",
+   251→                          active ? "bg-white text-water shadow-sm" : "bg-blue-50 text-water"
+   252→                        )}
+   253→                      >
+   254→                        <t.icon className="size-4 lg:size-5" aria-hidden />
+   255→                      </span>
+   256→                      <span className="min-w-0">
+   257→                        <span className={cn("block text-[0.7rem] lg:text-[0.78rem] font-semibold leading-tight", active ? "text-slate-900" : "text-slate-800")}>
+   258→                          {t.label}
+   259→                        </span>
+   260→                        <span className="hidden lg:block mt-0.5 text-[0.62rem] text-slate-500 leading-snug">{t.hint}</span>
+   261→                      </span>
+   262→                    </span>
+   263→                  </button>
+   264→                </HoverLift>
+   265→              );
+   266→            })}
+   267→          </div>
+   268→
+   269→          {/* per-tool input area */}
+   270→          <div className="flex-1 min-h-0 overflow-y-auto">
+   271→            {tool === "classify" && <ClassifyInput classify={classify} />}
+   272→            {tool === "cluster" && <ClusterInput cluster={cluster} radius={radius} setRadius={setRadius} />}
+   273→            {tool === "risk" && <RiskInput risk={risk} />}
+   274→          </div>
+   275→        </aside>
+   276→
+   277→        {/* results column */}
+   278→        <div className="min-h-0 overflow-y-auto p-3 sm:p-4 space-y-3">
+   279→          {tool === "classify" && <ClassifyResults m={classify} />}
+   280→          {tool === "cluster" && <ClusterResults m={cluster} />}
+   281→          {tool === "risk" && <RiskResults m={risk} />}
+   282→        </div>
+   283→      </div>
+   284→    </div>
+   285→  );
+   286→}
+   287→
+   288→// --- Tool A: classification ------------------------------------------------------------
+   289→
+   290→function ClassifyInput({ classify }: { classify: ClassifyMutation }) {
+   291→  const [mode, setMode] = useState<"queue" | "adhoc">("queue");
+   292→  const [description, setDescription] = useState("");
+   293→  const [severity, setSeverity] = useState<string>("MEDIUM");
+   294→  const [lat, setLat] = useState("");
+   295→  const [lng, setLng] = useState("");
+   296→
+   297→  const pending = classify.isPending;
+   298→  const descOk = description.trim().length >= 12;
+   299→  const latNum = Number(lat);
+   300→  const lngNum = Number(lng);
+   301→  const coordsOk = (lat.trim() === "" || Number.isFinite(latNum)) && (lng.trim() === "" || Number.isFinite(lngNum));
+   302→
+   303→  return (
+   304→    <div className="p-3.5 space-y-3">
+   305→      {/* mode toggle */}
+   306→      <div className="flex rounded-lg border border-border bg-slate-50 p-0.5" role="tablist" aria-label="Classification input mode">
+   307→        {(["queue", "adhoc"] as const).map((m) => (
+   308→          <button
+   309→            key={m}
+   310→            role="tab"
+   311→            aria-selected={mode === m}
+   312→            onClick={() => setMode(m)}
+   313→            className={cn(
+   314→              "flex-1 rounded-md micro-label !text-[0.55rem] py-1.5 transition-colors",
+   315→              mode === m ? "bg-ink-900 text-water shadow-sm" : "text-slate-500 hover:text-slate-700"
+   316→            )}
+   317→          >
+   318→            {m === "queue" ? "report queue" : "ad-hoc text"}
+   319→          </button>
+   320→        ))}
+   321→      </div>
+   322→
+   323→      {mode === "queue" ? (
+   324→        <ReportQueue pending={pending} onClassify={(r) => classify.mutate({ reportId: r.id, reportRef: r.publicRef })} />
+   325→      ) : (
+   326→        <div className="space-y-3">
+   327→          <div className="space-y-1.5">
+   328→            <Label htmlFor="adhoc-desc" className="text-xs">Description</Label>
+   329→            <Textarea
+   330→              id="adhoc-desc"
+   331→              rows={4}
+   332→              value={description}
+   333→              onChange={(e) => setDescription(e.target.value)}
+   334→              placeholder="e.g. knee-deep water under the railway bridge, autos stalled, drain overflowing"
+   335→              className="bg-ink-900 border-border text-xs leading-relaxed"
+   336→              maxLength={600}
+   337→            />
+   338→            <p className="text-[0.6rem] text-muted-foreground/70">min 12 characters · no personal identifiers</p>
+   339→          </div>
+   340→          <div className="grid grid-cols-3 gap-2">
+   341→            <div className="space-y-1">
+   342→              <Label className="text-[0.65rem]">Severity</Label>
+   343→              <Select value={severity} onValueChange={setSeverity}>
+   344→                <SelectTrigger className="h-8 bg-ink-900 border-border text-xs" aria-label="Reported severity"><SelectValue /></SelectTrigger>
+   345→                <SelectContent>
+   346→                  {SEVERITIES.map((s) => <SelectItem key={s} value={s} className="text-xs">{s.toLowerCase()}</SelectItem>)}
+   347→                </SelectContent>
+   348→              </Select>
+   349→            </div>
+   350→            <div className="space-y-1">
+   351→              <Label htmlFor="adhoc-lat" className="text-[0.65rem]">Lat (opt)</Label>
+   352→              <Input id="adhoc-lat" inputMode="decimal" value={lat} onChange={(e) => setLat(e.target.value)} placeholder="28.6129" className="h-8 bg-ink-900 border-border text-xs font-mono" />
+   353→            </div>
+   354→            <div className="space-y-1">
+   355→              <Label htmlFor="adhoc-lng" className="text-[0.65rem]">Lng (opt)</Label>
+   356→              <Input id="adhoc-lng" inputMode="decimal" value={lng} onChange={(e) => setLng(e.target.value)} placeholder="77.2295" className="h-8 bg-ink-900 border-border text-xs font-mono" />
+   357→            </div>
+   358→          </div>
+   359→          <Button
+   360→            size="sm"
+   361→            disabled={pending || !descOk || !coordsOk}
+   362→            onClick={() =>
+   363→              classify.mutate({
+   364→                description: description.trim(),
+   365→                severityReported: severity,
+   366→                lat: lat.trim() && Number.isFinite(latNum) ? latNum : undefined,
+   367→                lng: lng.trim() && Number.isFinite(lngNum) ? lngNum : undefined,
+   368→              })
+   369→            }
+   370→            className="group relative w-full overflow-hidden rounded-lg bg-water text-white hover:bg-water-dim shadow-sm"
+   371→          >
+   372→            <Sparkles className={cn("size-3.5", pending && "animate-pulse")} aria-hidden />
+   373→            {pending ? "Classifying…" : "Classify text"}
+   374→            <Shine />
+   375→          </Button>
+   376→          <p className="text-[0.6rem] text-muted-foreground/70 leading-relaxed">
+   377→            Delhi bounds: lat 28.3 to 28.9, lng 76.8 to 77.6. Coordinates outside Delhi are rejected by validation.
+   378→          </p>
+   379→        </div>
+   380→      )}
+   381→
+   382→      {classify.isError && (
+   383→        <p className="micro-label !text-[0.52rem] text-sev-critical" role="alert">
+   384→          last run failed: {classify.error.message}
+   385→        </p>
+   386→      )}
+   387→    </div>
+   388→  );
+   389→}
+   390→
+   391→function ReportQueue({ pending, onClassify }: { pending: boolean; onClassify: (r: ReportRow) => void }) {
+   392→  const reportsQ = useQuery({
+   393→    queryKey: ["reports", 50],
+   394→    queryFn: () => apiGet<ReportRow[]>("/api/reports?limit=50").then((r) => r.data),
+   395→    refetchInterval: 60_000,
+   396→    staleTime: 30_000,
+   397→  });
+   398→
+   399→  if (reportsQ.isLoading) return <LoadingRows rows={6} />;
+   400→  if (reportsQ.isError) return <ErrorNote message={(reportsQ.error as Error).message} onRetry={() => reportsQ.refetch()} />;
+   401→
+   402→  const reports = reportsQ.data ?? [];
+   403→  if (reports.length === 0)
+   404→    return <EmptyState title="No reports in the queue" hint="Citizen reports appear here as they arrive." />;
+   405→
+   406→  return (
+   407→    <div>
+   408→      <p className="micro-label !text-[0.52rem] text-muted-foreground/70 mb-2">
+   409→        recent reports · newest first · {reports.length}
+   410→      </p>
+   411→      <Stagger>
+   412→        {reports.map((r) => (
+   413→          <StaggerItem key={r.id} className="hairline-b last:border-0 py-2.5 first:pt-0">
+   414→            <div className="flex items-center gap-2 flex-wrap">
+   415→              <span className="data-mono text-[0.65rem] font-semibold text-water">{r.publicRef}</span>
+   416→              <span className="micro-label !text-[0.5rem]">{r.channel.toLowerCase()}</span>
+   417→              <span className={cn("micro-label !text-[0.5rem]", sevTone(r.severityReported))}>{r.severityReported.toLowerCase()}</span>
+   418→              {r.isDuplicate && <span className="micro-label !text-[0.5rem] text-sev-moderate">merged</span>}
+   419→              <TimeAgo iso={r.submittedAt} />
+   420→            </div>
+   421→            <p className="mt-0.5 text-[0.72rem] text-slate-600 leading-snug line-clamp-2">{r.description}</p>
+   422→            <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+   423→              <SourceBadge source={r.source} />
+   424→              {r.classification && <ProviderChip provider={r.classification.provider} model={r.classification.modelId} />}
+   425→              <Button
+   426→                size="sm"
+   427→                variant="outline"
+   428→                disabled={pending}
+   429→                onClick={() => onClassify(r)}
+   430→                className="ml-auto group relative h-7 overflow-hidden rounded-lg bg-water border-water text-white hover:bg-water-dim hover:text-white text-[0.65rem] shadow-sm"
+   431→              >
+   432→                <Sparkles className={cn("size-3", pending && "animate-pulse")} aria-hidden />
+   433→                {r.classification ? "Re-run" : "Classify"}
+   434→                <Shine />
+   435→              </Button>
+   436→            </div>
+   437→          </StaggerItem>
+   438→        ))}
+   439→      </Stagger>
+   440→    </div>
+   441→  );
+   442→}
+   443→
+   444→function ClassifyResults({ m }: { m: ClassifyMutation }) {
+   445→  if (m.isPending) {
+   446→    return (
+   447→      <Panel title="classification · result" icon={<Sparkles />}>
+   448→        <LoadingRows rows={5} />
+   449→        <p className="micro-label !text-[0.52rem] text-muted-foreground/60 mt-2">
+   450→          running provider call for {m.variables?.reportRef ?? "ad-hoc text"}…
+   451→        </p>
+   452→      </Panel>
+   453→    );
+   454→  }
+   455→  if (m.isError) {
+   456→    return (
+   457→      <Panel title="classification · result" icon={<Sparkles />}>
+   458→        <ErrorNote
+   459→          message={(m.error as Error).message}
+   460→          onRetry={m.variables ? () => m.mutate(m.variables!) : undefined}
+   461→        />
+   462→      </Panel>
+   463→    );
+   464→  }
+   465→  if (!m.data) {
+   466→    return (
+   467→      <Panel title="classification · result" icon={<Sparkles />}>
+   468→        <EmptyState
+   469→          icon={<Sparkles className="size-7" />}
+   470→          title="No classification run yet"
+   471→          hint="Pick a report from the queue, or switch to ad-hoc text mode, then run the classifier."
+   472→        />
+   473→      </Panel>
+   474→    );
+   475→  }
+   476→
+   477→  const r = m.data;
+   478→  const cl = r.classification;
+   479→  const prov = r.provenance;
+   480→  const rkey = `${r._label}·${prov.modelId}·${prov.latencyMs}`;
+   481→
+   482→  return (
+   483→    <>
+   484→      <Reveal key={`cl-main-${rkey}`}>
+   485→        <Panel
+   486→          title={`classification · ${r._label}`}
+   487→          icon={<Sparkles />}
+   488→          actions={<ProviderChip provider={prov.provider} model={prov.modelId} />}
+   489→        >
+   490→          {/* verdict headline */}
+   491→          <div className="rounded-lg border border-blue-100 bg-blue-50/70 px-3.5 py-2.5 mb-3">
+   492→            <p className="micro-label !text-[0.5rem] text-water">analysis result</p>
+   493→            <p className="mt-0.5 text-[0.95rem] font-semibold text-slate-900 leading-snug">
+   494→              {cl.category.toLowerCase().replace(/_/g, " ")}
+   495→            </p>
+   496→          </div>
+   497→          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+   498→            <Readout label="severity" value={cl.severity.toLowerCase()} tone={sevTone(cl.severity)} />
+   499→            <Readout
+   500→              label="confidence"
+   501→              value={
+   502→                <span className="flex items-baseline gap-0.5">
+   503→                  <CountUp value={cl.confidence * 100} className="text-xl font-semibold text-water" />
+   504→                  <span className="text-[0.65rem] text-muted-foreground">%</span>
+   505→                </span>
+   506→              }
+   507→            />
+   508→            <div className="flex items-center">
+   509→              {cl.confidence < 0.5 && <ConfidenceChip confidence={cl.confidence} />}
+   510→            </div>
+   511→          </div>
+   512→          <p className="text-sm text-slate-700 leading-relaxed border-l-2 border-water/50 pl-3">{cl.summary}</p>
+   513→          {cl.factors.length > 0 && (
+   514→            <ul className="mt-3 flex flex-wrap gap-1.5">
+   515→              {cl.factors.map((f, i) => (
+   516→                <li key={i} className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[0.65rem] text-slate-600">{f}</li>
+   517→              ))}
+   518→            </ul>
+   519→          )}
+   520→          <div className="mt-3">
+   521→            {cl.isDuplicateSuspected ? (
+   522→              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[0.65rem] text-sev-moderate">
+   523→                <GitMerge className="size-3" aria-hidden /> duplicate suspected
+   524→                {cl.duplicateReason ? `: ${cl.duplicateReason}` : ""}
+   525→              </span>
+   526→            ) : (
+   527→              <span className="micro-label !text-[0.52rem] text-muted-foreground">no duplicate suspected by model</span>
+   528→            )}
+   529→          </div>
+   530→          <p className="mt-3 micro-label !text-[0.5rem] text-muted-foreground/60">
+   531→            Structured output only. No chain-of-thought exposed.
+   532→          </p>
+   533→        </Panel>
+   534→      </Reveal>
+   535→
+   536→      {/* provenance */}
+   537→      <Reveal key={`cl-prov-${rkey}`} delay={0.07}>
+   538→        <Panel title="provenance" icon={<ShieldAlert />}>
+   539→          <div className="space-y-2.5">
+   540→            <FactRow label="provider"><ProviderChip provider={prov.provider} model={prov.modelId} /></FactRow>
+   541→            <FactRow label="model id"><span className="data-mono text-[0.62rem] break-all">{prov.modelId}</span></FactRow>
+   542→            <FactRow label="version"><span className="data-mono text-[0.62rem]">{prov.version}</span></FactRow>
+   543→            <FactRow label="latency"><span className="data-mono text-[0.62rem]">{prov.latencyMs} ms</span></FactRow>
+   544→            <FactRow label="fallback">
+   545→              <span className={cn("micro-label !text-[0.55rem]", prov.fallbackUsed ? "text-sev-moderate" : "text-verified")}>
+   546→                {prov.fallbackUsed ? "used" : "not used"}
+   547→              </span>
+   548→            </FactRow>
+   549→            {prov.fallbackUsed && prov.fallbackReason && (
+   550→              <p className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-sev-moderate" role="alert">
+   551→                GLM call failed, deterministic fallback used: {prov.fallbackReason}
+   552→              </p>
+   553→            )}
+   554→            <div className="hairline-t pt-2.5 space-y-2">
+   555→              <p className="micro-label !text-[0.5rem] text-muted-foreground/60">provider health at run time</p>
+   556→              <FactRow label="status">
+   557→                <span className={cn("micro-label !text-[0.55rem] flex items-center gap-1.5", prov.providerHealth.available ? "text-verified" : "text-sev-high")}>
+   558→                  <span aria-hidden className={cn("size-1.5 rounded-full", prov.providerHealth.available ? "bg-verified" : "bg-sev-high")} />
+   559→                  {prov.providerHealth.provider} {prov.providerHealth.available ? "available" : "unavailable"}
+   560→                </span>
+
+[showing lines 1-560 of 1047; use offset=561 with limit to continue reading]

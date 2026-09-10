@@ -61,9 +61,9 @@ export function ResponsibilityView() {
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
           <span className="flex items-center gap-2">
             <Network className="size-3.5 text-water" aria-hidden />
-            <span className="micro-label !text-[0.62rem] text-slate-600">responsibility model</span>
+            <span className="micro-label !text-[0.62rem] text-slate-600">Responsibility Model</span>
           </span>
-          <span className="text-[0.65rem] text-muted-foreground">
+          <span className="text-[0.65rem] text-muted-foreground" title="How responsibility is traced from an incident to the agency that must act">
             event → asset → jurisdiction → agency → action → escalation
           </span>
           <span className="micro-label ml-auto !text-[0.5rem] text-muted-foreground/60">
@@ -136,7 +136,7 @@ function CrossAgencyRegister() {
 
   return (
     <Panel
-      title={`cross-agency register · ${filtered.length} events`}
+      title={`Cross-Agency Register · ${filtered.length} Events`}
       icon={<Network />}
       actions={
         <Button
@@ -159,7 +159,7 @@ function CrossAgencyRegister() {
         <>
           {/* filters */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-3">
-            <span className="micro-label !text-[0.52rem] text-muted-foreground/70">agency</span>
+            <span className="micro-label !text-[0.52rem] text-muted-foreground/70">Agency</span>
             <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by agency">
               {AGENCY_CODES.map((a) => {
                 const on = agencyFilter.has(a);
@@ -195,7 +195,7 @@ function CrossAgencyRegister() {
 
           {/* group header stats: events per agency */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mb-3 hairline-t hairline-b py-2">
-            <span className="micro-label !text-[0.5rem] text-muted-foreground/60">events per agency</span>
+            <span className="micro-label !text-[0.5rem] text-muted-foreground/60">Events per Agency</span>
             {AGENCY_CODES.filter((a) => perAgency.has(a)).map((a) => (
               <span key={a} className="data-mono text-[0.62rem]">
                 <span className="text-water">{a}</span>
@@ -213,7 +213,7 @@ function CrossAgencyRegister() {
 
           {/* rows */}
           {filtered.length === 0 ? (
-            <EmptyState title="No events match the filters" hint="Clear the agency toggles or the escalated-only switch." />
+            <EmptyState title="No Events Match the Filters" hint="Turn off the agency chips or the escalated-only switch to see more." />
           ) : (
             <Stagger>
               {filtered.map((e) => (
@@ -268,14 +268,14 @@ function AgencyWorkload() {
 
   if (agenciesQ.isLoading) {
     return (
-      <Panel title="agency workload" icon={<Activity />}>
+      <Panel title="Agency Workload" icon={<Activity />}>
         <LoadingRows rows={7} />
       </Panel>
     );
   }
   if (agenciesQ.isError) {
     return (
-      <Panel title="agency workload" icon={<Activity />}>
+      <Panel title="Agency Workload" icon={<Activity />}>
         <ErrorNote message={(agenciesQ.error as Error).message} onRetry={() => agenciesQ.refetch()} />
       </Panel>
     );
@@ -287,7 +287,7 @@ function AgencyWorkload() {
 
   return (
     <Panel
-      title={`agency workload · ${agencies.length} agencies`}
+      title={`Agency Workload · ${agencies.length} Agencies`}
       icon={<Activity />}
       actions={overviewQ.isError ? <span className="micro-label !text-[0.5rem] text-sev-moderate">verified counts unavailable</span> : undefined}
     >
@@ -328,7 +328,7 @@ function AgencyWorkload() {
         })}
       </Stagger>
       <p className="mt-3 micro-label !text-[0.5rem] text-muted-foreground/60">
-        links: active responsibility links (any role) · bar length relative to the busiest agency · ver: verified or closed events where the agency is primary
+        Links: open incidents involving this agency (any role) · bar length is relative to the busiest agency · ver: incidents verified or closed where the agency is the lead
       </p>
     </Panel>
   );
@@ -355,7 +355,7 @@ function ChainInspector() {
 
   return (
     <Panel
-      title="chain inspector"
+      title="Chain Inspector"
       icon={<GitBranch />}
       actions={respQ.data ? <span className="micro-label !text-[0.5rem] text-muted-foreground/70">{respQ.data.ruleVersion}</span> : undefined}
     >
@@ -392,8 +392,8 @@ function ChainInspector() {
       ) : !selected ? (
         <EmptyState
           icon={<FileWarning className="size-7" />}
-          title="No event selected"
-          hint="Pick an event to render its responsibility chain, actions and escalation reasons."
+          title="No Event Selected"
+          hint="Pick an incident to see who is responsible, what actions exist and why anything was escalated."
         />
       ) : respQ.isLoading ? (
         <LoadingRows rows={6} />
@@ -417,7 +417,7 @@ function ChainInspector() {
 
           {/* actions */}
           <div className="mt-4 hairline-t pt-3">
-            <p className="micro-label !text-[0.55rem] mb-2">action items · {respQ.data.actions.length}</p>
+            <p className="micro-label !text-[0.55rem] mb-2">Action Items · {respQ.data.actions.length}</p>
             {respQ.data.actions.length === 0 ? (
               <p className="text-xs text-muted-foreground">No action items recorded for this event.</p>
             ) : (
@@ -444,7 +444,7 @@ function ChainInspector() {
               </ul>
             )}
             <p className="mt-2.5 text-[0.6rem] text-muted-foreground/70">
-              Action updates and verification happen in the event dossier. This inspector is read-only.
+              Updates and field checks happen inside the event dossier. This inspector is read-only.
             </p>
           </div>
         </>
@@ -509,7 +509,7 @@ const ROUTING_RULES: { trigger: string; route: string; note: string }[] = [
 function EscalationMatrix() {
   return (
     <Panel
-      title="escalation matrix · routing reference"
+      title="Escalation Matrix · Routing Reference"
       icon={<ShieldAlert />}
       actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/70">routing-rules v1.2-demo</span>}
     >
@@ -517,9 +517,9 @@ function EscalationMatrix() {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="hairline-b">
-              <th scope="col" className="micro-label !text-[0.52rem] py-2 pr-4 font-medium">trigger</th>
-              <th scope="col" className="micro-label !text-[0.52rem] py-2 pr-4 font-medium">routes to</th>
-              <th scope="col" className="micro-label !text-[0.52rem] py-2 font-medium hidden md:table-cell">note</th>
+              <th scope="col" className="micro-label !text-[0.52rem] py-2 pr-4 font-medium">Trigger</th>
+              <th scope="col" className="micro-label !text-[0.52rem] py-2 pr-4 font-medium">Routes to</th>
+              <th scope="col" className="micro-label !text-[0.52rem] py-2 font-medium hidden md:table-cell">Note</th>
             </tr>
           </thead>
           <tbody>
@@ -537,7 +537,7 @@ function EscalationMatrix() {
         </table>
       </div>
       <p className="mt-3 micro-label !text-[0.5rem] text-muted-foreground/60">
-        Static reference for how the routing engine assigns primary, support and escalation links. The live chain per event is shown in the chain inspector above.
+        A fixed reference showing how the system picks the lead, support and escalation agencies. Each event's live chain is shown in the Chain Inspector above.
       </p>
     </Panel>
   );

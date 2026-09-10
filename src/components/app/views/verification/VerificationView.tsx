@@ -26,11 +26,11 @@ import { Camera, Check, ChevronRight, ClipboardCheck, RefreshCw, RotateCcw, Sear
 const VERIF_STAGES = ["ASSIGNED", "DISPATCHED", "OBSERVED", "EVIDENCE_UPLOADED", "ACTION_RECORDED", "VERIFIED", "CLOSED"] as const;
 
 const COLUMNS: { key: string; title: string; hint: string; dot: string; statuses: string[] }[] = [
-  { key: "unassigned", title: "unassigned", hint: "detected or triaged, not yet assigned to an agency", dot: "bg-slate-400", statuses: ["DETECTED", "TRIAGED"] },
-  { key: "assigned", title: "assigned", hint: "responsibility assigned, dispatch pending", dot: "bg-blue-500", statuses: ["ASSIGNED"] },
-  { key: "infield", title: "in field", hint: "dispatched, observation or action underway", dot: "bg-water", statuses: ["IN_PROGRESS"] },
-  { key: "verified", title: "verified / closed", hint: "field-verified with evidence, or closed", dot: "bg-verified", statuses: ["VERIFIED", "CLOSED"] },
-  { key: "reopened", title: "reopened", hint: "recurrence after closure, back in the queue", dot: "bg-sev-high", statuses: ["REOPENED"] },
+  { key: "unassigned", title: "Unassigned", hint: "Spotted or sorted, but no agency has been assigned yet", dot: "bg-slate-400", statuses: ["DETECTED", "TRIAGED"] },
+  { key: "assigned", title: "Assigned", hint: "An agency is responsible; a crew has not set out yet", dot: "bg-blue-500", statuses: ["ASSIGNED"] },
+  { key: "infield", title: "In Field", hint: "A crew is on site or on the way, observing or acting", dot: "bg-water", statuses: ["IN_PROGRESS"] },
+  { key: "verified", title: "Verified / Closed", hint: "Checked on site with evidence, or closed", dot: "bg-verified", statuses: ["VERIFIED", "CLOSED"] },
+  { key: "reopened", title: "Reopened", hint: "Flooded again after closing; back in the queue", dot: "bg-sev-high", statuses: ["REOPENED"] },
 ];
 
 const RISK_FILTERS = ["ALL", "LOW", "MODERATE", "HIGH", "CRITICAL"] as const;
@@ -138,7 +138,7 @@ export function VerificationView() {
               Field Verification
             </h1>
             <p className="mt-1 text-xs text-muted-foreground sm:pl-[2.875rem]">
-              Workflow board. Stages advance in order: assigned, dispatched, observed, evidence, action, verified, closed.
+              Every incident moves through fixed steps in order: assigned → dispatched → observed → evidence → action → verified → closed. Open a card to record the next step.
             </p>
           </div>
 
@@ -256,9 +256,9 @@ function EmptyStateBoard() {
         <span className="grid size-12 place-items-center rounded-xl bg-blue-50 text-water mx-auto" aria-hidden>
           <ClipboardCheck className="size-6" />
         </span>
-        <p className="mt-3 text-sm font-medium text-slate-600">No events to verify</p>
+        <p className="mt-3 text-sm font-medium text-slate-600">No Events to Verify</p>
         <p className="mt-1 text-xs text-slate-500 max-w-sm mx-auto">
-          Events appear here once the ingest pipeline creates them from citizen reports.
+          Incidents appear here once the system groups citizen reports into events.
         </p>
       </div>
     </div>
@@ -441,15 +441,15 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                 {/* summary */}
                 <Reveal>
                   <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50/70 p-3.5">
-                    <Fact label="severity" value={<SeverityTicks severity={ev.severity} />} />
-                    <Fact label="reports" value={<span className="data-mono">{ev.reportCount} ({ev.recurrenceCount} recurrences)</span>} />
-                    <Fact label="agency" value={<span className="data-mono">{ev.agencyCode ?? "unassigned"}</span>} />
-                    <Fact label="location" value={<span className="data-mono !text-[0.68rem]">{ev.lat.toFixed(4)}, {ev.lng.toFixed(4)}</span>} />
-                    <Fact label="first reported" value={<TimeAgo iso={ev.firstReportedAt} />} />
-                    <Fact label="last activity" value={<TimeAgo iso={ev.lastActivityAt} />} />
-                    <Fact label="rainfall 24/72h" value={<span className="data-mono">{Math.round(ev.rainfall24hMm ?? 0)} / {Math.round(ev.rainfall72hMm ?? 0)} mm</span>} />
-                    <Fact label="classification" value={ev.classificationProvider ? <span className="micro-label !text-[0.55rem]">{ev.classificationProvider.toLowerCase()}</span> : <span className="text-slate-500">n/a</span>} />
-                    <Fact label="risk assessed" value={ev.riskAssessedAt ? <TimeAgo iso={ev.riskAssessedAt} /> : <span className="text-slate-500">pending</span>} />
+                    <Fact label="Severity" value={<SeverityTicks severity={ev.severity} />} />
+                    <Fact label="Reports" value={<span className="data-mono">{ev.reportCount} ({ev.recurrenceCount} recurrences)</span>} />
+                    <Fact label="Agency" value={<span className="data-mono">{ev.agencyCode ?? "unassigned"}</span>} />
+                    <Fact label="Location" value={<span className="data-mono !text-[0.68rem]">{ev.lat.toFixed(4)}, {ev.lng.toFixed(4)}</span>} />
+                    <Fact label="First Reported" value={<TimeAgo iso={ev.firstReportedAt} />} />
+                    <Fact label="Last Activity" value={<TimeAgo iso={ev.lastActivityAt} />} />
+                    <Fact label="Rainfall 24/72h" value={<span className="data-mono">{Math.round(ev.rainfall24hMm ?? 0)} / {Math.round(ev.rainfall72hMm ?? 0)} mm</span>} />
+                    <Fact label="Classification" value={ev.classificationProvider ? <span className="micro-label !text-[0.55rem]">{ev.classificationProvider.toLowerCase()}</span> : <span className="text-slate-500">n/a</span>} />
+                    <Fact label="Risk Assessed" value={ev.riskAssessedAt ? <TimeAgo iso={ev.riskAssessedAt} /> : <span className="text-slate-500">pending</span>} />
                   </dl>
                 </Reveal>
                 <p className="text-xs text-slate-500 -mt-2">{ev.locationText}</p>
@@ -457,7 +457,7 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                 {/* stepper */}
                 <Reveal delay={0.06}>
                   <div className="pt-3 hairline-t">
-                    <p className="micro-label mb-2.5">verification progress</p>
+                    <p className="micro-label mb-2.5">Verification Progress</p>
                     <StageStepper stages={[...reached]} />
                   </div>
                 </Reveal>
@@ -465,7 +465,7 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                 {/* timeline */}
                 <Reveal delay={0.12}>
                   <div className="pt-3 hairline-t">
-                    <p className="micro-label mb-2.5">recorded stages</p>
+                    <p className="micro-label mb-2.5">Recorded Stages</p>
                     {ev.verifications.length === 0 ? (
                       <p className="text-xs text-slate-500">No stages recorded yet. The first entry is typically dispatched once a team is on the way.</p>
                     ) : (
@@ -502,9 +502,9 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                   <div className="pt-3 hairline-t">
                     {ev.status === "CLOSED" ? (
                       <div className="space-y-2">
-                        <p className="micro-label">reopen event · agency role</p>
+                        <p className="micro-label">Reopen Event · Agency Role</p>
                         <p className="text-xs text-slate-500">
-                          Closed {ev.closedAt ? timeAgo(ev.closedAt) : ""}. New citizen reports at this location auto-reopen it via recurrence; agencies can reopen manually with a reason.
+                          Closed {ev.closedAt ? timeAgo(ev.closedAt) : ""}. New citizen reports from the same spot reopen it automatically; agencies can also reopen it manually with a reason.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-end">
                           <div className="flex-1 space-y-1">
@@ -535,7 +535,7 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                       </div>
                     ) : (
                       <div className="space-y-2.5">
-                        <p className="micro-label">record verification stage · field team role</p>
+                        <p className="micro-label">Record Verification Stage · Field Team Role</p>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                           <div className="space-y-1">
                             <Label className="text-[0.65rem]">Stage</Label>
@@ -555,7 +555,7 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                             </Select>
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-[0.65rem]">Observed severity</Label>
+                            <Label className="text-[0.65rem]">Observed Severity</Label>
                             <Select value={observedSeverity} onValueChange={setObservedSeverity}>
                               <SelectTrigger className="h-8 rounded-lg bg-ink-900 border-border text-xs" aria-label="Observed severity">
                                 <SelectValue />
@@ -647,7 +647,7 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
 
                         <div className="flex items-center justify-between gap-3 flex-wrap">
                           <p className="text-[0.62rem] text-slate-500">
-                            Next expected: <span className="text-water">{(nextStage ?? "CLOSED").toLowerCase().replace(/_/g, " ")}</span>. Stages are validated in order by the server.
+                            Next expected: <span className="text-water">{(nextStage ?? "CLOSED").toLowerCase().replace(/_/g, " ")}</span>. Steps must be recorded in order (checked by the server).
                           </p>
                           <Button size="sm" className="group relative overflow-hidden rounded-lg bg-water text-white hover:bg-water-dim h-8" disabled={verify.isPending} onClick={submitStage}>
                             {verify.isPending ? "Recording…" : "Record stage"}

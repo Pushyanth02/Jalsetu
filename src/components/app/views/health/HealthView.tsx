@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import {
   Activity, Database, BrainCircuit, RefreshCw, Gauge, HeartPulse, History, Server,
-  ShieldCheck, AlertTriangle,
+  ShieldCheck, AlertTriangle, BookOpen,
 } from "lucide-react";
 
 // DATA & MODEL HEALTH - source freshness, provider state, run log,
@@ -136,6 +136,22 @@ async function ping(path: string): Promise<PingState> {
 
 const SEVERITY: Record<string, number> = { EMPTY: 0, STALE: 1, OK: 2 };
 
+// Plain-language glossary for non-technical readers (terms used across the app).
+const GLOSSARY: { term: string; definition: string }[] = [
+  { term: "Waterlogging", definition: "Rain water that stays standing on roads long after the rain has stopped." },
+  { term: "Urban Event", definition: "One real-world incident that merges several citizen reports from the same place and time." },
+  { term: "Risk Score", definition: "A 0-100 number estimating how urgently crews should respond to an incident." },
+  { term: "Risk Band", definition: "The plain-language bucket for a risk score: Low, Moderate, High or Critical." },
+  { term: "Severity", definition: "How serious the reported conditions are, from 1 (minor) to 4 (critical)." },
+  { term: "Jurisdiction", definition: "The official area (ward or corridor) an agency is responsible for maintaining." },
+  { term: "Verification", definition: "A field crew confirming water depth and cleanup on site before an event closes." },
+  { term: "Ground Truth", definition: "Independently known problem sites used to check whether the system's guesses are right." },
+  { term: "Baseline", definition: "The old approach: reacting only to how often complaints arrive from an area." },
+  { term: "Proposed System", definition: "The new approach: combining complaints, rainfall, drains and infrastructure into one signal." },
+  { term: "AI Classification", definition: "The model reading each report and tagging its category, severity and confidence." },
+  { term: "Synthetic Demo Data", definition: "Realistic but generated data for safe testing. It is never real citizen data." },
+];
+
 // motion-enhanced table row (keeps semantic <tr> nesting inside tbody)
 const MotionRow = motion.tr;
 
@@ -205,7 +221,7 @@ export function HealthView() {
               </span>
             </div>
             <p className="text-[0.7rem] text-muted-foreground mt-0.5">
-              source freshness · provider state · run log · confidence · endpoint checks
+              A quick health check of every data source and AI model behind this dashboard.
             </p>
           </div>
           <button
@@ -255,7 +271,7 @@ export function HealthView() {
                   tint={hb.latencyMs > 5000 ? "bg-amber-50 text-sev-moderate" : "bg-blue-50 text-water"}
                   value={<CountUp value={hb.latencyMs} suffix=" ms" />}
                   label="API latency"
-                  sub="health endpoint round-trip"
+                  sub="time for the server to answer one health check"
                 />
                 {dh && (
                   <StatCard
@@ -267,7 +283,7 @@ export function HealthView() {
                       </span>
                     }
                     label="Data health"
-                    sub={`${dh.sources.length} sources · ${dh.pilot.jurisdictions} juris · ${dh.pilot.groundTruthHotspots} GT sites`}
+                    sub={`${dh.sources.length} sources · ${dh.pilot.jurisdictions} jurisdictions · ${dh.pilot.groundTruthHotspots} ground-truth sites`}
                   />
                 )}
                 <StatCard
@@ -289,7 +305,7 @@ export function HealthView() {
 
         <Reveal delay={0.05}>
           <Panel
-            title="system details"
+            title="System Details"
             icon={<Activity />}
             actions={hb && <ProviderChip provider={hb.ai.provider} model={hb.ai.modelId} />}
           >
@@ -334,7 +350,7 @@ export function HealthView() {
           <Panel
             title={
               <span className="flex items-center gap-2">
-                source health
+                Source Health
                 {dh && <span className="data-mono ml-1 !text-[0.62rem] !tracking-normal !normal-case font-normal text-slate-400">{dh.sources.length} sources</span>}
               </span>
             }
@@ -354,18 +370,18 @@ export function HealthView() {
             ) : dataQ.isError ? (
               <ErrorNote message={(dataQ.error as Error).message} onRetry={() => dataQ.refetch()} className="m-4" />
             ) : !dh ? null : dh.sources.length === 0 ? (
-              <EmptyState title="No sources reporting" />
+              <EmptyState title="No Sources Reporting" />
             ) : (
               <Stagger className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-ink-850/60 hover:bg-ink-850/60">
-                      <TableHead className="micro-label !text-[0.55rem] h-8">source</TableHead>
-                      <TableHead className="micro-label !text-[0.55rem] h-8 text-right">records</TableHead>
-                      <TableHead className="micro-label !text-[0.55rem] h-8">freshness</TableHead>
-                      <TableHead className="micro-label !text-[0.55rem] h-8">status</TableHead>
-                      <TableHead className="micro-label !text-[0.55rem] h-8">missingness</TableHead>
-                      <TableHead className="micro-label !text-[0.55rem] h-8 hidden md:table-cell">provenance</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8" title="Which data feed this row comes from">Source</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8 text-right">Records</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8" title="When the newest record arrived">Freshness</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8">Status</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8" title="Which fields have no recorded values">Missingness</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8 hidden md:table-cell" title="Where the data comes from">Provenance</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -412,7 +428,7 @@ export function HealthView() {
         {/* SECTION C - model & provider */}
         <Reveal delay={0.15}>
           <Panel
-            title="model & provider"
+            title="Model & Provider"
             icon={<BrainCircuit />}
             actions={
               <button onClick={() => modelQ.refetch()} className="micro-label !text-[0.58rem] text-water hover:text-water-dim transition-colors">
@@ -466,7 +482,7 @@ export function HealthView() {
                   </div>
 
                   <div className="rounded-xl border border-border bg-ink-850/50 px-3.5 py-3 space-y-1.5">
-                    <p className="micro-label !text-[0.55rem] text-slate-500 mb-1">component versions</p>
+                    <p className="micro-label !text-[0.55rem] text-slate-500 mb-1">Component Versions</p>
                     {Object.entries(mh.versions).map(([k, v]) => (
                       <div key={k} className="flex items-baseline justify-between gap-3">
                         <span className="micro-label !text-[0.52rem] text-slate-500 !tracking-[0.08em]">{k}</span>
@@ -477,13 +493,13 @@ export function HealthView() {
                 </div>
 
                 <div className="rounded-xl border border-border bg-ink-850/50 px-3.5 py-3">
-                  <p className="micro-label !text-[0.55rem] text-slate-500 mb-2">model runs · last 25</p>
+                  <p className="micro-label !text-[0.55rem] text-slate-500 mb-2">Model Runs · Last 25</p>
                   <div className="flex flex-wrap divide-x divide-border rounded-lg border border-border bg-white">
-                    <Segment label="total" value={<CountUp value={mh.runsSummary.total} />} tone="plain" border={false} />
-                    <Segment label="succeeded" value={<CountUp value={mh.runsSummary.succeeded} />} tone="teal" border={false} />
-                    <Segment label="failed" value={<CountUp value={mh.runsSummary.failed} />} tone={mh.runsSummary.failed > 0 ? "red" : "plain"} border={false} />
+                    <Segment label="Total" value={<CountUp value={mh.runsSummary.total} />} tone="plain" border={false} />
+                    <Segment label="Succeeded" value={<CountUp value={mh.runsSummary.succeeded} />} tone="teal" border={false} />
+                    <Segment label="Failed" value={<CountUp value={mh.runsSummary.failed} />} tone={mh.runsSummary.failed > 0 ? "red" : "plain"} border={false} />
                     <Segment
-                      label="success rate"
+                      label="Success Rate"
                       value={`${(mh.runsSummary.successRate * 100).toFixed(0)}%`}
                       tone={mh.runsSummary.failed > 0 ? "amber" : "teal"}
                       border={false}
@@ -504,7 +520,7 @@ export function HealthView() {
           <Panel
             title={
               <span className="flex items-center gap-2">
-                model run log
+                Model Run Log
                 {mh && <span className="data-mono ml-1 !text-[0.62rem] !tracking-normal !normal-case font-normal text-slate-400">{Math.min(25, mh.runs.length)} of {mh.runsSummary.total}</span>}
               </span>
             }
@@ -516,19 +532,19 @@ export function HealthView() {
             ) : modelQ.isError ? (
               <ErrorNote message={(modelQ.error as Error).message} onRetry={() => modelQ.refetch()} className="m-4" />
             ) : !mh ? null : mh.runs.length === 0 ? (
-              <EmptyState title="No model runs recorded" hint="Runs appear after reports are classified or events reassessed." />
+              <EmptyState title="No Model Runs Recorded" hint="Runs appear here after the AI reads new reports or an event's risk is recalculated." />
             ) : (
               <ScrollArea className="max-h-96">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-ink-850/60 hover:bg-ink-850/60">
-                      <TableHead className="micro-label !text-[0.55rem] h-8">model</TableHead>
-                      <TableHead className="micro-label !text-[0.55rem] h-8">provider</TableHead>
-                      <TableHead className="micro-label !text-[0.55rem] h-8">status</TableHead>
-                      <TableHead className="micro-label !text-[0.55rem] h-8 text-right">in/out</TableHead>
-                      <TableHead className="micro-label !text-[0.55rem] h-8 text-right">latency</TableHead>
-                      <TableHead className="micro-label !text-[0.55rem] h-8">started</TableHead>
-                      <TableHead className="micro-label !text-[0.55rem] h-8 hidden lg:table-cell">notes / error</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8">Model</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8">Provider</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8">Status</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8 text-right">In/Out</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8 text-right">Latency</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8">Started</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8 hidden lg:table-cell">Notes / Error</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -565,7 +581,7 @@ export function HealthView() {
         {/* SECTION E - confidence distribution */}
         <Reveal delay={0.25}>
           <Panel
-            title="classification confidence distribution"
+            title="Classification Confidence Distribution"
             icon={<Gauge />}
           >
             {modelQ.isLoading ? (
@@ -605,10 +621,10 @@ export function HealthView() {
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
                   <span className="flex items-center gap-1.5 micro-label !text-[0.52rem] text-slate-500">
-                    <span className="size-2.5 rounded-[2px]" style={{ background: BLUE }} aria-hidden /> at/above flag threshold
+                    <span className="size-2.5 rounded-[2px]" style={{ background: BLUE }} aria-hidden /> At/Above Review Threshold
                   </span>
                   <span className="flex items-center gap-1.5 micro-label !text-[0.52rem] text-slate-500">
-                    <span className="size-2.5 rounded-[2px]" style={{ background: AMBER }} aria-hidden /> below flag threshold
+                    <span className="size-2.5 rounded-[2px]" style={{ background: AMBER }} aria-hidden /> Below Threshold · Flagged for Review
                   </span>
                   <span className="data-mono text-[0.65rem] text-slate-500 ml-auto">
                     mean <span className="text-slate-800">{mh.confidenceDistribution.mean.toFixed(2)}</span> · min{" "}
@@ -617,12 +633,12 @@ export function HealthView() {
                   </span>
                 </div>
                 <p className="micro-label !text-[0.55rem] text-slate-400 !tracking-[0.08em] normal-case leading-relaxed">
-                  Classifications below {mh.confidenceDistribution.lowConfidenceFlag} confidence are flagged for review
-                  (see confidence chips in the event queue). The 0.4-0.6 bucket straddles the flag threshold, so its
-                  colouring is indicative only.
+                  When the AI is less than {mh.confidenceDistribution.lowConfidenceFlag} sure about a report, it is flagged for a
+                  human to double-check (see the confidence chips in the event list). The 0.4-0.6 bucket sits across the
+                  threshold, so its colour is only a guide.
                 </p>
                 <div className="hairline-t pt-2.5 flex flex-wrap items-center gap-2">
-                  <span className="micro-label !text-[0.55rem] text-slate-500">classified reports by provider</span>
+                  <span className="micro-label !text-[0.55rem] text-slate-500">Classified Reports by Provider</span>
                   {Object.entries(mh.classificationProviders).map(([k, count]) => (
                     <span key={k} className="inline-flex items-center gap-1.5">
                       <ProviderChip provider={k} />
@@ -640,8 +656,8 @@ export function HealthView() {
           <Panel
             title={
               <span className="flex items-center gap-2">
-                api endpoint checks
-                <span className="micro-label !text-[0.5rem] text-slate-400">client-side · same-origin</span>
+                API Endpoint Checks
+                <span className="micro-label !text-[0.5rem] text-slate-400">Client-Side · Same-Origin</span>
               </span>
             }
             icon={<Server />}
@@ -699,9 +715,28 @@ export function HealthView() {
               </div>
             )}
             <p className="micro-label !text-[0.55rem] text-slate-400 !tracking-[0.08em] normal-case leading-relaxed px-4 py-2.5 hairline-t">
-              Latency is measured client-side from this browser session. /api/health probes the AI provider, so its check
-              can take several seconds.
+              Response times are measured from this browser. The /api/health check also contacts the AI provider, so it can
+              take a few seconds.
             </p>
+          </Panel>
+        </Reveal>
+
+        {/* SECTION G - plain-language glossary */}
+        <Reveal delay={0.35}>
+          <Panel title="Plain-Language Glossary" icon={<BookOpen />}>
+            <p className="mb-3 text-[0.7rem] text-muted-foreground">
+              Short, everyday definitions for the terms this dashboard uses.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {GLOSSARY.map((g) => (
+                <div key={g.term} className="rounded-xl border border-border bg-white px-3.5 py-2.5 shadow-xs">
+                  <p className="text-xs leading-relaxed">
+                    <span className="font-bold text-slate-800">{g.term}: </span>
+                    <span className="text-[0.68rem] text-slate-500">{g.definition}</span>
+                  </p>
+                </div>
+              ))}
+            </div>
           </Panel>
         </Reveal>
       </div>

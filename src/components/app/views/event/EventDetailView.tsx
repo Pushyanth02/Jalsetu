@@ -107,7 +107,7 @@ export function EventDetailView() {
   if (!eventId) {
     return (
       <div className="flex-1 grid place-items-center">
-        <EmptyState icon={<FileWarning className="size-8" />} title="No event selected" hint="Open an event from the command center or map." action={
+        <EmptyState icon={<FileWarning className="size-8" />} title="No Event Selected" hint="Open an incident from the Command Center or the map." action={
           <Button variant="outline" size="sm" onClick={() => navigate("command")} className="mt-2 rounded-lg">← Command Center</Button>
         } />
       </div>
@@ -150,7 +150,7 @@ export function EventDetailView() {
               <span className="inline-flex items-center gap-1"><HardHat className="size-3" aria-hidden /> {event.agencyCode ?? "unassigned"}</span>
               <span>first report <TimeAgo iso={event.firstReportedAt} /></span>
               {event.status !== "CLOSED" && (
-                <span className="inline-flex items-center gap-1.5" title="last activity">
+                <span className="inline-flex items-center gap-1.5" title="Last activity">
                   <PulseDot size={6} color="bg-verified" /> activity <TimeAgo iso={event.lastActivityAt} />
                 </span>
               )}
@@ -200,7 +200,7 @@ export function EventDetailView() {
               groundTruthHotspotId: event.groundTruthHotspotId, source: event.source,
             }]} initialZoom={14.2} />
             <div className="absolute top-2 left-2 rounded-md bg-white/95 px-2 py-1 shadow-sm ring-1 ring-border/70 pointer-events-none">
-              <p className="micro-label !text-[0.55rem]">event focus</p>
+              <p className="micro-label !text-[0.55rem]">Event Focus</p>
             </div>
           </div>
           <QuickFacts d={d} />
@@ -274,21 +274,21 @@ function QuickFacts({ d }: { d: D }) {
   return (
     <div className="p-4 space-y-4 xl:overflow-y-auto">
       <div>
-        <p className="micro-label mb-1.5">risk</p>
+        <p className="micro-label mb-1.5">Risk</p>
         <RiskMeter score={e.riskScore} band={e.riskBand} />
         <p className="mt-1 micro-label !text-[0.52rem] text-muted-foreground/70">
           {e.riskModelVersion} · assessed {e.riskAssessedAt ? timeAgo(e.riskAssessedAt) : "-"}
         </p>
       </div>
       <dl className="space-y-2 text-xs">
-        <Fact label="severity" value={<SeverityTicks severity={e.severity} />} />
-        <Fact label="reports" value={<span className="data-mono"><CountUp value={e.reportCount} /> ({e.reports.filter((r) => r.isDuplicate).length} merged)</span>} />
-        <Fact label="recurrence" value={<span className="data-mono"><CountUp value={e.recurrenceCount} />×</span>} />
-        <Fact label="rainfall 24h/72h" value={<span className="data-mono text-water">{Math.round(e.rainfall24hMm ?? 0)} / {Math.round(e.rainfall72hMm ?? 0)} mm</span>} />
-        <Fact label="category" value={<span className="data-mono">{e.category.toLowerCase()}</span>} />
-        <Fact label="classification" value={<ProviderChip provider={e.classificationProvider ?? "-"} model={e.modelVersion} />} />
+        <Fact label="Severity" value={<SeverityTicks severity={e.severity} />} />
+        <Fact label="Reports" value={<span className="data-mono"><CountUp value={e.reportCount} /> ({e.reports.filter((r) => r.isDuplicate).length} merged)</span>} />
+        <Fact label="Recurrence" value={<span className="data-mono"><CountUp value={e.recurrenceCount} />×</span>} />
+        <Fact label="Rainfall 24h/72h" value={<span className="data-mono text-water">{Math.round(e.rainfall24hMm ?? 0)} / {Math.round(e.rainfall72hMm ?? 0)} mm</span>} />
+        <Fact label="Category" value={<span className="data-mono">{e.category.toLowerCase()}</span>} />
+        <Fact label="Classification" value={<ProviderChip provider={e.classificationProvider ?? "-"} model={e.modelVersion} />} />
         {e.groundTruthHotspotId && (
-          <Fact label="ground truth" value={<span className="text-[0.65rem] text-sev-moderate">{e.groundTruthHotspotId} · {e.groundTruthAgencyCode} (synthetic)</span>} />
+          <Fact label="Ground Truth" value={<span className="text-[0.65rem] text-sev-moderate">{e.groundTruthHotspotId} · {e.groundTruthAgencyCode} (synthetic)</span>} />
         )}
       </dl>
     </div>
@@ -325,14 +325,14 @@ function OverviewTab({ d }: { d: D }) {
   return (
     <>
       <Reveal>
-        <Panel title={`citizen reports · ${e.reportCount}`} icon={<MessageSquare />}>
+        <Panel title={`Citizen Reports · ${e.reportCount}`} icon={<MessageSquare />}>
           <Stagger className="divide-y divide-border/60">
             {e.reports.map((r) => (
               <StaggerItem key={r.id} className="py-2.5 first:pt-0 last:pb-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="data-mono text-[0.65rem] text-water">{r.publicRef}</span>
                   <span className="micro-label !text-[0.52rem]">{r.channel.toLowerCase()}</span>
-                  {r.isDuplicate && <span className="micro-label !text-[0.52rem] text-sev-moderate">merged as duplicate</span>}
+                  {r.isDuplicate && <span className="micro-label !text-[0.52rem] text-sev-moderate" title="This report described the same incident, so it was counted inside this event instead of separately">merged as duplicate</span>}
                   <TimeAgo iso={r.submittedAt} />
                 </div>
                 <p className="mt-1 text-[0.82rem] text-slate-700 leading-relaxed">{r.description}</p>
@@ -351,9 +351,9 @@ function OverviewTab({ d }: { d: D }) {
 
       <Reveal delay={0.06}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Panel title="infrastructure context · within 600m" icon={<Network />}>
+          <Panel title="Infrastructure Context · Within 600m" icon={<Network />}>
             {nearbyAssets.length === 0 ? (
-              <EmptyState title="No assets recorded nearby" hint="Asset registry covers pilot jurisdictions only (synthetic)." />
+              <EmptyState title="No Assets Recorded Nearby" hint="The infrastructure list covers pilot areas only (synthetic)." />
             ) : (
               <ul className="space-y-2">
                 {nearbyAssets.map((a) => (
@@ -370,9 +370,9 @@ function OverviewTab({ d }: { d: D }) {
             )}
           </Panel>
 
-          <Panel title="historical incidents · within 300m" icon={<History />}>
+          <Panel title="Historical Incidents · Within 300m" icon={<History />}>
             {nearIncidents.length === 0 ? (
-              <EmptyState title="No historical incidents nearby" hint="Synthetic archive covers the pilot jurisdictions." />
+              <EmptyState title="No Historical Incidents Nearby" hint="The historical archive is synthetic and covers pilot areas only." />
             ) : (
               <ul className="space-y-2">
                 {nearIncidents.map((i) => (
@@ -390,9 +390,9 @@ function OverviewTab({ d }: { d: D }) {
 
       <Reveal delay={0.12}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Panel title="maintenance nearby" icon={<Wrench />}>
+          <Panel title="Maintenance Nearby" icon={<Wrench />}>
             {nearMaint.length === 0 ? (
-              <EmptyState title="No maintenance records for nearby assets" />
+              <EmptyState title="No Maintenance Records for Nearby Assets" />
             ) : (
               <ul className="space-y-2">
                 {nearMaint.map((m, i) => (
@@ -408,7 +408,7 @@ function OverviewTab({ d }: { d: D }) {
             )}
           </Panel>
 
-          <Panel title="rainfall · 72h (synthetic)" icon={<Umbrella />}>
+          <Panel title="Rainfall · 72h (Synthetic)" icon={<Umbrella />}>
             <ul className="space-y-1.5 text-xs">
               {context.rainfallSeries.slice(-12).map((s, i) => (
                 <li key={i} className="flex items-center gap-2">
@@ -462,9 +462,9 @@ function EvidenceTab({ d, onMutated }: { d: D; onMutated: () => void }) {
   return (
     <>
       <Reveal>
-        <Panel title={`evidence chain · ${e.evidence.length} items`} icon={<Camera />}>
+        <Panel title={`Evidence Chain · ${e.evidence.length} Items`} icon={<Camera />}>
           {e.evidence.length === 0 ? (
-            <EmptyState icon={<Camera className="size-7" />} title="No evidence yet" hint="Field teams can attach photos and notes; the pipeline attaches AI outputs automatically." />
+            <EmptyState icon={<Camera className="size-7" />} title="No Evidence Yet" hint="Field teams can attach photos and notes here. The system adds its own AI summaries automatically." />
           ) : (
             <Stagger className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {e.evidence.map((ev) => (
@@ -495,7 +495,7 @@ function EvidenceTab({ d, onMutated }: { d: D; onMutated: () => void }) {
       </Reveal>
 
       <Reveal delay={0.06}>
-        <Panel title="attach field evidence" icon={<Upload />}>
+        <Panel title="Attach Field Evidence" icon={<Upload />}>
           <div className="space-y-3 max-w-lg">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -526,7 +526,7 @@ function EvidenceTab({ d, onMutated }: { d: D; onMutated: () => void }) {
                 <Button type="button" variant="outline" size="sm" disabled={uploading || upload.isPending} onClick={() => fileRef.current?.click()} className="border-border rounded-lg">
                   <Camera className="size-3.5" /> {uploading || upload.isPending ? "Processing…" : "Select photo"}
                 </Button>
-                <p className="mt-1.5 text-[0.65rem] text-muted-foreground">Images are downscaled to ≤1024px and stored as data URLs in the demo database.</p>
+                <p className="mt-1.5 text-[0.65rem] text-muted-foreground">Photos are automatically shrunk to 1024px or smaller and saved in the demo database.</p>
               </div>
             ) : (
               <div className="space-y-1.5">
@@ -557,11 +557,11 @@ function InvestigationTab({ d }: { d: D }) {
     <>
       {cl && (
         <Reveal>
-          <Panel title="classification · structured model output" icon={<FileSearch />} actions={<ProviderChip provider={latestReport?.classificationProvider ?? "-"} model={e.modelVersion} />}>
+          <Panel title="Classification · Structured Model Output" icon={<FileSearch />} actions={<ProviderChip provider={latestReport?.classificationProvider ?? "-"} model={e.modelVersion} />}>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-              <Readout label="category" value={cl.category.toLowerCase().replace(/_/g, " ")} />
-              <Readout label="severity" value={cl.severity.toLowerCase()} tone={sevClass(cl.severity)} />
-              <Readout label="confidence" value={<CountUp value={Math.round(cl.confidence * 100)} suffix="%" />} />
+              <Readout label="Category" value={cl.category.toLowerCase().replace(/_/g, " ")} />
+              <Readout label="Severity" value={cl.severity.toLowerCase()} tone={sevClass(cl.severity)} />
+              <Readout label="Confidence" value={<CountUp value={Math.round(cl.confidence * 100)} suffix="%" />} />
             </div>
             <p className="text-sm text-slate-700 leading-relaxed border-l-2 border-water/50 pl-3">{cl.summary}</p>
             {cl.factors.length > 0 && (
@@ -579,7 +579,7 @@ function InvestigationTab({ d }: { d: D }) {
       )}
 
       <Reveal delay={0.06}>
-        <Panel title={`risk assessment · ${e.riskModelVersion ?? "risk-engine"}`} icon={<Gauge />} actions={<RiskBadge band={e.riskBand} score={e.riskScore} />}>
+        <Panel title={`Risk Assessment · ${e.riskModelVersion ?? "risk-engine"}`} icon={<Gauge />} actions={<RiskBadge band={e.riskBand} score={e.riskScore} />}>
           <div className="space-y-2.5 max-w-2xl">
             {riskFactors.map((f) => (
               <div key={f.key} className="flex items-center gap-3">
@@ -597,21 +597,21 @@ function InvestigationTab({ d }: { d: D }) {
             ))}
           </div>
           <p className="mt-3 text-[0.68rem] text-muted-foreground">
-            Score = Σ(factor value × weight) × 100. Weights: severity 0.20, rainfall 0.18, reports 0.16, recurrence 0.14, infrastructure 0.12, maintenance 0.10, history 0.10.
+            The score adds up each factor (value × weight) and scales the total to 0–100. Weights: severity 0.20, rainfall 0.18, reports 0.16, recurrence 0.14, infrastructure 0.12, maintenance 0.10, history 0.10.
           </p>
         </Panel>
       </Reveal>
 
       <Reveal delay={0.12}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          <Panel title="duplicate & recurrence analysis" icon={<GitMerge />}>
+          <Panel title="Duplicate & Recurrence Analysis" icon={<GitMerge />}>
             <ul className="space-y-2 text-xs">
               {e.reports.filter((r) => r.isDuplicate).length > 0 ? (
                 e.reports.filter((r) => r.isDuplicate).map((r) => (
                   <li key={r.id} className="flex items-center gap-2">
                     <GitMerge className="size-3.5 text-water shrink-0" aria-hidden />
                     <span className="data-mono text-water">{r.publicRef}</span>
-                    <span className="text-muted-foreground">merged within 150m / 48h window</span>
+                    <span className="text-muted-foreground">merged: same spot (within 150m) and time (48h)</span>
                   </li>
                 ))
               ) : (
@@ -629,7 +629,7 @@ function InvestigationTab({ d }: { d: D }) {
             </ul>
           </Panel>
 
-          <Panel title="risk history" icon={<History />}>
+          <Panel title="Risk History" icon={<History />}>
             <ul className="space-y-2">
               {d.riskHistory.length === 0 ? (
                 <li className="text-xs text-muted-foreground">No assessments recorded.</li>
@@ -649,7 +649,7 @@ function InvestigationTab({ d }: { d: D }) {
 
       {aiEvidence.length > 0 && (
         <Reveal delay={0.18}>
-          <Panel title="AI risk advisories · structured outputs" icon={<Sparkles />}>
+          <Panel title="AI Risk Advisories · Structured Outputs" icon={<Sparkles />}>
             <div className="space-y-3">
               {aiEvidence.map((ev) => {
                 let parsed: { narrative: string; factors?: { key: string; label: string; direction: string; weight: number }[]; recommendedInvestigation?: string } | null = null;
@@ -742,7 +742,7 @@ function ResponseTab({ d, onMutated }: { d: D; onMutated: () => void }) {
   return (
     <>
       <Reveal>
-        <Panel title="responsibility chain" icon={<Network />} actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/60">routing-rules v1.2</span>}>
+        <Panel title="Responsibility Chain" icon={<Network />} actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/60">routing-rules v1.2</span>}>
           <ol className="space-y-0">
             <ChainLevel level="EVENT" label={e.code} detail={`${e.reportCount} reports · risk ${e.riskScore} (${e.riskBand})`} />
             <ChainLevel level="JURISDICTION" label={e.jurisdiction?.name ?? "-"} detail={e.jurisdiction ? `${e.jurisdiction.kind.toLowerCase()} · administered by ${e.jurisdiction.agencyCode ?? "n/a"}` : "outside pilot"} />
@@ -768,9 +768,9 @@ function ResponseTab({ d, onMutated }: { d: D; onMutated: () => void }) {
       </Reveal>
 
       <Reveal delay={0.06}>
-        <Panel title={`action items · ${e.actions.length}`} icon={<ListChecks />}>
+        <Panel title={`Action Items · ${e.actions.length}`} icon={<ListChecks />}>
           {e.actions.length === 0 ? (
-            <EmptyState title="No action items" hint="Actions are recommended by the routing engine at triage." />
+            <EmptyState title="No Action Items" hint="Suggested actions appear here once the system sorts (triages) the incident." />
           ) : (
             <ul>
               <Stagger className="space-y-2">
@@ -816,7 +816,7 @@ function ResponseTab({ d, onMutated }: { d: D; onMutated: () => void }) {
       </Reveal>
 
       <Reveal delay={0.12}>
-        <Panel title="field verification workflow" icon={<ClipboardCheck />}>
+        <Panel title="Field Verification Workflow" icon={<ClipboardCheck />}>
           <VerificationStepper stages={e.verifications.map((v) => v.stage)} />
           <VerificationTimeline verifications={e.verifications} />
           <VerificationForms
@@ -838,7 +838,7 @@ function AssignForm({ onAssign, pending }: { onAssign: (p: { agencyCode: string;
   const agencies = ["MCD", "PWD", "NDMC", "DJB", "IFC", "DDMA", "DCP"];
   return (
     <div className="mt-4 pt-3 hairline-t">
-      <p className="micro-label mb-2">assign / escalate manually</p>
+      <p className="micro-label mb-2">Assign / Escalate Manually</p>
       <div className="flex flex-wrap gap-2 items-end">
         <div className="space-y-1">
           <Label htmlFor="asg-agency" className="text-[0.65rem]">Agency</Label>
@@ -964,7 +964,7 @@ function VerificationForms({ event, onVerify, onReopen, pending }: {
 
   return (
     <div className="mt-4 pt-3 hairline-t">
-      <p className="micro-label mb-2">record verification stage</p>
+      <p className="micro-label mb-2">Record Verification Stage</p>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         <div className="space-y-1">
           <Label className="text-[0.65rem]">Stage</Label>
@@ -978,7 +978,7 @@ function VerificationForms({ event, onVerify, onReopen, pending }: {
           </Select>
         </div>
         <div className="space-y-1">
-          <Label className="text-[0.65rem]">Observed severity</Label>
+          <Label className="text-[0.65rem]">Observed Severity</Label>
           <Select value={observedSeverity} onValueChange={setObservedSeverity}>
             <SelectTrigger className="h-8 bg-ink-900 border-border text-xs" aria-label="Observed severity"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -1005,7 +1005,7 @@ function VerificationForms({ event, onVerify, onReopen, pending }: {
       </div>
       <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="field notes (optional)" className="mt-2.5 bg-ink-900 border-border text-xs" maxLength={600} aria-label="Field notes" />
       <p className="mt-1.5 text-[0.62rem] text-muted-foreground">
-        Next expected stage: <span className="text-water">{effectiveStage.toLowerCase().replace(/_/g, " ")}</span>. Stages are validated in order.
+        Next expected stage: <span className="text-water">{effectiveStage.toLowerCase().replace(/_/g, " ")}</span>. Stages must be recorded in order.
       </p>
     </div>
   );
@@ -1016,9 +1016,9 @@ function VerificationForms({ event, onVerify, onReopen, pending }: {
 function AuditTab({ d }: { d: D }) {
   return (
     <Reveal>
-      <Panel title={`audit history · ${d.auditHistory.length} entries`} icon={<ScrollText />}>
+      <Panel title={`Audit History · ${d.auditHistory.length} Entries`} icon={<ScrollText />}>
         {d.auditHistory.length === 0 ? (
-          <EmptyState title="No audit entries" />
+          <EmptyState title="No Audit Entries" />
         ) : (
           <ol className="relative">
             <Stagger>
