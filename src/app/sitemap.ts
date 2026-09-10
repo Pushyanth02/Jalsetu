@@ -1,30 +1,33 @@
 import type { MetadataRoute } from "next";
-import { db } from "@/lib/db";
+import snapshot from "@/data/snapshot.json";
 import { SITE_URL } from "./layout";
 
-/**
- * Sitemap index. The application is a single crawlable URL ("/") because all
- * views are hash-routed inside one page; the view map is documented in
- * /llms.txt for AI crawlers. lastModified reflects the freshest urban event
- * so crawlers re-visit when the pilot data changes.
- */
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  let lastModified = new Date();
-  try {
-    const latest = await db.urbanEvent.findFirst({
-      orderBy: { updatedAt: "desc" },
-      select: { updatedAt: true },
-    });
-    if (latest?.updatedAt) lastModified = latest.updatedAt;
-  } catch {
-    // database unavailable at build/request time: fall back to "now"
-  }
+// Sitemap for the static deployment. The site is a single hash-routed page, so
+// the sitemap carries the root URL (absolute, base-path aware) with an honest
+// lastModified timestamp taken from the newest activity in the committed demo
+// snapshot (no server, no db).
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH?.replace(/\/+$/, "") ?? "";
+
+interface SnapshotEvent {
+  lastActivityAt?: string;
+}
+
+const events = ((snapshot as { tables?: { urbanEvent?: SnapshotEvent[] } }).tables ?? {})
+  .urbanEvent ?? [];
+
+const lastModified = events.reduce<Date | null>((latest, event) => {
+  const time = event.lastActivityAt ? new Date(event.lastActivityAt) : null;
+  if (!time || Number.isNaN(time.getTime())) return latest;
+  return !latest || time > latest ? time : latest;
+}, null);
+
+export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
-      url: `${SITE_URL}/`,
-      lastModified,
-      changeFrequency: "daily",
+      url: `${SITE_URL}${BASE_PATH}/`,
+      lastModified: lastModified ?? new Date(),
+      changeFrequency: "weekly",
       priority: 1,
     },
   ];

@@ -1,0 +1,68 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558 for task docs.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Dev: Start Next.js",
+      "type": "shell",
+      "command": "bun run dev",
+      "isBackground": true,
+      "problemMatcher": [],
+      "group": { "kind": "build", "isDefault": true },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "clear": true,
+        "showReuseMessage": false
+      },
+      "runOptions": { "runOn": "default" }
+    },
+    {
+      "label": "Lint",
+      "type": "shell",
+      "command": "bun run lint",
+      "problemMatcher": ["$eslint-stylish"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "clear": true,
+        "showReuseMessage": false
+      }
+    },
+    {
+      "label": "Typecheck",
+      "type": "shell",
+      "command": "bun run typecheck",
+      "problemMatcher": ["$tsc"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "clear": true,
+        "showReuseMessage": false
+      }
+    },
+    {
+      "label": "Static Export (GitHub Pages)",
+      "type": "shell",
+      "command": "bun run build:pages",
+      "problemMatcher": [],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "clear": true,
+        "showReuseMessage": false
+      }
+    }
+  ]
+}

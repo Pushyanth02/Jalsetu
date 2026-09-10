@@ -1,0 +1,115 @@
+# Static export → GitHub Pages. Enable Pages (Settings → Pages → Source:
+# GitHub Actions) once, then pushes to main deploy automatically. For a custom
+# domain add a CNAME file and set NEXT_PUBLIC_SITE_URL.
+
+name: Deploy To GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      site-url:
+        description: "Public site URL (no trailing slash). Leave empty for the default github.io URL."
+        type: string
+        default: ""
+      base-path:
+        description: "Base path under the host, e.g. /my-repo. Leave empty for root."
+        type: string
+        default: ""
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Static Site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      # Compute NEXT_PUBLIC_BASE_PATH / NEXT_PUBLIC_SITE_URL for this run.
+      # Defaults: project pages → /<repo-name>, owner root repo
+      # (<owner>.github.io) → root. Manual runs may override both via inputs.
+      - name: Configure Site URLs
+        id: site
+        run: |
+          set -euo pipefail
+
+          trim_slashes() {
+            local value="$1"
+            while [[ "$value" == /* ]]; do value="${value:1}"; done
+            while [[ "$value" == */ ]]; do value="${value%?}"; done
+            printf '%s' "$value"
+          }
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            site_url="$(trim_slashes "$INPUT_SITE_URL")"
+            base_path="$(trim_slashes "$INPUT_BASE_PATH")"
+            if [ -n "$base_path" ]; then
+              base_path="/$base_path"
+            fi
+          else
+            if [ "$REPO_NAME" = "$OWNER.github.io" ]; then
+              base_path=""
+              site_url="https://$OWNER.github.io"
+            else
+              base_path="/$REPO_NAME"
+              site_url="https://$OWNER.github.io/$REPO_NAME"
+            fi
+          fi
+
+          printf 'base-path=%s\n' "$base_path" >> "$GITHUB_OUTPUT"
+          printf 'site-url=%s\n' "$site_url" >> "$GITHUB_OUTPUT"
+          echo "Site URL : $site_url"
+          echo "Base path: '$base_path'"
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_SITE_URL: ${{ inputs.site-url }}
+          INPUT_BASE_PATH: ${{ inputs.base-path }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          OWNER: ${{ github.repository_owner }}
+
+      - name: Install Dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build Static Export
+        run: bun run build:pages
+        env:
+          STATIC_EXPORT: "true"
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.site.outputs.base-path }}
+          NEXT_PUBLIC_SITE_URL: ${{ steps.site.outputs.site-url }}
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    name: Deploy To GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

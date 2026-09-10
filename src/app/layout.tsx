@@ -6,9 +6,11 @@ import { Providers } from "@/components/app/providers";
 
 /**
  * Custom-domain-ready base URL: set NEXT_PUBLIC_SITE_URL in production and
- * every canonical, OG and sitemap URL follows automatically.
+ * every canonical, OG and sitemap URL follows automatically. NEXT_PUBLIC_BASE_PATH
+ * carries the GitHub Pages subpath (e.g. /repo-name) when deployed there.
  */
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+export const SITE_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH?.replace(/\/+$/, "") ?? "";
 
 const inter = Inter({
   variable: "--font-inter",

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "@/lib/client/api";
+import { staticApi } from "@/lib/static/router";
 import {
   LoadingRows, ErrorNote, Panel, EmptyState, TimeAgo, ProviderChip,
 } from "@/components/app/shared/domain";
@@ -124,11 +125,13 @@ interface PingState {
 }
 
 async function ping(path: string): Promise<PingState> {
+  // Static deployment: endpoints are served by the in-browser API shim
+  // (no HTTP, no server). Latency measures the in-memory handler round trip.
   const t0 = performance.now();
   try {
-    const res = await fetch(path, { cache: "no-store" });
+    const res = await staticApi(path);
     const ms = Math.round(performance.now() - t0);
-    return { path, status: res.ok ? "ok" : "err", ms, code: res.status };
+    return { path, status: res.status >= 200 && res.status < 400 ? "ok" : "err", ms, code: res.status };
   } catch {
     return { path, status: "err", ms: Math.round(performance.now() - t0), code: null };
   }
@@ -657,7 +660,7 @@ export function HealthView() {
             title={
               <span className="flex items-center gap-2">
                 API Endpoint Checks
-                <span className="micro-label !text-[0.5rem] text-slate-400">Client-Side · Same-Origin</span>
+                <span className="micro-label !text-[0.5rem] text-slate-400">In-Browser · Static API</span>
               </span>
             }
             icon={<Server />}

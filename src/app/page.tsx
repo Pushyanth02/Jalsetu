@@ -1,5 +1,5 @@
 import { AppRoot } from "@/components/app/shell/AppRoot";
-import { SITE_URL } from "./layout";
+import { SITE_URL, SITE_BASE_PATH } from "./layout";
 
 /**
  * Root route: the single user-visible page. Server-rendered JSON-LD carries
@@ -13,8 +13,8 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "WebSite",
-      "@id": `${SITE_URL}/#website`,
-      url: SITE_URL,
+      "@id": `${SITE_URL}${SITE_BASE_PATH}/#website`,
+      url: `${SITE_URL}${SITE_BASE_PATH}/`,
       name: "JalSetu - Delhi Waterlogging Intelligence",
       description:
         "Cross-agency waterlogging intelligence for Delhi: citizen reports, rainfall, GIS and infrastructure fused into explainable urban events.",
@@ -23,11 +23,11 @@ const jsonLd = {
     },
     {
       "@type": "LocalBusiness",
-      "@id": `${SITE_URL}/#project`,
+      "@id": `${SITE_URL}${SITE_BASE_PATH}/#project`,
       name: "JalSetu - Delhi Waterlogging Intelligence Lab",
       description:
         "Civic-technology research prototype for monsoon flood intelligence in Delhi. Not a deployed government system.",
-      url: SITE_URL,
+      url: `${SITE_URL}${SITE_BASE_PATH}/`,
       additionalType: "https://schema.org/ResearchProject",
       areaServed: {
         "@type": "AdministrativeArea",
@@ -53,30 +53,30 @@ const jsonLd = {
     },
     {
       "@type": "BreadcrumbList",
-      "@id": `${SITE_URL}/#breadcrumb`,
+      "@id": `${SITE_URL}${SITE_BASE_PATH}/#breadcrumb`,
       itemListElement: [
         {
           "@type": "ListItem",
           position: 1,
           name: "Home",
-          item: `${SITE_URL}/`,
+          item: `${SITE_URL}${SITE_BASE_PATH}/`,
         },
         {
           "@type": "ListItem",
           position: 2,
           name: "Waterlogging Map",
-          item: `${SITE_URL}/#/map`,
+          item: `${SITE_URL}${SITE_BASE_PATH}/#/map`,
         },
       ],
     },
     {
       "@type": "Dataset",
-      "@id": `${SITE_URL}/#hotspot-dataset`,
+      "@id": `${SITE_URL}${SITE_BASE_PATH}/#hotspot-dataset`,
       name: "Delhi Waterlogging Events And Hotspots (Synthetic Demo Data)",
       description:
         "Deterministic synthetic demonstration dataset for a bounded Delhi pilot (3 jurisdictions): citizen reports, urban events, rainfall observations, infrastructure assets and verification outcomes. All records are labelled as synthetic demo data and must not be quoted as real measurements.",
-      url: `${SITE_URL}/`,
-      creator: { "@id": `${SITE_URL}/#project` },
+      url: `${SITE_URL}${SITE_BASE_PATH}/`,
+      creator: { "@id": `${SITE_URL}${SITE_BASE_PATH}/#project` },
       spatialCoverage: {
         "@type": "Place",
         geo: {

@@ -1,0 +1,15 @@
+{
+  // NOTE: start the dev server first — via the "Dev: Start Next.js" task
+  // (Terminal → Run Task) or `bun run dev` — then press F5 to attach Chrome.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Chrome Against Dev Server",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}",
+      "userDataDir": "${workspaceDir}/.vscode/chrome-profile"
+    }
+  ]
+}

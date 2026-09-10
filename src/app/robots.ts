@@ -1,17 +1,18 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "./layout";
 
-/** Dynamic robots.txt: crawl the app shell, keep the JSON API out of indexes. */
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH?.replace(/\/+$/, "") ?? "";
+
+/** Dynamic robots.txt for the fully static site: everything is crawlable. */
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/"],
       },
     ],
-    sitemap: `${SITE_URL}/sitemap.xml`,
+    sitemap: `${SITE_URL}${BASE_PATH}/sitemap.xml`,
     host: SITE_URL,
   };
 }

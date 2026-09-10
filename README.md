@@ -1,137 +1,148 @@
-# JalSetu: Delhi Urban Event Intelligence System
+# JalSetu — Delhi Waterlogging Intelligence
 
-JalSetu is a research-grade prototype for urban event intelligence applied to Delhi
-monsoon waterlogging. It turns citizen reports into a structured chain of evidence,
-urban events, explainable risk scores, routed responsibility, field verification and
-measured analytics, and it compares this against a complaint-frequency baseline.
+A research-grade demo of a cross-agency waterlogging intelligence system: citizen
+reports → AI classification → risk-scored urban events → agency routing → field
+verification → learning, shown across 9 interactive views.
 
-It is NOT a deployed government system. All seeded data is synthetic and labelled
-SYNTHETIC_DEMO. No municipal feed is live. See "Honest limitations" below.
+[![CI](https://github.com/<owner>/<repo>/actions/workflows/ci.yml/badge.svg)](https://github.com/<owner>/<repo>/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![Static](https://img.shields.io/badge/Static-No_API_Keys-No_Backend-2ea44f)
 
-## Quickstart
+> **Live demo** — the site deploys to GitHub Pages automatically via the included
+> workflow. Once: repo **Settings → Pages → Source: GitHub Actions**. After that,
+> every push to `main` ships. See [Deploying To GitHub Pages](#deploying-to-github-pages).
 
-Prerequisites: bun (1.x). The database is a single SQLite file; no server needed.
+**Not an official government system.** All data is synthetic demonstration data,
+labelled as such everywhere in the UI. See [Data Ethics](#data-ethics).
+
+## What You Get
+
+One single-page app, 9 hash-routed views, deep-linkable (e.g. `#/events/UE-2026-0001`):
+
+| View | What it shows |
+| --- | --- |
+| **Command Center** (`#/`) | KPIs, live ops map, rainfall context, alerts, event queue |
+| **Waterlogging Map** (`#/map`) | Every event on a keyless MapLibre GL map (Esri World Dark Gray Canvas tiles + OpenStreetMap labels), severity markers, clusters, filters, hotspots, "Locate Me" |
+| **Event Dossier** (`#/events/:id`) | The full evidence chain for one event: evidence, AI investigation, risk factors, response, audit trail |
+| **Investigate** (`#/investigate`) | AI tools with full provenance: classification, duplicate clustering, risk advisory |
+| **Responsibility** (`#/responsibility`) | Cross-agency register: who owns which asset and who was routed where |
+| **Verification** (`#/verify`) | Field-verification board closing the loop from routed action to ground truth |
+| **Report Wizard** (`#/report`) | Five-step citizen report: location → issue → evidence → review → submit, with a tracking reference |
+| **Analytics** (`#/analytics`) | Does combining evidence types find flooding hotspots better than counting complaints? Counterfactual comparison, honestly reported |
+| **Data & Model Health** (`#/health`) | Dataset provenance, missingness, model runs, endpoint checks, plain-language glossary |
+
+## No API Keys, No Backend
+
+The deployed app is a **fully static export**:
+
+- All data ships as [`src/data/snapshot.json`](src/data/snapshot.json) — clearly
+  labelled **synthetic demonstration data** — generated once by the offline
+  pipeline (see below) and committed to the repo.
+- An in-browser typed data layer (`src/lib/static`) reimplements the API
+  surface, so the app code consumes the same interfaces it would in a server
+  deployment — there just is no server.
+- Mutations (filing a report, verifying an event, …) run **client-side**.
+  They are deterministic and **reset on reload** — refresh for a clean demo.
+- AI classification runs through the **deterministic mock provider** in static
+  mode. No model calls, no keys, no network. Every synthetic/AI artefact is
+  labelled in the UI: `SYNTHETIC_DEMO`, `MOCK`, "deterministic".
+- The map needs **no key**: MapLibre GL with free Esri/OSM tile services.
+
+## Data Ethics
+
+- Every record is labelled synthetic demo data. The discipline is:
+  **REAL / SYNTHETIC / MODEL OUTPUT / HYPOTHETICAL** — never mixed silently.
+- The dataset is licensed **CC-BY-4.0**; keep the attribution line if you reuse it.
+- This is a research demo, **not** a deployed government service, and no
+  municipal feed is live. Claims about system performance describe the demo only.
+- Map tiles: © OpenStreetMap contributors; © Esri (World Dark Gray Canvas).
+
+## Quick Start
+
+Prerequisites: **Node 20+** and **Bun 1.1+**.
 
 ```bash
-bun install                # dependencies
-bun run db:generate        # Prisma client (skip if already generated)
-bun run db:push            # create/refresh SQLite schema (file: db/custom.db; accepts data loss)
-bun run src/scripts/seed.ts  # deterministic Delhi pilot demo data
-bun run dev                # dev server on port 3000
+bun install
+bun run dev        # http://localhost:3000
 ```
 
-Open http://localhost:3000 (or the sandbox preview panel). The app is a single
-route with hash-based views, so deep links like `#/events/UE-2026-0001` work.
+No database, no env vars, no keys needed to run the demo — the snapshot ships
+with the repo. Optional local config: copy `.env.example` → `.env`.
 
-Seeding is safe to re-run: `bun run src/scripts/seed.ts` wipes and regenerates
-the demo dataset (structure is deterministic via a fixed PRNG; timestamps are
-anchored to execution time so freshness metrics stay live). A fresh seed
-produces roughly 53 reports, 21 urban events, 132 rainfall observations,
-58 historical incidents, 20 assets and 6 ground-truth hotspots.
+## Scripts
 
-Note on the clock: the sandbox clock reads 2026. Event codes use the runtime
-year (UE-2026-NNNN here), and seed timestamps anchor to seed-execution time.
+| Script | What it does |
+| --- | --- |
+| `bun run dev` | Dev server on port 3000 |
+| `bun run lint` | ESLint across the repo |
+| `bun run typecheck` | `tsc --noEmit` |
+| `bun run build` | Standard Next.js production build |
+| `bun run build:pages` | Static export with `STATIC_EXPORT=true` → `out/` (GitHub Pages artifact) |
+| `bun run seed` | Regenerate `src/data/snapshot.json` deterministically (no database, no network) |
 
-## Demo journey (the acceptance path)
+## Regenerating The Demo Dataset
 
-The chain: REPORT -> EVIDENCE -> URBAN EVENT -> RISK -> ASSET -> RESPONSIBILITY
--> ACTION -> VERIFICATION -> LEARNING. Walk it in this order:
+The generator runs the full in-memory pipeline (deterministic PRNG +
+rule-based classification) and writes the snapshot directly — there is no
+database anywhere in the pipeline:
 
-1. Command Center (default view `#/`): counts, operational alerts, rainfall
-   context, response-by-agency, event queue.
-2. File a report: left nav rail -> Report. Five-step wizard: Location (click
-   the map, type coordinates, pick a jurisdiction or "Use my location") ->
-   Issue (category, severity, description) -> Evidence (optional photo,
-   optional phone, required consent) -> Review -> Submit.
-3. Result panel: you get a public tracking ref (CR-XXXXX), the pipeline outcome
-   (EVENT_CREATED, ATTACHED_DUPLICATE or REOPENED_RECURRENCE), the AI
-   classification with provider provenance, the risk band and the routed
-   agencies. Click "Open event dossier".
-4. Event dossier: tabs Overview / Evidence / AI Investigation /
-   Response & Verification / Audit. This is the full evidence chain for one
-   event, including factor-by-factor risk breakdown.
-5. Duplicate detection: submit a second report within ~150m of an open event
-   (within 48h). The pipeline attaches it as a duplicate and strengthens the
-   event instead of creating a new one. The seeded dataset already contains a
-   recurrence that reopened a closed event (Baba Kharak Singh Marg).
-6. AI Investigation (`#/investigate`): three tools with full provenance:
-   classification (queue or ad-hoc text), duplicate clustering (radius
-   100-300m), risk assessment with structured AI advisory.
-7. Responsibility (`#/responsibility`): cross-agency register, agency
-   workload, chain inspector (event -> asset -> agency -> action) and the
-   escalation matrix.
-8. Field Verification (`#/verify`): workflow board. Open an event and record
-   stages in order (ASSIGNED, DISPATCHED, OBSERVED, ...). Out-of-order stages
-   are rejected server-side with 409 STAGE_OUT_OF_ORDER. Closed events can be
-   reopened with a reason.
-9. Analytics (`#/analytics`): baseline (complaint frequency) vs proposed
-   (multi-source evidence) evaluation on the seeded ground truth, with a
-   research-integrity banner marking results as synthetic.
-10. Data & Model Health (`#/health`): source freshness, model run log
-    (including honest failures) and live endpoint checks.
-
-## Environment variables
-
-| Variable | Values | Meaning |
-|---|---|---|
-| DATABASE_URL | SQLite file URL | e.g. `file:/home/z/my-project/db/custom.db` |
-| AI_PROVIDER | `auto` (default), `glm`, `mock` | Provider selection. `auto` probes GLM once (5 min cache) and falls back to the deterministic mock if unavailable. |
-| AI_MODEL | model id (optional) | Overrides the GLM model id. Detected default: `glm-4-plus`. |
-
-AI credentials never reach the browser. The GLM provider calls the
-z-ai-web-dev-sdk server-side only (its own config file); no key is committed
-or shipped to the client.
-
-## Testing
-
-- `bun test tests/` runs the test suite: `tests/engine.test.ts` (unit tests for the deterministic core: RNG, geo math, risk model bounds and factor explainability, mock-provider classification, proximity clustering, ARI/AUC metrics, routing rules) and `tests/api.test.ts` (integration tests over the live HTTP surface: health, registries, event dossier, report ingestion pipeline, AI endpoints, authorization boundaries, workflow stage validation, analytics). Requires the dev server running on port 3000 and a seeded database.
-  API integration tests, once added, need the dev server running on port 3000.
-- Honest status: an automated test suite (engine unit + API integration) is
-  been manual and scriptable: curl API sweeps, browser QA of all nine views,
-  ESLint (0 errors in src) and tsc (0 errors in project code). See QA.md.
-
-## Project structure
-
-```
-prisma/schema.prisma          17 models (SQLite; JSON-in-string columns)
-src/app/page.tsx              single route; mounts AppRoot
-src/app/api/                  31 endpoints in 28 route files
-src/components/app/shell/     AppRoot, TopBar, NavRail (hash navigation)
-src/components/app/map/       MapCanvas (MapLibre + supercluster), legend
-src/components/app/views/     9 views: command, map, event, investigate,
-                              responsibility, verification, report,
-                              analytics, health
-src/lib/engine/               pipeline, risk, responsibility, analytics,
-                              duplicate, enrich (Urban Event Engine)
-src/lib/ai/                   provider interface + health, glm-provider,
-                              mock-provider, factory (index.ts)
-src/lib/seed/                 delhi.ts (pilot definitions), generate.ts
-                              (deterministic seed), photo.ts (SVG evidence)
-src/lib/client/               api.ts (fetch + demo-role header), store.ts
-                              (Zustand + hash router)
-src/lib/                      api-helpers, validation (zod), db, geo, rng,
-                              json (audit/model-run), types
-src/scripts/seed.ts           seed runner
+```bash
+bun run seed                 # overwrites src/data/snapshot.json (also --out <path> to preview)
 ```
 
-## Honest limitations
+Then commit the changed `src/data/snapshot.json` — that file **is** the app's
+data at runtime, so the commit is the release.
 
-- Synthetic data: every seeded row is labelled SYNTHETIC_DEMO. Evaluation
-  metrics (P/R/F1, AUC, ARI, routing accuracy) are computed on labelled
-  synthetic ground truth; they demonstrate methodology, not real-world
-  performance.
-- Bounded pilot: 3 jurisdictions, 6 ground-truth hotspots, 7 agencies,
-  20 assets. Coordinates approximate real places; nothing claims live
-  municipal data.
-- No live feeds: weather observations are synthetic rain gauges; there is no
-  municipal 311/IMS, IMD or sensor integration.
-- No real authentication: roles are demo roles passed via the documented
-  `x-demo-role` request header. This is transparent and testable, not
-  production auth.
-- In-memory rate limits: per-process only; they reset on restart and are not
-  shared across instances.
-- SQLite at demo scale: enrichment does in-memory filtering of small tables;
-  fine here, not a city-scale data strategy.
-- Phone "hashing" is a deterministic demo-grade digest, not cryptography.
-- AI calls fall back honestly to deterministic rules when GLM fails; the
-  fallback is recorded in ModelRun, never hidden.
+## Deploying To GitHub Pages
+
+1. Push to `main`. The [Deploy workflow](.github/workflows/deploy.yml) builds
+   the static export and publishes it.
+2. Enable Pages once: **Settings → Pages → Source: GitHub Actions**.
+3. The workflow computes `NEXT_PUBLIC_BASE_PATH` automatically
+   (`/<repo-name>`, or empty for an `<owner>.github.io` root repo), so project
+   pages work out of the box.
+4. **Custom domain**: add a `CNAME` file, set `NEXT_PUBLIC_SITE_URL` to your
+   domain (repo → workflow inputs on manual runs, or hardcode), and leave the
+   base path empty.
+5. Every PR additionally runs CI: lint + typecheck + a full export smoke build
+   (`.github/workflows/ci.yml`) — if it builds there, it deploys.
+
+## Editing In VS Code
+
+Open the folder and you are set:
+
+- Accept the workspace TypeScript SDK prompt (uses the repo's `typescript`).
+- Recommended extensions are auto-suggested (ESLint, Tailwind IntelliSense,
+  pretty TS errors, Error Lens, EditorConfig, GitHub Actions).
+- **F5** launches Chrome against the dev server (start it via the
+  `Dev: Start Next.js` task or `bun run dev` first).
+- Tasks: `Dev: Start Next.js`, `Lint`, `Typecheck`, `Static Export (GitHub Pages)`
+  (Terminal → Run Task).
+
+## Project Structure
+
+```text
+src/app/            # Single route + SEO metadata routes (robots, sitemap, icons)
+src/components/app/ # Shell (nav, top bar), the 9 views, keyless map components
+src/components/ui/  # shadcn/ui primitives
+src/lib/static/     # In-browser data layer: snapshot store + engine + API shim + seed
+src/lib/            # Pure utilities: geo, rng, validation, types
+src/data/           # snapshot.json — the committed synthetic demo dataset
+src/scripts/        # Offline pipeline: deterministic seed, icon tools
+.github/            # CI + Pages deploy workflows, issue/PR templates, Dependabot
+.vscode/            # Workspace settings, launch config, tasks
+```
+
+## Accessibility & Performance
+
+- WCAG-minded: visible focus states, ARIA on interactive widgets,
+  `prefers-reduced-motion` respected by all animation, AA-contrast palettes.
+- All 9 views are route-level lazy-loaded; no source maps ship in production
+  builds; images are optimized (AVIF/WebP) with explicit dimensions.
+- One page, zero runtime backend — it loads like a static site because it is one.
+
+## License
+
+- Code: **MIT** (see [LICENSE](LICENSE)).
+- Demo dataset (`src/data/snapshot.json`): **CC-BY-4.0** — keep the attribution
+  line (© OpenStreetMap contributors / © Esri for map tiles) if you reuse it.

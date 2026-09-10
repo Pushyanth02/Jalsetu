@@ -5,7 +5,9 @@
 > hotspot and event data is deterministic SYNTHETIC DEMO DATA and is labelled
 > as such everywhere in the interface. It is not a deployed government system.
 
-- Site: http://localhost:3000/ (set NEXT_PUBLIC_SITE_URL for production)
+- Site: http://localhost:3000/ (set NEXT_PUBLIC_SITE_URL per deployment)
+- Hosting: fully static (GitHub Pages compatible). No server, no database,
+  no API keys, no tracking.
 - Language: English (India)
 - Maintainer: JalSetu Research Prototype Team
 - License for datasets: CC-BY-4.0 (synthetic, attribution required)
@@ -14,8 +16,9 @@
 ## What This System Does
 
 1. Citizens report waterlogging (location, depth, description, optional photo).
-2. AI classifies each report (category, severity, confidence) using GLM or a
-   deterministic fallback - the active provider is always shown honestly.
+2. AI classifies each report (category, severity, confidence). The deployed
+   app runs a deterministic rule-based provider (labelled "MOCK") - same input,
+   same output, no network. The active provider is always shown honestly.
 3. Near-duplicate reports are merged into "urban events" by time-space clustering.
 4. Events are enriched with rainfall, drains, pumps, jurisdiction and history.
 5. A transparent rule-based risk model scores each event 0-100 (LOW to CRITICAL).
@@ -23,6 +26,20 @@
 7. Field teams verify and close events; closures can be reopened on recurrence.
 8. Baseline (complaint frequency only) vs proposed (multi-source evidence) is
    evaluated with honest metrics (F1, AUC, ARI) in Research & Analytics.
+
+## Architecture (static, keyless)
+
+- The whole app is one page with hash deep-links (no server round trips).
+- Data ships inside the page bundle as `src/data/snapshot.json` (a committed,
+  clearly labelled synthetic demo dataset) and is queried in the browser
+  through a typed in-memory data layer.
+- The former REST API surface (envelope: { ok, data | error }) is reimplemented
+  in the browser, so every view works identically offline. Mutations run
+  client-side and reset on reload - this is documented in the UI.
+- AI classification is deterministic (rule-based mock provider); no LLM calls,
+  no API keys, nothing to configure.
+- The interactive map is MapLibre GL with keyless tiles (Esri World Dark Gray
+  Canvas + OpenStreetMap labels).
 
 ## Views (hash deep-links on the single page)
 
@@ -36,24 +53,13 @@
 - /#/analytics - Research & Analytics: baseline vs proposed, methodology, traceability
 - /#/health - Data & Model Health: source freshness, model runs, endpoint checks, glossary
 
-## JSON API (envelope: { ok, data | error }, demo roles via x-demo-role header)
-
-- GET /api/overview - command center aggregate
-- GET /api/events?status=&riskBand=&category=&hours=&jurisdictionId=&limit=
-- GET /api/events/{id} - full dossier; POST /api/events/{id}/merge|assign|verify|reassess|actions
-- GET /api/reports; POST /api/reports (role CITIZEN) - ingestion pipeline
-- GET /api/hotspots - computed + ground-truth hotspots
-- GET /api/jurisdictions | /api/assets | /api/weather?hours=72
-- GET /api/risk, POST /api/ai/classify | /api/ai/cluster | /api/ai/risk
-- GET /api/analytics/baseline | /api/analytics/proposed - evaluation metrics
-- GET /api/model-health | /api/data-health | /api/health - provider + source health
-- GET /api/agencies | /api/history | /api/admin/seed (role ADMIN)
-
 ## Data Provenance (integrity rules)
 
 - CitizenReports, WeatherObservations, InfrastructureAssets, HistoricalIncidents
-  and their derived UrbanEvents are SYNTHETIC DEMO DATA (seeded deterministically).
-- Live submissions through the Report view are labelled "Live Submission" separately.
+  and their derived UrbanEvents are SYNTHETIC DEMO DATA (seeded deterministically;
+  regenerate offline with `bun run seed`).
+- Reports submitted through the Report view during a browsing session are kept
+  in memory only and labelled "Live Submission" - a reload resets the demo data.
 - AI outputs (classification, risk narrative) are MODEL OUTPUT with provider,
   model version and confidence always displayed.
 - Performance metrics are computed on the synthetic pilot dataset and labelled
@@ -71,6 +77,5 @@
 
 - Pilot covers 3 Delhi jurisdictions; results do not generalize city-wide.
 - No real user accounts; demo roles (CITIZEN, FIELD_TEAM, AGENCY, ADMIN) are
-  switched via header for evaluation.
-- Google Maps basemap activates only when NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is
-  set; otherwise a keyless open basemap is used and labelled as a fallback.
+  switched in-app for evaluation.
+- The dataset snapshot freezes at build time; it is a demo, not live data.

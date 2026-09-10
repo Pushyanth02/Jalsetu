@@ -1,0 +1,8 @@
+# Dependabot keeps GitHub Actions versions fresh (checkout, pages, setup-bun).
+# npm/bun dependency updates are intentionally manual in this project.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

@@ -340,37 +340,11 @@
   100% { transform: scale(1.25); opacity: 0; }
 }
 
-/* --- Google Maps InfoWindow: match JalSetu white-card popups ------------------ */
-.gm-style .gm-style-iw {
-  background: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 10px !important;
-  box-shadow: 0 10px 32px rgba(15, 23, 42, 0.22) !important;
-  padding: 0 !important;
-  max-width: 300px !important;
-  overflow: hidden;
-}
-.gm-style .gm-style-iw-c {
-  border-radius: 10px !important;
-  padding: 0 !important;
-}
-.gm-style .gm-style-iw-d {
-  overflow: hidden !important;
-}
-.gm-style .gm-style-iw-t::after {
-  background: #ffffff;
-}
-.gm-style .gm-ui-hover-effect {
-  top: 6px !important;
-  right: 8px !important;
-  opacity: 0.5;
-}
-.gm-style .gm-style-iw button[data-open-event],
+/* --- maplibre popup action buttons (keyless engine) --------------------------- */
 .maplibregl-popup button[data-open-event] {
   cursor: pointer;
   transition: filter 150ms ease;
 }
-.gm-style .gm-style-iw button[data-open-event]:hover,
 .maplibregl-popup button[data-open-event]:hover {
   filter: brightness(1.08);
 }

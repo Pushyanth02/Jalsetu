@@ -1,0 +1,12 @@
+{
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": { "source.fixAll.eslint": "explicit" },
+  "eslint.validate": ["javascript", "typescript", "javascriptreact", "typescriptreact"],
+  "eslint.useFlatConfig": true,
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "tailwindCSS.includeLanguages": { "typescriptreact": "javascript" },
+  "files.associations": { "*.css": "tailwindcss" },
+  "search.exclude": { "**/node_modules": true, "**/.next": true, "**/out": true, "**/bun.lock": true },
+  "files.watcherExclude": { "**/.next/**": true, "**/node_modules/**": true }
+}

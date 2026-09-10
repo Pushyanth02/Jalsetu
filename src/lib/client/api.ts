@@ -1,5 +1,10 @@
-// Typed API client for the frontend. All requests are relative-path,
-// envelope-aware, and expose honest error information.
+// Typed API client for the frontend. In the static (GitHub Pages) deployment
+// there is no server: every request is served by the in-browser API shim
+// (src/lib/static/router.ts) against the committed demo snapshot. The public
+// surface (apiGet/apiPost/apiPut, ApiClientError, shared view types) is
+// unchanged, so views need zero modifications.
+
+import { staticApi } from "@/lib/static/router";
 
 export class ApiClientError extends Error {
   constructor(
@@ -12,27 +17,28 @@ export class ApiClientError extends Error {
   }
 }
 
-type Envelope<T> = { ok: true; data: T; meta?: Record<string, unknown> } | { ok: false; error: { code: string; message: string; details?: unknown } };
-
-export async function api<T>(path: string, init?: RequestInit & { role?: string }): Promise<{ data: T; meta?: Record<string, unknown> }> {
-  const { role, ...rest } = init ?? {};
-  const headers: Record<string, string> = {
-    ...(rest.headers as Record<string, string> | undefined),
-  };
-  if (role) headers["x-demo-role"] = role;
-  if (rest.body && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
-
-  const res = await fetch(path, { ...rest, headers });
-  let json: Envelope<T>;
-  try {
-    json = (await res.json()) as Envelope<T>;
-  } catch {
-    throw new ApiClientError(res.status, "BAD_RESPONSE", `Non-JSON response (${res.status})`);
+export async function api<T>(
+  path: string,
+  init?: RequestInit & { role?: string }
+): Promise<{ data: T; meta?: Record<string, unknown> }> {
+  const { role, method, body } = init ?? {};
+  let parsedBody: unknown;
+  if (typeof body === "string") {
+    try {
+      parsedBody = JSON.parse(body);
+    } catch {
+      parsedBody = body;
+    }
+  } else if (body && typeof body === "object") {
+    parsedBody = body;
   }
-  if (!json.ok) {
-    throw new ApiClientError(res.status, json.error.code, json.error.message, json.error.details);
+  const methodUpper = (method ?? "GET").toUpperCase();
+  const res = await staticApi(path, { method: methodUpper, body: parsedBody, role });
+  const envelope = res.envelope;
+  if (!envelope.ok) {
+    throw new ApiClientError(res.status, envelope.error.code, envelope.error.message, envelope.error.details);
   }
-  return { data: json.data, meta: json.meta };
+  return { data: envelope.data as T, meta: envelope.meta };
 }
 
 export const apiGet = <T>(path: string) => api<T>(path, { method: "GET" });

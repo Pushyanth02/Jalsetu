@@ -1,0 +1,45 @@
+# CI — lint + typecheck + a full static-export smoke build on every PR / push
+# to main. The export build proves GitHub Pages readiness (no API routes, no
+# server-only code) before anything ships.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  verify:
+    name: Lint, Typecheck & Static Export
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install Dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      # Full static export with STATIC_EXPORT=true. The throwaway site URL
+      # only feeds canonical/OG metadata; what matters is that `out/` builds.
+      - name: Static Export Smoke Build
+        run: bun run build:pages
+        env:
+          STATIC_EXPORT: "true"
+          NEXT_PUBLIC_SITE_URL: "https://ci-smoke.invalid"
+          NEXT_PUBLIC_BASE_PATH: ""
