@@ -94,7 +94,7 @@ jobs:
           NEXT_PUBLIC_SITE_URL: ${{ steps.site.outputs.site-url }}
 
       - name: Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: out
 
