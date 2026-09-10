@@ -1,7 +1,6 @@
 "use client";
 
 import { useUi, navigate } from "@/lib/client/store";
-import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import { apiGet, type OverviewResponse, type WeatherResponse, type EventSummary } from "@/lib/client/api";
 import { useMapData, MapWithOverlays } from "@/components/app/map/MapView";
@@ -406,15 +405,21 @@ function RecentReportsPanel() {
                       className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-ink-850/70 transition-colors group"
                       aria-label={`Report ${r.publicRef}`}
                     >
-                      { }
-                      <Image
-                        src={r.category === "UNDERPASS" ? "/img/ito-underpass.png" : "/img/street-flood.png"}
-                        alt={`${r.publicRef} report thumbnail: ${r.category === "UNDERPASS" ? "flooded underpass" : "waterlogged street"} (illustrative)`}
-                        width={56}
-                        height={44}
-                        className="h-11 w-14 rounded-lg object-cover shrink-0 ring-1 ring-border"
-                        loading="lazy"
-                      />
+                      <picture>
+                        <source
+                          srcSet={r.category === "UNDERPASS" ? "/img/ito-underpass.webp" : "/img/street-flood.webp"}
+                          type="image/webp"
+                        />
+                        <img
+                          src={r.category === "UNDERPASS" ? "/img/ito-underpass.png" : "/img/street-flood.png"}
+                          alt={`${r.publicRef} report thumbnail: ${r.category === "UNDERPASS" ? "flooded underpass" : "waterlogged street"} (illustrative)`}
+                          width={56}
+                          height={44}
+                          className="h-11 w-14 rounded-lg object-cover shrink-0 ring-1 ring-border"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </picture>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2">
                           <span className="data-mono text-[0.68rem] font-semibold text-water">{r.publicRef}</span>
