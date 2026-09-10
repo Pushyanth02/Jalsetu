@@ -4,7 +4,7 @@ A research-grade demo of a cross-agency waterlogging intelligence system: citize
 reports → AI classification → risk-scored urban events → agency routing → field
 verification → learning, shown across 9 interactive views.
 
-[![CI](https://github.com/<owner>/<repo>/actions/workflows/ci.yml/badge.svg)](https://github.com/<owner>/<repo>/actions/workflows/ci.yml)
+[![CI](https://github.com/Pushyanth02/Jalsetu/actions/workflows/ci.yml/badge.svg)](https://github.com/Pushyanth02/Jalsetu/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 ![Static](https://img.shields.io/badge/Static-No_API_Keys-No_Backend-2ea44f)
 

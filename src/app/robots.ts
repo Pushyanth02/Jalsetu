@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "./layout";
 
+export const dynamic = "force-static";
+
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH?.replace(/\/+$/, "") ?? "";
 
 /** Dynamic robots.txt for the fully static site: everything is crawlable. */
