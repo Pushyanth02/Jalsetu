@@ -3,11 +3,19 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Extra breakpoints (Tailwind v4 reads @theme, not tailwind.config.ts):
+   xs — narrow phones where 380px+ affords one more inline item;
+   3xl — ultrawide monitors for max content comfort. */
+@theme {
+  --breakpoint-xs: 380px;
+  --breakpoint-3xl: 1600px;
+}
+
 /* ============================================================
    JALSETU — design tokens (light command-center theme)
-   Replicates the reference design: dark charcoal sidebar,
-   light content surface (#f6f8fb), white cards, blue accent,
-   soft shadows, 12px card radius. Map stays dark (ops canvas).
+   Dark charcoal sidebar, light content (#f6f8fb), white cards,
+   blue accent, soft shadows, 12px radius. Map stays dark.
+   Responsive tokens scale typography + spacing on small screens.
    ============================================================ */
 
 @theme inline {
@@ -49,7 +57,6 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  /* domain colors: severity ramp + status + water accent (light-surface variants) */
   --color-sev-low: var(--sev-low);
   --color-sev-moderate: var(--sev-moderate);
   --color-sev-high: var(--sev-high);
@@ -63,7 +70,6 @@
   --color-hairline: var(--hairline);
   --color-verified: var(--verified);
 
-  /* dark sidebar surfaces (charcoal navy, always dark regardless of theme) */
   --color-sb-900: var(--sb-900);
   --color-sb-850: var(--sb-850);
   --color-sb-800: var(--sb-800);
@@ -71,34 +77,24 @@
 }
 
 :root {
-  --radius: 0.75rem; /* 12px cards per reference design */
-
-  /* page + surfaces: light, cool, calm */
-  --ink-950: #f6f8fb;   /* app background */
-  --ink-900: #ffffff;   /* card / panel surface */
-  --ink-850: #f1f5f9;   /* hover / subtle fill */
-  --ink-800: #e2e8f0;   /* track / divider fill */
-
+  --radius: 0.75rem;
+  --ink-950: #f6f8fb;
+  --ink-900: #ffffff;
+  --ink-850: #f1f5f9;
+  --ink-800: #e2e8f0;
   --hairline: #e2e8f0;
-
-  /* water accent: command blue (single accent, locked) */
-  --water: #2563eb;     /* blue-600: text + fills */
-  --water-dim: #3b82f6; /* blue-500: icons, bars */
-
-  /* severity ramp: readable on light surfaces */
-  --sev-low: #64748b;       /* slate-500 */
-  --sev-moderate: #d97706;  /* amber-600 */
-  --sev-high: #ea580c;      /* orange-600 */
-  --sev-critical: #dc2626;  /* red-600 */
-  --verified: #059669;      /* emerald-600 */
-
-  /* dark sidebar: charcoal navy per reference */
+  --water: #2563eb;
+  --water-dim: #3b82f6;
+  --sev-low: #64748b;
+  --sev-moderate: #d97706;
+  --sev-high: #ea580c;
+  --sev-critical: #dc2626;
+  --verified: #059669;
   --sb-900: #111527;
   --sb-850: #181e33;
   --sb-800: #212942;
   --sb-750: #2b3450;
 
-  /* shadcn semantic mapping (light) */
   --background: var(--ink-950);
   --foreground: #0f172a;
   --card: #ffffff;
@@ -130,6 +126,11 @@
   --sidebar-accent-foreground: #f8fafc;
   --sidebar-border: #232b47;
   --sidebar-ring: var(--water);
+
+  /* Fluid type scale — prevents mobile overflow */
+  --text-fluid-xs: clamp(0.62rem, 0.58rem + 0.2vw, 0.7rem);
+  --text-fluid-sm: clamp(0.78rem, 0.74rem + 0.2vw, 0.84rem);
+  --content-max: 1440px;
 }
 
 @layer base {
@@ -138,16 +139,29 @@
   }
   html {
     color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    scrollbar-gutter: stable;
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "tnum" 1; /* tabular numerals for ops data */
+    font-feature-settings: "tnum" 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   ::selection {
     background: rgba(37, 99, 235, 0.18);
   }
   :focus-visible {
-    @apply outline-2 outline-offset-1 outline-ring;
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+  /* Prevent iOS zoom on form focus — keep 16px minimum */
+  @media (max-width: 640px) {
+    input, select, textarea {
+      font-size: 16px;
+    }
   }
 }
 
@@ -165,7 +179,6 @@
     font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
     letter-spacing: -0.02em;
   }
-  /* micro label: mono, uppercase, tracked - the instrument voice */
   .micro-label {
     font-family: var(--font-plex-mono), monospace;
     font-size: 0.625rem;
@@ -201,11 +214,41 @@
   .card-hover:hover {
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.05);
   }
-  /* OriginKit-style shimmer skeleton */
+  @media (hover: none) {
+    .card-hover:hover {
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.04);
+    }
+  }
   .shimmer {
     background: linear-gradient(100deg, #eef2f7 40%, #f8fafc 50%, #eef2f7 60%);
     background-size: 200% 100%;
     animation: shimmer-slide 1.4s infinite linear;
+  }
+  /* Fluid container — centers content on ultrawide */
+  .content-wrap {
+    width: 100%;
+    max-width: var(--content-max);
+    margin-inline: auto;
+  }
+  /* Safe-area aware bottom padding (iPhone home indicator) */
+  .safe-pb {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+  /* Prevent long codes / URLs from breaking layout */
+  .break-safe {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  /* Skip render work for far-offscreen content (long lists, below-fold cards).
+     Pair with a min-height/contain-intrinsic size where the box size is known. */
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 320px;
+  }
+  /* Touch target helper — 44px minimum */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
   }
 }
 
@@ -231,9 +274,7 @@
   background: #94a3b8;
 }
 
-/* --- map marker + popup primitives (HTML markers over MapLibre) -------------
-   Popups render as light cards over the dark ops basemap, matching the
-   reference design (white tooltip with dark text on dark map). */
+/* --- map marker + popup primitives ----------------------------------------- */
 
 .maplibregl-popup-content {
   background: #ffffff !important;
@@ -316,7 +357,6 @@
   pointer-events: auto;
 }
 
-/* --- live location dot (Locate Me) ------------------------------------------- */
 .user-dot {
   width: 18px;
   height: 18px;
@@ -340,7 +380,6 @@
   100% { transform: scale(1.25); opacity: 0; }
 }
 
-/* --- maplibre popup action buttons (keyless engine) --------------------------- */
 .maplibregl-popup button[data-open-event] {
   cursor: pointer;
   transition: filter 150ms ease;
@@ -348,8 +387,6 @@
 .maplibregl-popup button[data-open-event]:hover {
   filter: brightness(1.08);
 }
-
-/* maplibre popup close button: visible on white card */
 .maplibregl-popup-close-button {
   font-size: 16px;
   color: #64748b;
@@ -360,14 +397,19 @@
   color: #0f172a;
 }
 
-/* --- motion discipline ------------------------------------------------------ */
+/* --- focus & a11y ---------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
+}
+
+/* Ensure dialog/drawer overlays don't get clipped on small viewports */
+[data-radix-popper-content-wrapper] {
+  max-width: min(92vw, 420px);
 }

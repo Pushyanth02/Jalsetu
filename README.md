@@ -67,7 +67,7 @@ bun run dev        # http://localhost:3000
 ```
 
 No database, no env vars, no keys needed to run the demo — the snapshot ships
-with the repo. Optional local config: copy `.env.example` → `.env`.
+with the repo.
 
 ## Scripts
 
@@ -133,6 +133,22 @@ src/scripts/        # Offline pipeline: deterministic seed, icon tools
 .vscode/            # Workspace settings, launch config, tasks
 ```
 
+## Responsive Behavior
+
+The interface adapts at four tiers — no separate mobile app, one code path:
+
+| Tier | Breakpoint | What changes |
+| --- | --- | --- |
+| Phone | `< 640px` | Bottom tab bar with a center **Report** action, drawer navigation, expandable search, filters in a drag-handle bottom sheet, map legend starts collapsed, 44px touch targets everywhere |
+| Tablet | `640–1023px` | Desktop search visible, header condenses (location/time chips hidden), map filter rail stays a bottom sheet |
+| Desktop | `≥ 1024px` | Full sidebar rail, filter rail beside the map, all header chips, keyboard shortcuts (`/` focuses search) |
+| Ultrawide | `≥ 1600px` (`3xl`) | Content capped at 1440px and centered; extra header detail appears (`2xl` tiers) |
+
+Safe-area insets are respected on notched phones (bottom bar + footer), and
+`100dvh` keeps the app shell correct when mobile browsers collapse their URL
+bar. Test with devtools device emulation at **320 px, 390 px, 768 px,
+1280 px and 1920 px** before shipping UI changes.
+
 ## Accessibility & Performance
 
 - WCAG-minded: visible focus states, ARIA on interactive widgets,
@@ -140,6 +156,25 @@ src/scripts/        # Offline pipeline: deterministic seed, icon tools
 - All 9 views are route-level lazy-loaded; no source maps ship in production
   builds; images are optimized (AVIF/WebP) with explicit dimensions.
 - One page, zero runtime backend — it loads like a static site because it is one.
+
+### How the fast loads are achieved
+
+- **Images**: raster art ships as WebP with a PNG fallback (`<picture>`); the
+  OG image is a 1200×630 optimized JPEG (~150 KB, down from 370 KB). Every
+  image declares explicit dimensions, `sizes`, lazy loading below the fold,
+  and `decoding="async"` — so the layout never shifts while media streams in.
+- **Tailwind v4 breakpoints**: `xs` (380 px) and `3xl` (1600 px) are defined
+  via `@theme` in `src/app/globals.css` (Tailwind v4 ignores
+  `tailwind.config.ts`); use them freely for one-extra-item phone layouts and
+  ultrawide comfort.
+- **Rendering budget**: all views are code-split and render only their own
+  data subscriptions; search, filters and menus adjust state during render
+  instead of cascading effects; below-fold panels stay cheap via
+  `content-visibility` where applied.
+- **Map**: MapLibre loads only the tiles in view; markers cluster
+  (supercluster) and off-screen markers are skipped entirely.
+- **Type scale**: fluid `clamp()` tokens prevent text overflow on small
+  screens without media-query soup; touch targets stay ≥44 px on mobile.
 
 ## License
 

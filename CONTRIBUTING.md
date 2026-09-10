@@ -21,9 +21,13 @@ demo data ships in the repo (`src/data/snapshot.json`).
   (CI runs both plus a full static-export smoke build on every PR).
 - **Honest-data rules (non-negotiable)**: never present synthetic data as real.
   Keep the `SYNTHETIC_DEMO` / `MOCK` / "deterministic" labels and provenance
-  badges intact. New data must be regenerated through
-  `bun run db:push && bun run seed && bun run snapshot` and committed via
-  `src/data/snapshot.json`.
+  badges intact. New data must be regenerated with `bun run seed` and committed
+  via `src/data/snapshot.json`.
+- **Performance**: images ship as WebP with a PNG fallback (or optimized
+  JPEG for the OG image); every `<img>` needs explicit dimensions, lazy
+  loading below the fold, and `sizes` when responsive. New views must lazy-load
+  and respect `prefers-reduced-motion`. Check that the layout survives 320 px
+  to 2560 px before opening the PR.
 - **No backend, no keys**: everything runs in the browser. If your change needs
   an API key, a server or a database at runtime, open an issue first — it
   probably belongs in the offline pipeline instead.

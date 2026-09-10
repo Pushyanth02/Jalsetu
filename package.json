@@ -4,7 +4,7 @@
   "private": true,
   "description": "JalSetu - Delhi Waterlogging Intelligence. Static, API-key-less research prototype: citizen reports to risk-scored cross-agency urban events.",
   "scripts": {
-    "dev": "next dev -p 3000",
+    "dev": "next dev",
     "build": "next build",
     "build:pages": "STATIC_EXPORT=true next build",
     "lint": "eslint .",

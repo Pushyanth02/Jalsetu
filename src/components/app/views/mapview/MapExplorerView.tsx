@@ -166,7 +166,7 @@ export function MapExplorerView() {
             )}
           </Reveal>
 
-          <div className="h-64 lg:h-56 shrink-0 hairline-t bg-white overflow-y-auto">
+          <div className="h-64 lg:h-56 shrink-0 hairline-t bg-white overflow-y-auto cv-auto">
             {eventsQ.isLoading ? (
               <LoadingRows rows={4} className="p-3.5" />
             ) : eventsQ.data && eventsQ.data.length > 0 ? (

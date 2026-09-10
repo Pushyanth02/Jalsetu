@@ -1,17 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 // Map legend: severity ramp, status symbols, layer keys. Floating white card
-// over the dark ops basemap. Collapsible.
+// over the dark ops basemap. Collapsible — starts collapsed on phones so it
+// never covers the majority of the small map canvas.
 export function MapLegend({ compact }: { compact?: boolean }) {
   const [open, setOpen] = useUiLegend();
-  if (compact && !open) {
+  const [isSmall, setIsSmall] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const apply = () => setIsSmall(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
+  // Phones: default the legend collapsed so the 9-row card never buries the
+  // small map canvas; users can expand it with a 44px-target button.
+  useEffect(() => {
+    if (isSmall) setOpen(false);
+  }, [isSmall, setOpen]);
+
+  if (!open) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="absolute z-10 bottom-3 left-3 panel rounded-lg px-2.5 py-1.5 micro-label !text-[0.58rem] text-slate-600 hover:bg-ink-850 transition-colors"
+        className="absolute z-10 bottom-3 left-3 panel rounded-lg px-2.5 py-1.5 micro-label !text-[0.58rem] text-slate-600 hover:bg-ink-850 transition-colors touch-target"
         aria-expanded={false}
       >
         legend
@@ -20,8 +37,8 @@ export function MapLegend({ compact }: { compact?: boolean }) {
   }
   return (
     <div className={cn("absolute z-10 bottom-3 left-3 panel rounded-xl p-3 max-w-48", compact && "text-[0.62rem]")}>
-      {compact && (
-        <button onClick={() => setOpen(false)} className="absolute top-1.5 right-2 micro-label !text-[0.55rem] text-slate-400 hover:text-slate-600" aria-label="Collapse legend">
+      {(compact || isSmall) && (
+        <button onClick={() => setOpen(false)} className="absolute top-1.5 right-2 p-1 micro-label !text-[0.55rem] text-slate-400 hover:text-slate-600" aria-label="Collapse legend">
           hide
         </button>
       )}
