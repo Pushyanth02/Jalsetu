@@ -1,4 +1,4 @@
-# PRODUCT.md: Varuna product definition
+# PRODUCT.md: JalSetu product definition
 
 ## Problem statement
 
@@ -99,7 +99,7 @@ noise reports, and a seeded verification lifecycle (one closure that recurs).
 
 ## Alignment with the SMART CITY 2030 competition framing
 
-| Element | Varuna answer |
+| Element | JalSetu answer |
 |---|---|
 | Urban problem | Recurring monsoon waterlogging in Delhi with fragmented evidence, complaint-volume attention and unverified closures. |
 | Methodology | Evidence fusion over a single event spine (report to learning); explainable 7-factor risk model; rule-based responsibility routing; baseline vs proposed evaluation on identical labels. |

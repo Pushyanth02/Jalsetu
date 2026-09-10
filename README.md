@@ -1,6 +1,6 @@
-# Varuna: Delhi Urban Event Intelligence System
+# JalSetu: Delhi Urban Event Intelligence System
 
-Varuna is a research-grade prototype for urban event intelligence applied to Delhi
+JalSetu is a research-grade prototype for urban event intelligence applied to Delhi
 monsoon waterlogging. It turns citizen reports into a structured chain of evidence,
 urban events, explainable risk scores, routed responsibility, field verification and
 measured analytics, and it compares this against a complaint-frequency baseline.

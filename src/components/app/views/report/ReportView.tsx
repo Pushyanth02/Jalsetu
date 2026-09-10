@@ -3,7 +3,7 @@
 import { useRef, useState, type RefObject } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost, ApiClientError, type JurisdictionResponse } from "@/lib/client/api";
-import { ErrorNote, Panel, ProviderChip, RiskBadge, SourceBadge, fmtDateTime } from "@/components/app/shared/domain";
+import { ErrorNote, Panel, ProviderChip, RISK_META, RiskBadge, SourceBadge, fmtDateTime } from "@/components/app/shared/domain";
 import { MapView } from "@/components/app/map/MapView";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,8 +15,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { navigate, useUi } from "@/lib/client/store";
 import { cn } from "@/lib/utils";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatedProgress, CountUp, HoverLift, PulseDot, Reveal, Shine, Stagger, StaggerItem } from "@/components/motion/kit";
 import {
-  AlertTriangle, Camera, Check, ChevronLeft, ChevronRight, Copy, FileText, LocateFixed, MapPin, Search, ShieldCheck, X,
+  AlertTriangle, Camera, Check, ChevronLeft, ChevronRight, Copy, FileCheck, Flag, LocateFixed, MapPin, Search, X,
 } from "lucide-react";
 
 // CITIZEN REPORT - public submission wizard (Location → Issue → Evidence →
@@ -45,12 +47,12 @@ const PHONE_RE = /^(\+91[- ]?)?[6-9]\d{9}$/;
 const PIPELINE_META: Record<string, { label: string; cls: string; explain: (o: ReportOutcome) => string }> = {
   EVENT_CREATED: {
     label: "new event created",
-    cls: "text-water border-water/30 bg-water/8",
+    cls: "text-water border-blue-200 bg-blue-50",
     explain: () => "Your report started a new urban event. It has been classified, risk-assessed and routed to the responsible agencies.",
   },
   ATTACHED_DUPLICATE: {
     label: "merged into existing event",
-    cls: "text-sev-moderate border-sev-moderate/30 bg-sev-moderate/10",
+    cls: "text-amber-700 border-amber-200 bg-amber-50",
     explain: (o) =>
       o.duplicateOf
         ? `Your report matched an open event ${o.duplicateOf.code} about ${o.duplicateOf.distanceM}m away (${o.duplicateOf.reason.toLowerCase()}). It was attached as corroborating evidence and raised that event's report count.`
@@ -58,7 +60,7 @@ const PIPELINE_META: Record<string, { label: string; cls: string; explain: (o: R
   },
   REOPENED_RECURRENSE: {
     label: "reopened closed event",
-    cls: "text-sev-high border-sev-high/30 bg-sev-high/10",
+    cls: "text-orange-700 border-orange-200 bg-orange-50",
     explain: (o) =>
       o.duplicateOf
         ? `A closed event ${o.duplicateOf.code} at this location was reopened as a recurrence. Its recurrence count and risk were updated.`
@@ -67,10 +69,10 @@ const PIPELINE_META: Record<string, { label: string; cls: string; explain: (o: R
 };
 
 const REPORT_STATUS_META: Record<string, { label: string; cls: string }> = {
-  RECEIVED: { label: "received", cls: "text-slate-300 border-slate-400/25 bg-slate-400/8" },
-  TRIAGED: { label: "triaged", cls: "text-sev-moderate border-sev-moderate/30 bg-sev-moderate/10" },
-  MERGED: { label: "merged into event", cls: "text-water border-water/30 bg-water/8" },
-  RESOLVED: { label: "resolved", cls: "text-verified border-verified/30 bg-verified/8" },
+  RECEIVED: { label: "received", cls: "text-slate-600 border-slate-200 bg-slate-50" },
+  TRIAGED: { label: "triaged", cls: "text-amber-700 border-amber-200 bg-amber-50" },
+  MERGED: { label: "merged into event", cls: "text-water border-blue-200 bg-blue-50" },
+  RESOLVED: { label: "resolved", cls: "text-emerald-700 border-emerald-200 bg-emerald-50" },
 };
 
 interface ReportOutcome {
@@ -134,19 +136,25 @@ function dataUrlKb(dataUrl: string): number {
 export function ReportView() {
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-y-auto">
-      <div className="hairline-b bg-ink-900/30 px-4 sm:px-6 py-3.5">
-        <h1 className="text-base sm:text-lg font-medium flex items-center gap-2">
-          <FileText className="size-4 text-water" aria-hidden />
+      <div className="hairline-b bg-white px-4 sm:px-6 py-3.5">
+        <h1 className="flex items-center gap-2.5 font-display text-lg font-bold tracking-tight text-slate-900 leading-tight">
+          <span className="grid size-9 place-items-center rounded-lg bg-blue-50 text-water shrink-0" aria-hidden>
+            <FileCheck className="size-4.5" />
+          </span>
           Citizen Report
         </h1>
-        <p className="mt-0.5 text-xs text-muted-foreground">
+        <p className="mt-1 text-xs text-muted-foreground sm:pl-[2.875rem]">
           Report waterlogging and related issues. Every submission is classified, checked for duplicates, risk-assessed and routed automatically.
         </p>
       </div>
 
-      <div className="w-full max-w-3xl mx-auto flex flex-col gap-3 p-3 sm:p-4">
-        <TrackReport />
-        <ReportWizard />
+      <div className="w-full max-w-3xl mx-auto flex flex-col gap-4 p-3 sm:p-4">
+        <Reveal>
+          <TrackReport />
+        </Reveal>
+        <Reveal delay={0.08}>
+          <ReportWizard />
+        </Reveal>
       </div>
     </div>
   );
@@ -161,18 +169,13 @@ function TrackReport() {
   });
 
   const found = trackQ.data;
-  const rStatus = found ? REPORT_STATUS_META[found.status] ?? { label: found.status.toLowerCase(), cls: "text-slate-300 border-slate-400/25 bg-slate-400/8" } : null;
+  const rStatus = found ? REPORT_STATUS_META[found.status] ?? { label: found.status.toLowerCase(), cls: "text-slate-600 border-slate-200 bg-slate-50" } : null;
 
   return (
     <Panel
-      title={
-        <span className="flex items-center gap-1.5">
-          <Search className="size-3 text-water" aria-hidden />
-          track a report
-        </span>
-      }
-      actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/60">public reference</span>}
-      bodyClassName="pt-3"
+      title="Track a Report"
+      icon={<Search />}
+      actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/70">public reference</span>}
     >
       <form
         className="flex gap-2"
@@ -190,11 +193,11 @@ function TrackReport() {
           value={ref}
           onChange={(e) => setRef(e.target.value.toUpperCase())}
           placeholder="e.g. CR-4F2K9"
-          className="h-9 bg-ink-900 border-border data-mono flex-1"
+          className="h-9 rounded-lg bg-ink-900 border-border data-mono flex-1"
           maxLength={16}
           autoComplete="off"
         />
-        <Button type="submit" size="sm" variant="outline" className="border-border h-9" disabled={trackQ.isPending || !ref.trim()}>
+        <Button type="submit" size="sm" variant="outline" className="rounded-lg border-border text-slate-600 hover:bg-ink-850 h-9" disabled={trackQ.isPending || !ref.trim()}>
           {trackQ.isPending ? "Looking up…" : "Track"}
         </Button>
       </form>
@@ -204,11 +207,11 @@ function TrackReport() {
       )}
 
       {found && (
-        <div className="mt-3 rounded-sm border border-border/70 bg-ink-850/30 p-3" aria-live="polite">
+        <div className="mt-3 rounded-xl border border-border/70 bg-slate-50/70 p-3" aria-live="polite">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="data-mono text-sm font-semibold text-water">{found.publicRef}</span>
             {rStatus && (
-              <span className={cn("inline-flex rounded-sm border px-1.5 py-0.5 micro-label !text-[0.58rem]", rStatus.cls)}>{rStatus.label}</span>
+              <span className={cn("inline-flex rounded-full border px-2 py-0.5 micro-label !text-[0.58rem]", rStatus.cls)}>{rStatus.label}</span>
             )}
             <SourceBadge source={found.source} />
             <span className="ml-auto micro-label !text-[0.52rem] text-muted-foreground" title={fmtDateTime(found.submittedAt)}>
@@ -216,15 +219,15 @@ function TrackReport() {
             </span>
           </div>
 
-          <p className="mt-1.5 text-[0.82rem] text-foreground/90 leading-relaxed line-clamp-2">{found.description}</p>
+          <p className="mt-1.5 text-[0.82rem] text-slate-700 leading-relaxed line-clamp-2">{found.description}</p>
 
-          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.68rem] text-muted-foreground">
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.68rem] text-slate-500">
             <span className="data-mono">{found.lat.toFixed(4)}, {found.lng.toFixed(4)}</span>
-            <span>reported severity <span className="text-foreground/90">{found.severityReported.toLowerCase()}</span></span>
+            <span>reported severity <span className="text-slate-700">{found.severityReported.toLowerCase()}</span></span>
             {found.classification && (
               <span>
-                assessed <span className="text-foreground/90">{found.classification.category.toLowerCase().replace(/_/g, " ")}</span> ·{" "}
-                <span className="text-foreground/90">{found.classification.severity.toLowerCase()}</span> · conf{" "}
+                assessed <span className="text-slate-700">{found.classification.category.toLowerCase().replace(/_/g, " ")}</span> ·{" "}
+                <span className="text-slate-700">{found.classification.severity.toLowerCase()}</span> · conf{" "}
                 <span className="data-mono">{Math.round(found.classification.confidence * 100)}%</span>
               </span>
             )}
@@ -240,7 +243,7 @@ function TrackReport() {
               <Button
                 size="sm"
                 variant="outline"
-                className="ml-auto border-border h-7 text-[0.65rem]"
+                className="ml-auto rounded-lg border-border text-slate-600 hover:bg-ink-850 h-7 text-[0.65rem]"
                 onClick={() => navigate("event", found.urbanEvent!.code)}
               >
                 Open dossier <ChevronRight className="size-3" aria-hidden />
@@ -260,6 +263,7 @@ function TrackReport() {
 function ReportWizard() {
   const { toast } = useToast();
   const qc = useQueryClient();
+  const reduce = useReducedMotion();
 
   const [step, setStep] = useState(0);
   const [attempted, setAttempted] = useState(false);
@@ -428,15 +432,11 @@ function ReportWizard() {
 
   return (
     <Panel
-      title={
-        <span className="flex items-center gap-1.5">
-          <ShieldCheck className="size-3 text-water" aria-hidden />
-          file a new report
-        </span>
-      }
-      actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/60">public · web channel</span>}
+      title="File a New Report"
+      icon={<Flag />}
+      actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/70">public · web channel</span>}
     >
-      {/* step progress */}
+      {/* step progress: numbered circles, completed shows a check */}
       <ol className="flex items-center gap-0 overflow-x-auto no-scrollbar pb-1" aria-label="Wizard progress">
         {STEPS.map((label, i) => {
           const done = locked ? i <= 4 : i < step;
@@ -450,24 +450,24 @@ function ReportWizard() {
                 onClick={() => reachable && goTo(i)}
                 aria-current={current ? "step" : undefined}
                 className={cn(
-                  "flex items-center gap-1.5 px-2.5 py-1 rounded-sm transition-colors",
-                  reachable ? "cursor-pointer hover:bg-ink-850/60" : "cursor-default",
-                  current && "bg-water/10"
+                  "flex items-center gap-2 px-2 py-1 rounded-lg transition-colors",
+                  reachable ? "cursor-pointer hover:bg-ink-850" : "cursor-default",
+                  current && "bg-blue-50"
                 )}
               >
                 <span
                   className={cn(
-                    "size-5 rounded-full border grid place-items-center data-mono !text-[0.62rem] !tracking-normal",
-                    done ? "bg-water border-water text-ink-950" : current ? "border-water text-water" : "border-border text-muted-foreground"
+                    "grid size-8 place-items-center rounded-full font-semibold data-mono !text-[0.72rem] !tracking-normal transition-colors",
+                    done ? (current ? "bg-water text-white" : "bg-blue-50 text-water") : current ? "bg-water text-white" : "bg-ink-850 text-slate-400"
                   )}
                   aria-hidden
                 >
-                  {done && i !== 4 ? <Check className="size-3" /> : i + 1}
+                  {done && i !== 4 ? <Check className="size-4" /> : i + 1}
                 </span>
                 <span
                   className={cn(
-                    "micro-label !text-[0.55rem]",
-                    current ? "text-foreground" : done ? "text-verified/90" : "text-muted-foreground/60"
+                    "text-[0.7rem] font-medium",
+                    current ? "text-slate-900" : done ? "text-slate-600" : "text-slate-400"
                   )}
                 >
                   {label}
@@ -480,95 +480,108 @@ function ReportWizard() {
       </ol>
 
       <div className="mt-2 pt-4 hairline-t">
-        {step === 0 && (
-          <StepLocation
-            latText={latText}
-            lngText={lngText}
-            onLat={setLatText}
-            onLng={setLngText}
-            latValid={latValid}
-            lngValid={lngValid}
-            coordsValid={coordsValid}
-            attempted={attempted}
-            jurisdictionId={jurisdictionId}
-            onJurisdiction={onJurisdiction}
-            jurisdictions={jurisdictions}
-            jurisdictionsLoading={jurisdictionsQ.isLoading}
-            jurisdictionsError={jurisdictionsQ.isError ? (jurisdictionsQ.error as Error).message : null}
-            addressText={addressText}
-            onAddress={setAddressText}
-            gpsState={gpsState}
-            gpsMsg={gpsMsg}
-            onGps={onGps}
-          />
-        )}
+        {/* step content transitions: fade + slide, reduced-motion safe */}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={step}
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, y: -8 }}
+            transition={{ duration: 0.24, ease: [0.21, 0.47, 0.32, 0.98] }}
+          >
+            {step === 0 && (
+              <StepLocation
+                latText={latText}
+                lngText={lngText}
+                onLat={setLatText}
+                onLng={setLngText}
+                latValid={latValid}
+                lngValid={lngValid}
+                coordsValid={coordsValid}
+                attempted={attempted}
+                jurisdictionId={jurisdictionId}
+                onJurisdiction={onJurisdiction}
+                jurisdictions={jurisdictions}
+                jurisdictionsLoading={jurisdictionsQ.isLoading}
+                jurisdictionsError={jurisdictionsQ.isError ? (jurisdictionsQ.error as Error).message : null}
+                addressText={addressText}
+                onAddress={setAddressText}
+                gpsState={gpsState}
+                gpsMsg={gpsMsg}
+                onGps={onGps}
+              />
+            )}
 
-        {step === 1 && (
-          <StepIssue
-            category={category}
-            onCategory={setCategory}
-            severity={severity}
-            onSeverity={setSeverity}
-            description={description}
-            onDescription={setDescription}
-            descValid={descValid}
-            attempted={attempted}
-          />
-        )}
+            {step === 1 && (
+              <StepIssue
+                category={category}
+                onCategory={setCategory}
+                severity={severity}
+                onSeverity={setSeverity}
+                description={description}
+                onDescription={setDescription}
+                descValid={descValid}
+                attempted={attempted}
+              />
+            )}
 
-        {step === 2 && (
-          <StepEvidence
-            photo={photo}
-            photoBusy={photoBusy}
-            photoErr={photoErr}
-            fileRef={fileRef}
-            onPhotoFile={onPhotoFile}
-            onRemovePhoto={() => setPhoto(null)}
-            phone={phone}
-            onPhone={setPhone}
-            phoneValid={phoneValid}
-            consent={consent}
-            onConsent={setConsent}
-            attempted={attempted}
-          />
-        )}
+            {step === 2 && (
+              <StepEvidence
+                photo={photo}
+                photoBusy={photoBusy}
+                photoErr={photoErr}
+                fileRef={fileRef}
+                onPhotoFile={onPhotoFile}
+                onRemovePhoto={() => setPhoto(null)}
+                phone={phone}
+                onPhone={setPhone}
+                phoneValid={phoneValid}
+                consent={consent}
+                onConsent={setConsent}
+                attempted={attempted}
+              />
+            )}
 
-        {step === 3 && (
-          <StepReview
-            lat={latNum}
-            lng={lngNum}
-            jurisdictionName={jurisdictions.find((j) => j.id === jurisdictionId)?.name ?? null}
-            addressText={addressText.trim()}
-            category={category}
-            severity={severity}
-            description={descTrim}
-            photo={photo}
-            phone={phoneTrim}
-            submitPending={submit.isPending}
-            submitError={submit.isError ? (submit.error as ApiClientError).message : null}
-            onSubmit={next}
-          />
-        )}
+            {step === 3 && (
+              <StepReview
+                lat={latNum}
+                lng={lngNum}
+                jurisdictionName={jurisdictions.find((j) => j.id === jurisdictionId)?.name ?? null}
+                addressText={addressText.trim()}
+                category={category}
+                severity={severity}
+                description={descTrim}
+                photo={photo}
+                phone={phoneTrim}
+                submitPending={submit.isPending}
+                submitError={submit.isError ? (submit.error as ApiClientError).message : null}
+                onSubmit={next}
+              />
+            )}
 
-        {step === 4 && outcome && <StepResult outcome={outcome} onReset={reset} />}
+            {step === 4 && outcome && <StepResult outcome={outcome} onReset={reset} />}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* nav */}
       {!locked && (
         <div className="mt-5 pt-3 hairline-t flex items-center justify-between gap-2">
-          <Button type="button" variant="outline" size="sm" className="border-border" disabled={step === 0} onClick={() => goTo(Math.max(0, step - 1))}>
+          <Button type="button" variant="outline" size="sm" className="rounded-lg border-border text-slate-600 hover:bg-ink-850" disabled={step === 0} onClick={() => goTo(Math.max(0, step - 1))}>
             <ChevronLeft className="size-3.5" aria-hidden /> Back
           </Button>
           <span className="micro-label !text-[0.52rem] text-muted-foreground">
             {step < 3 ? `${step + 1} of 4` : "final check"}
           </span>
           {step < 3 ? (
-            <Button type="button" size="sm" className="bg-water text-ink-950 hover:bg-water/85" onClick={next}>
+            <Button type="button" size="sm" className="group relative overflow-hidden rounded-lg bg-water text-white hover:bg-water-dim" onClick={next}>
               {attempted && !stepValid ? "Fix to continue" : "Continue"} <ChevronRight className="size-3.5" aria-hidden />
+              <Shine />
             </Button>
           ) : (
-            <Button type="button" size="sm" className="bg-water text-ink-950 hover:bg-water/85" disabled={submit.isPending} onClick={next}>
+            <Button type="button" size="sm" className="group relative overflow-hidden rounded-lg bg-water text-white hover:bg-water-dim" disabled={submit.isPending} onClick={next}>
               {submit.isPending ? "Submitting…" : "Submit report"}
+              <Shine />
             </Button>
           )}
         </div>
@@ -604,10 +617,10 @@ function StepLocation(p: {
 
   return (
     <div className="space-y-4">
-      <div className="relative h-52 sm:h-60 rounded-sm overflow-hidden border border-border/60">
+      <div className="relative h-52 sm:h-60 rounded-xl overflow-hidden border border-border/70 shadow-sm">
         <MapView events={[]} interactive className="size-full" />
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink-950/90 to-transparent p-2.5 pointer-events-none">
-          <p className="micro-label !text-[0.52rem] text-muted-foreground">
+        <div className="absolute inset-x-0 bottom-0 bg-white/90 backdrop-blur-sm border-t border-slate-200/70 p-2.5 pointer-events-none">
+          <p className="micro-label !text-[0.52rem] text-slate-500">
             pilot window: central Delhi · place the report with coordinates, GPS or a pilot area below
           </p>
         </div>
@@ -624,7 +637,7 @@ function StepLocation(p: {
             value={p.latText}
             onChange={(e) => p.onLat(e.target.value.replace(/[^\d.\-]/g, ""))}
             placeholder="28.6285"
-            className="h-9 bg-ink-900 border-border data-mono"
+            className="h-9 rounded-lg bg-ink-900 border-border data-mono"
             aria-invalid={p.attempted && !p.latValid}
             aria-describedby="rep-lat-hint"
           />
@@ -646,7 +659,7 @@ function StepLocation(p: {
             value={p.lngText}
             onChange={(e) => p.onLng(e.target.value.replace(/[^\d.\-]/g, ""))}
             placeholder="77.2216"
-            className="h-9 bg-ink-900 border-border data-mono"
+            className="h-9 rounded-lg bg-ink-900 border-border data-mono"
             aria-invalid={p.attempted && !p.lngValid}
             aria-describedby="rep-lng-hint"
           />
@@ -661,7 +674,7 @@ function StepLocation(p: {
       </div>
 
       <div className="flex flex-wrap gap-2 items-start">
-        <Button type="button" variant="outline" size="sm" className="border-border" onClick={p.onGps} disabled={p.gpsState === "locating"}>
+        <Button type="button" variant="outline" size="sm" className="rounded-lg border-border text-slate-600 hover:bg-ink-850" onClick={p.onGps} disabled={p.gpsState === "locating"}>
           <LocateFixed className={cn("size-3.5", p.gpsState === "locating" && "animate-pulse")} aria-hidden />
           {p.gpsState === "locating" ? "Locating…" : "Use my location"}
         </Button>
@@ -669,19 +682,19 @@ function StepLocation(p: {
           type="button"
           variant="outline"
           size="sm"
-          className="border-border"
+          className="rounded-lg border-border text-slate-600 hover:bg-ink-850"
           disabled={!p.coordsValid}
           onClick={() => useUi.getState().focusMap(latNum, lngNum, 14)}
         >
           <MapPin className="size-3.5" aria-hidden /> Preview on map
         </Button>
         {p.gpsState === "ok" && !p.coordsValid && (
-          <span className="text-[0.62rem] text-sev-moderate/90 self-center">Device location is outside the pilot window. Adjust manually.</span>
+          <span className="text-[0.62rem] text-sev-moderate self-center">Device location is outside the pilot window. Adjust manually.</span>
         )}
       </div>
 
       {p.gpsMsg && (
-        <p className={cn("text-[0.62rem] flex items-start gap-1.5", p.gpsState === "error" ? "text-sev-moderate/90" : "text-muted-foreground")} role={p.gpsState === "error" ? "alert" : undefined}>
+        <p className={cn("text-[0.62rem] flex items-start gap-1.5", p.gpsState === "error" ? "text-sev-moderate" : "text-muted-foreground")} role={p.gpsState === "error" ? "alert" : undefined}>
           {p.gpsState === "error" && <AlertTriangle className="size-3.5 shrink-0 mt-px" aria-hidden />}
           {p.gpsMsg}
         </p>
@@ -691,10 +704,10 @@ function StepLocation(p: {
         <div className="space-y-1.5">
           <Label className="text-xs">Pilot area (optional)</Label>
           {p.jurisdictionsError ? (
-            <p className="text-[0.62rem] text-sev-moderate/90">Pilot areas unavailable: {p.jurisdictionsError}</p>
+            <p className="text-[0.62rem] text-sev-moderate">Pilot areas unavailable: {p.jurisdictionsError}</p>
           ) : (
             <Select value={p.jurisdictionId} onValueChange={p.onJurisdiction}>
-              <SelectTrigger className="h-9 bg-ink-900 border-border text-xs" aria-label="Pilot area">
+              <SelectTrigger className="h-9 rounded-lg bg-ink-900 border-border text-xs" aria-label="Pilot area">
                 <SelectValue placeholder="Select a pilot area" />
               </SelectTrigger>
               <SelectContent>
@@ -720,7 +733,7 @@ function StepLocation(p: {
             value={p.addressText}
             onChange={(e) => p.onAddress(e.target.value)}
             placeholder="e.g. near Minto Road pump station"
-            className="h-9 bg-ink-900 border-border text-xs"
+            className="h-9 rounded-lg bg-ink-900 border-border text-xs"
             maxLength={160}
           />
           <p className="text-[0.62rem] text-muted-foreground">Free text, up to 160 characters. Helps field teams locate the spot.</p>
@@ -731,6 +744,21 @@ function StepLocation(p: {
 }
 
 // --- step 2: issue + severity ------------------------------------------------------
+
+function OptionCard({ selected, children }: { selected: boolean; children: React.ReactNode }) {
+  return (
+    <HoverLift>
+      <label
+        className={cn(
+          "flex items-start gap-2.5 rounded-xl border p-3 cursor-pointer transition-colors bg-white shadow-xs",
+          selected ? "border-water bg-blue-50" : "border-border/80 hover:bg-ink-850/60"
+        )}
+      >
+        {children}
+      </label>
+    </HoverLift>
+  );
+}
 
 function StepIssue(p: {
   category: string;
@@ -746,44 +774,40 @@ function StepIssue(p: {
   return (
     <div className="space-y-4">
       <fieldset>
-        <legend className="micro-label mb-2">what is the issue</legend>
-        <RadioGroup value={p.category} onValueChange={p.onCategory} className="grid grid-cols-1 sm:grid-cols-2 gap-2" aria-label="Issue category">
-          {CATEGORY_META.map((c) => (
-            <label
-              key={c.value}
-              className={cn(
-                "flex items-start gap-2.5 rounded-sm border p-3 cursor-pointer transition-colors",
-                p.category === c.value ? "border-water/40 bg-water/6" : "border-border/70 hover:bg-ink-850/40"
-              )}
-            >
-              <RadioGroupItem value={c.value} className="mt-0.5 border-water/40 data-[state=checked]:border-water" />
-              <span className="min-w-0">
-                <span className="block text-sm text-foreground">{c.value.toLowerCase().replace(/_/g, " ")}</span>
-                <span className="block mt-0.5 text-[0.68rem] text-muted-foreground leading-snug">{c.helper}</span>
-              </span>
-            </label>
-          ))}
+        <legend className="micro-label mb-2.5">what is the issue</legend>
+        <RadioGroup value={p.category} onValueChange={p.onCategory} aria-label="Issue category">
+          <Stagger className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {CATEGORY_META.map((c) => (
+              <StaggerItem key={c.value}>
+                <OptionCard selected={p.category === c.value}>
+                  <RadioGroupItem value={c.value} className="mt-0.5 data-[state=checked]:border-water" />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-slate-800">{c.value.toLowerCase().replace(/_/g, " ")}</span>
+                    <span className="block mt-0.5 text-[0.68rem] text-slate-500 leading-snug">{c.helper}</span>
+                  </span>
+                </OptionCard>
+              </StaggerItem>
+            ))}
+          </Stagger>
         </RadioGroup>
       </fieldset>
 
       <fieldset>
-        <legend className="micro-label mb-2">how severe (water depth guide)</legend>
-        <RadioGroup value={p.severity} onValueChange={p.onSeverity} className="grid grid-cols-2 lg:grid-cols-4 gap-2" aria-label="Severity">
-          {SEVERITY_META.map((s) => (
-            <label
-              key={s.value}
-              className={cn(
-                "flex items-start gap-2.5 rounded-sm border p-3 cursor-pointer transition-colors",
-                p.severity === s.value ? "border-water/40 bg-water/6" : "border-border/70 hover:bg-ink-850/40"
-              )}
-            >
-              <RadioGroupItem value={s.value} className="mt-0.5 border-water/40 data-[state=checked]:border-water" />
-              <span className="min-w-0">
-                <span className="block text-sm text-foreground">{s.value.toLowerCase()}</span>
-                <span className="block mt-0.5 text-[0.62rem] text-muted-foreground leading-snug">{s.helper}</span>
-              </span>
-            </label>
-          ))}
+        <legend className="micro-label mb-2.5">how severe (water depth guide)</legend>
+        <RadioGroup value={p.severity} onValueChange={p.onSeverity} aria-label="Severity">
+          <Stagger className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+            {SEVERITY_META.map((s) => (
+              <StaggerItem key={s.value}>
+                <OptionCard selected={p.severity === s.value}>
+                  <RadioGroupItem value={s.value} className="mt-0.5 data-[state=checked]:border-water" />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-slate-800">{s.value.toLowerCase()}</span>
+                    <span className="block mt-0.5 text-[0.62rem] text-slate-500 leading-snug">{s.helper}</span>
+                  </span>
+                </OptionCard>
+              </StaggerItem>
+            ))}
+          </Stagger>
         </RadioGroup>
       </fieldset>
 
@@ -792,7 +816,7 @@ function StepIssue(p: {
           <Label htmlFor="rep-desc" className="text-xs">
             Describe what you see
           </Label>
-          <span className={cn("data-mono text-[0.62rem]", p.descValid ? "text-muted-foreground" : p.attempted ? "text-sev-high" : "text-muted-foreground")}>
+          <span className={cn("data-mono text-[0.62rem]", p.attempted && !p.descValid ? "text-sev-high" : "text-muted-foreground")}>
             {descLen}/600
           </span>
         </div>
@@ -802,7 +826,7 @@ function StepIssue(p: {
           onChange={(e) => p.onDescription(e.target.value)}
           rows={4}
           placeholder="e.g. Knee-deep water on the underpass approach, drains not taking flow, traffic diverted"
-          className="bg-ink-900 border-border text-sm"
+          className="rounded-lg bg-ink-900 border-border text-sm"
           maxLength={600}
           aria-invalid={p.attempted && !p.descValid}
           aria-describedby="rep-desc-hint"
@@ -851,24 +875,24 @@ function StepEvidence(props: StepEvidenceProps) {
           onChange={(e) => e.target.files?.[0] && onPhotoFile(e.target.files[0])}
         />
         <div className="mt-1.5 flex flex-wrap items-center gap-2">
-          <Button type="button" variant="outline" size="sm" className="border-border" disabled={photoBusy} onClick={() => fileRef.current?.click()}>
+          <Button type="button" variant="outline" size="sm" className="rounded-lg border-border text-slate-600 hover:bg-ink-850" disabled={photoBusy} onClick={() => fileRef.current?.click()}>
             <Camera className="size-3.5" aria-hidden /> {photoBusy ? "Processing…" : photo ? "Replace photo" : "Select photo"}
           </Button>
           {photo && (
-            <Button type="button" variant="ghost" size="sm" className="h-7 text-[0.65rem] text-muted-foreground" onClick={onRemovePhoto}>
+            <Button type="button" variant="ghost" size="sm" className="h-7 text-[0.65rem] text-slate-500" onClick={onRemovePhoto}>
               <X className="size-3" aria-hidden /> Remove
             </Button>
           )}
-          <span className="text-[0.62rem] text-muted-foreground">Downscaled to at most 1024px jpeg and stored as a data URL in the demo database.</span>
+          <span className="text-[0.62rem] text-slate-500">Downscaled to at most 1024px jpeg and stored as a data URL in the demo database.</span>
         </div>
         {photoErr && <p className="mt-1.5 text-[0.62rem] text-sev-high" role="alert">{photoErr}</p>}
         {photo && (
-          <figure className="mt-2.5 flex items-start gap-3 rounded-sm border border-border/70 bg-ink-850/30 p-2.5 max-w-sm">
-            <div className="relative rounded-sm overflow-hidden border border-border/60 size-20 shrink-0 bg-ink-850">
+          <figure className="mt-2.5 flex items-start gap-3 rounded-xl border border-border/70 bg-white p-2.5 shadow-sm ring-1 ring-slate-200/60 max-w-sm">
+            <div className="relative rounded-lg overflow-hidden border border-border/60 size-20 shrink-0 bg-slate-100">
               <img src={photo.dataUrl} alt="Report photo preview" className="size-full object-cover" />
             </div>
-            <figcaption className="min-w-0 text-[0.65rem] text-muted-foreground">
-              <span className="inline-flex rounded-sm border border-water/30 bg-water/8 text-water px-1.5 py-0.5 micro-label !text-[0.52rem]">uploaded</span>
+            <figcaption className="min-w-0 text-[0.65rem] text-slate-500">
+              <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 text-water px-2 py-0.5 micro-label !text-[0.52rem]">uploaded</span>
               <span className="block mt-1 truncate">{photo.name}</span>
               <span className="data-mono block mt-0.5">{dataUrlKb(photo.dataUrl)} KB · jpeg</span>
             </figcaption>
@@ -887,7 +911,7 @@ function StepEvidence(props: StepEvidenceProps) {
           value={phone}
           onChange={(e) => onPhone(e.target.value)}
           placeholder="98XXXXXXXX or +91 98XXXXXXXX"
-          className="h-9 bg-ink-900 border-border data-mono"
+          className="h-9 rounded-lg bg-ink-900 border-border data-mono"
           maxLength={16}
           aria-invalid={attempted && !phoneValid}
           aria-describedby="rep-phone-hint"
@@ -899,12 +923,12 @@ function StepEvidence(props: StepEvidenceProps) {
         </p>
       </div>
 
-      <div className="rounded-sm border border-border/70 bg-ink-850/30 p-3">
+      <div className="rounded-xl border border-border/70 bg-slate-50/70 p-3.5">
         <label className="flex items-start gap-2.5 cursor-pointer" htmlFor="rep-consent">
-          <Checkbox id="rep-consent" checked={consent} onCheckedChange={(v) => onConsent(v === true)} className="mt-0.5 data-[state=checked]:bg-water data-[state=checked]:border-water data-[state=checked]:text-ink-950" />
-          <span className="text-xs leading-relaxed text-foreground/90">
-            <span className="text-foreground font-medium">I consent to this report being processed.</span>
-            <span className="block mt-0.5 text-muted-foreground">
+          <Checkbox id="rep-consent" checked={consent} onCheckedChange={(v) => onConsent(v === true)} className="mt-0.5 data-[state=checked]:bg-water data-[state=checked]:border-water data-[state=checked]:text-white" />
+          <span className="text-xs leading-relaxed text-slate-600">
+            <span className="text-slate-800 font-medium">I consent to this report being processed.</span>
+            <span className="block mt-0.5 text-slate-500">
               Location and photo are used only for this report and its event. Phone is optional and stored hashed. This is a research demo, not a deployed government service.
             </span>
           </span>
@@ -938,7 +962,7 @@ function StepReview(p: {
   return (
     <div className="space-y-3">
       <p className="micro-label">final check before submission</p>
-      <dl className="rounded-sm border border-border/70 bg-ink-850/30 divide-y divide-border/60 text-xs">
+      <dl className="rounded-xl border border-border/70 bg-slate-50/60 divide-y divide-border/60 text-xs">
         <ReviewRow label="coordinates" value={`${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`} />
         <ReviewRow label="pilot area" value={p.jurisdictionName ?? "none selected"} />
         <ReviewRow label="landmark" value={p.addressText || "none"} />
@@ -948,13 +972,14 @@ function StepReview(p: {
         <ReviewRow label="photo" value={p.photo ? `attached (${p.photo.name}, ${dataUrlKb(p.photo.dataUrl)} KB jpeg)` : "none"} />
         <ReviewRow label="phone" value={p.phone ? "provided (stored hashed)" : "not provided"} />
       </dl>
-      <p className="text-[0.65rem] text-muted-foreground">
+      <p className="text-[0.65rem] text-slate-500">
         On submit the pipeline classifies the report, checks for duplicates within 150m and 48h, computes risk and routes responsibility. The outcome reference lets you track it.
       </p>
       {p.submitError && <ErrorNote message={p.submitError} />}
       <div className="flex justify-end">
-        <Button size="sm" className="bg-water text-ink-950 hover:bg-water/85" disabled={p.submitPending} onClick={p.onSubmit}>
+        <Button size="sm" className="group relative overflow-hidden rounded-lg bg-water text-white hover:bg-water-dim" disabled={p.submitPending} onClick={p.onSubmit}>
           {p.submitPending ? "Submitting…" : "Submit report"}
+          <Shine />
         </Button>
       </div>
     </div>
@@ -963,9 +988,9 @@ function StepReview(p: {
 
 function ReviewRow({ label, value, multiline }: { label: string; value: string; multiline?: boolean }) {
   return (
-    <div className="flex items-start gap-3 px-3 py-2">
+    <div className="flex items-start gap-3 px-3.5 py-2.5">
       <dt className="micro-label !text-[0.52rem] w-32 shrink-0 pt-0.5">{label}</dt>
-      <dd className={cn("data-mono !text-[0.72rem] text-foreground/90 min-w-0", multiline ? "whitespace-pre-wrap leading-relaxed" : "truncate")}>{value}</dd>
+      <dd className={cn("data-mono !text-[0.72rem] text-slate-700 min-w-0", multiline ? "whitespace-pre-wrap leading-relaxed" : "truncate")}>{value}</dd>
     </div>
   );
 }
@@ -976,7 +1001,7 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
   const [copied, setCopied] = useState(false);
   const pipe = PIPELINE_META[outcome.pipelineAction] ?? {
     label: outcome.pipelineAction.toLowerCase().replace(/_/g, " "),
-    cls: "text-slate-300 border-slate-400/25 bg-slate-400/8",
+    cls: "text-slate-600 border-slate-200 bg-slate-50",
     explain: () => "Pipeline completed.",
   };
 
@@ -992,88 +1017,104 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
 
   return (
     <div className="space-y-4" aria-live="polite">
-      <div className="rounded-sm border border-water/30 bg-water/6 p-4">
-        <p className="micro-label !text-[0.55rem] text-water">report submitted · tracking reference</p>
-        <div className="mt-1.5 flex flex-wrap items-center gap-3">
-          <span className="data-mono text-2xl font-semibold text-water tracking-tight">{outcome.publicRef}</span>
-          <Button type="button" variant="outline" size="sm" className="border-water/30 text-water h-7 text-[0.65rem]" onClick={copy}>
-            {copied ? <Check className="size-3" aria-hidden /> : <Copy className="size-3" aria-hidden />}
-            {copied ? "Copied" : "Copy"}
+      <Reveal>
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+          <p className="micro-label !text-[0.55rem] text-water flex items-center gap-2">
+            <PulseDot color="bg-emerald-500" size={7} />
+            report submitted · tracking reference
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <span className="data-mono text-2xl sm:text-[1.7rem] font-bold text-water tracking-tight">{outcome.publicRef}</span>
+            <Button type="button" variant="outline" size="sm" className="rounded-lg border-blue-200 bg-white text-water hover:bg-blue-100/60 h-7 text-[0.65rem]" onClick={copy}>
+              {copied ? <Check className="size-3" aria-hidden /> : <Copy className="size-3" aria-hidden />}
+              {copied ? "Copied" : "Copy"}
+            </Button>
+          </div>
+          <p className="mt-1.5 text-[0.65rem] text-slate-500">Save this reference. Use the lookup above to follow the report at any time.</p>
+        </div>
+      </Reveal>
+
+      <Reveal delay={0.08}>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <span className="micro-label !text-[0.52rem] text-muted-foreground">pipeline outcome</span>
+          <span className={cn("inline-flex rounded-full border px-2.5 py-1 micro-label !text-[0.6rem]", pipe.cls)}>{pipe.label}</span>
+        </div>
+        <p className="mt-2 text-xs text-slate-600 leading-relaxed">{pipe.explain(outcome)}</p>
+      </Reveal>
+
+      <Reveal delay={0.14}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="rounded-xl border border-border/70 bg-white p-3.5 shadow-xs">
+            <div className="flex items-center justify-between gap-2">
+              <p className="micro-label !text-[0.52rem]">classification</p>
+              <ProviderChip provider={outcome.classification.provider} model={outcome.classification.modelId} />
+            </div>
+            <dl className="mt-2.5 space-y-1.5 text-xs">
+              <div className="flex justify-between gap-2">
+                <dt className="text-slate-500">category</dt>
+                <dd className="data-mono text-slate-800">{outcome.classification.category.toLowerCase().replace(/_/g, " ")}</dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-slate-500">severity</dt>
+                <dd className="data-mono text-slate-800">{outcome.classification.severity.toLowerCase()}</dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-slate-500">confidence</dt>
+                <dd className="text-slate-800">
+                  <CountUp value={Math.round(outcome.classification.confidence * 100)} suffix="%" />
+                </dd>
+              </div>
+            </dl>
+            <p className="mt-2.5 text-[0.65rem] text-slate-500 leading-relaxed border-l-2 border-blue-200 pl-2.5">
+              {outcome.classification.summary}
+            </p>
+            {outcome.classification.fallbackUsed && (
+              <p className="mt-1.5 text-[0.62rem] text-sev-moderate">Deterministic fallback was used for this classification (AI provider unavailable).</p>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-border/70 bg-white p-3.5 shadow-xs">
+            <p className="micro-label !text-[0.52rem]">risk &amp; routing</p>
+            <div className="mt-2.5 flex items-center gap-2">
+              <RiskBadge band={outcome.risk.band} score={outcome.risk.score} />
+              <span className="text-[0.65rem] text-slate-500">risk score of 100, 7-factor explainable model</span>
+            </div>
+            <AnimatedProgress className="mt-3" value={outcome.risk.score} max={100} fillClassName={RISK_META[outcome.risk.band]?.bar ?? "bg-water-dim"} />
+            <ul className="mt-3 space-y-1">
+              {outcome.routing.length === 0 ? (
+                <li className="text-xs text-slate-500">No agency links recorded.</li>
+              ) : (
+                outcome.routing.map((r) => (
+                  <li key={`${r.agency}-${r.role}`} className="flex items-center gap-2 text-xs">
+                    <span className="data-mono font-semibold text-water">{r.agency}</span>
+                    <span className="micro-label !text-[0.5rem] text-slate-500">{r.role.toLowerCase()}</span>
+                  </li>
+                ))
+              )}
+            </ul>
+          </div>
+        </div>
+      </Reveal>
+
+      <Reveal delay={0.2}>
+        <div className="rounded-xl border border-border/70 bg-white p-3.5 shadow-xs flex items-center gap-3 flex-wrap">
+          <span className="micro-label !text-[0.52rem] text-muted-foreground">urban event</span>
+          <span className="data-mono text-sm font-semibold text-water">{outcome.event.code}</span>
+          <span className="micro-label !text-[0.52rem] text-muted-foreground">status {outcome.event.status.toLowerCase().replace(/_/g, " ")}</span>
+          <Button size="sm" className="ml-auto rounded-lg bg-water text-white hover:bg-water-dim" onClick={() => navigate("event", outcome.event.code)}>
+            Open event dossier <ChevronRight className="size-3.5" aria-hidden />
           </Button>
         </div>
-        <p className="mt-1 text-[0.65rem] text-muted-foreground">Save this reference. Use the lookup above to follow the report at any time.</p>
-      </div>
+      </Reveal>
 
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="micro-label !text-[0.52rem] text-muted-foreground">pipeline outcome</span>
-        <span className={cn("inline-flex rounded-sm border px-2 py-0.5 micro-label !text-[0.58rem]", pipe.cls)}>{pipe.label}</span>
-      </div>
-      <p className="text-xs text-foreground/90 leading-relaxed -mt-2">{pipe.explain(outcome)}</p>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="rounded-sm border border-border/70 bg-ink-850/30 p-3">
-          <div className="flex items-center justify-between gap-2">
-            <p className="micro-label !text-[0.52rem]">classification</p>
-            <ProviderChip provider={outcome.classification.provider} model={outcome.classification.modelId} />
-          </div>
-          <dl className="mt-2 space-y-1.5 text-xs">
-            <div className="flex justify-between gap-2">
-              <dt className="text-muted-foreground">category</dt>
-              <dd className="data-mono">{outcome.classification.category.toLowerCase().replace(/_/g, " ")}</dd>
-            </div>
-            <div className="flex justify-between gap-2">
-              <dt className="text-muted-foreground">severity</dt>
-              <dd className="data-mono">{outcome.classification.severity.toLowerCase()}</dd>
-            </div>
-            <div className="flex justify-between gap-2">
-              <dt className="text-muted-foreground">confidence</dt>
-              <dd className="data-mono">{Math.round(outcome.classification.confidence * 100)}%</dd>
-            </div>
-          </dl>
-          <p className="mt-2 text-[0.65rem] text-muted-foreground leading-relaxed border-l-2 border-water/40 pl-2">
-            {outcome.classification.summary}
-          </p>
-          {outcome.classification.fallbackUsed && (
-            <p className="mt-1.5 text-[0.62rem] text-sev-moderate/90">Deterministic fallback was used for this classification (AI provider unavailable).</p>
-          )}
+      <Reveal delay={0.26}>
+        <div className="flex items-center justify-between gap-2 pt-1">
+          <p className="text-[0.62rem] text-slate-500">The wizard is locked after submission to keep one report per flow.</p>
+          <Button variant="outline" size="sm" className="rounded-lg border-border text-slate-600 hover:bg-ink-850" onClick={onReset}>
+            File another report
+          </Button>
         </div>
-
-        <div className="rounded-sm border border-border/70 bg-ink-850/30 p-3">
-          <p className="micro-label !text-[0.52rem]">risk &amp; routing</p>
-          <div className="mt-2 flex items-center gap-2">
-            <RiskBadge band={outcome.risk.band} score={outcome.risk.score} />
-            <span className="text-[0.65rem] text-muted-foreground">risk score of 100, 7-factor explainable model</span>
-          </div>
-          <ul className="mt-2.5 space-y-1">
-            {outcome.routing.length === 0 ? (
-              <li className="text-xs text-muted-foreground">No agency links recorded.</li>
-            ) : (
-              outcome.routing.map((r) => (
-                <li key={`${r.agency}-${r.role}`} className="flex items-center gap-2 text-xs">
-                  <span className="data-mono font-semibold text-water">{r.agency}</span>
-                  <span className="micro-label !text-[0.5rem] text-muted-foreground">{r.role.toLowerCase()}</span>
-                </li>
-              ))
-            )}
-          </ul>
-        </div>
-      </div>
-
-      <div className="rounded-sm border border-border/70 bg-ink-850/30 p-3 flex items-center gap-3 flex-wrap">
-        <span className="micro-label !text-[0.52rem] text-muted-foreground">urban event</span>
-        <span className="data-mono text-sm font-semibold text-water">{outcome.event.code}</span>
-        <span className="micro-label !text-[0.52rem] text-muted-foreground">status {outcome.event.status.toLowerCase().replace(/_/g, " ")}</span>
-        <Button size="sm" className="ml-auto bg-water text-ink-950 hover:bg-water/85" onClick={() => navigate("event", outcome.event.code)}>
-          Open event dossier <ChevronRight className="size-3.5" aria-hidden />
-        </Button>
-      </div>
-
-      <div className="flex items-center justify-between gap-2 pt-1">
-        <p className="text-[0.62rem] text-muted-foreground">The wizard is locked after submission to keep one report per flow.</p>
-        <Button variant="outline" size="sm" className="border-border" onClick={onReset}>
-          File another report
-        </Button>
-      </div>
+      </Reveal>
     </div>
   );
 }

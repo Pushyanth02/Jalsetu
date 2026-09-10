@@ -16,7 +16,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, RefreshCw, ChevronRight, Camera, MapPin, Umbrella, HardHat, History, FileWarning, GitMerge, Network } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import { Reveal, Stagger, StaggerItem, CountUp, PulseDot, AnimatedProgress } from "@/components/motion/kit";
+import {
+  ArrowLeft, RefreshCw, Camera, MapPin, Umbrella, HardHat, History, FileWarning, GitMerge, Network,
+  MessageSquare, Wrench, Upload, FileSearch, Gauge, Sparkles, ListChecks, ClipboardCheck, ScrollText,
+} from "lucide-react";
 import { useState, useRef } from "react";
 
 // URBAN EVENT DETAIL - full dossier: evidence, AI investigation, risk
@@ -75,6 +80,7 @@ export function EventDetailView() {
   const eventId = useUi((s) => s.eventId);
   const { toast } = useToast();
   const qc = useQueryClient();
+  const [tab, setTab] = useState("overview");
 
   const detailQ = useQuery({
     queryKey: ["event", eventId],
@@ -102,7 +108,7 @@ export function EventDetailView() {
     return (
       <div className="flex-1 grid place-items-center">
         <EmptyState icon={<FileWarning className="size-8" />} title="No event selected" hint="Open an event from the command center or map." action={
-          <Button variant="outline" size="sm" onClick={() => navigate("command")} className="mt-2">← Command Center</Button>
+          <Button variant="outline" size="sm" onClick={() => navigate("command")} className="mt-2 rounded-lg">← Command Center</Button>
         } />
       </div>
     );
@@ -112,7 +118,7 @@ export function EventDetailView() {
     return (
       <div className="p-6 max-w-lg">
         <ErrorNote message={(detailQ.error as Error).message} onRetry={() => detailQ.refetch()} />
-        <Button variant="outline" size="sm" className="mt-3" onClick={() => navigate("command")}>← Back to Command Center</Button>
+        <Button variant="outline" size="sm" className="mt-3 rounded-lg" onClick={() => navigate("command")}>← Back to Command Center</Button>
       </div>
     );
 
@@ -124,9 +130,9 @@ export function EventDetailView() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* header */}
-      <div className="hairline-b bg-ink-900/30 px-4 sm:px-6 py-3.5">
+      <Reveal className="hairline-b bg-white px-4 sm:px-6 py-3.5">
         <div className="flex items-start gap-3 flex-wrap">
-          <button onClick={() => navigate(useUi.getState().view === "event" ? "command" : "map")} className="p-1.5 -ml-1.5 mt-0.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-ink-850 transition-colors" aria-label="Back">
+          <button onClick={() => navigate(useUi.getState().view === "event" ? "command" : "map")} className="p-1.5 -ml-1.5 mt-0.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-ink-850 transition-colors" aria-label="Back">
             <ArrowLeft className="size-4" />
           </button>
           <div className="min-w-0 flex-1">
@@ -137,12 +143,17 @@ export function EventDetailView() {
               <ConfidenceChip confidence={event.confidence} note={event.confidenceNote} />
               <SourceBadge source={event.source} />
             </div>
-            <h2 className="mt-1.5 text-base sm:text-lg font-medium leading-snug">{event.title}</h2>
+            <h2 className="mt-1.5 text-base sm:text-lg font-medium leading-snug text-slate-900">{event.title}</h2>
             <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1"><MapPin className="size-3" aria-hidden /> {event.locationText}</span>
               <span className="data-mono">{event.lat.toFixed(4)}, {event.lng.toFixed(4)}</span>
               <span className="inline-flex items-center gap-1"><HardHat className="size-3" aria-hidden /> {event.agencyCode ?? "unassigned"}</span>
               <span>first report <TimeAgo iso={event.firstReportedAt} /></span>
+              {event.status !== "CLOSED" && (
+                <span className="inline-flex items-center gap-1.5" title="last activity">
+                  <PulseDot size={6} color="bg-verified" /> activity <TimeAgo iso={event.lastActivityAt} />
+                </span>
+              )}
               {event.jurisdiction && <span className="hidden sm:inline">{event.jurisdiction.name}</span>}
             </div>
           </div>
@@ -153,26 +164,26 @@ export function EventDetailView() {
                 useUi.getState().focusMap(event.lat, event.lng, 15);
                 navigate("map");
               }}
-              className="border-border"
+              className="border-border rounded-lg"
             >
               <MapPin className="size-3.5" /> <span className="hidden sm:inline">Locate on map</span>
             </Button>
-            <Button size="sm" onClick={() => reassess.mutateAsync()} disabled={reassess.isPending} className="bg-water text-ink-950 hover:bg-water/85">
+            <Button size="sm" onClick={() => reassess.mutateAsync()} disabled={reassess.isPending} className="rounded-lg bg-water text-white hover:bg-water-dim">
               <RefreshCw className={cn("size-3.5", reassess.isPending && "animate-spin")} />
               {reassess.isPending ? "Reassessing…" : "Reassess risk"}
             </Button>
           </div>
         </div>
         {event.confidenceNote && (
-          <p className="mt-2 rounded-sm border border-sev-moderate/25 bg-sev-moderate/6 px-2.5 py-1.5 text-xs text-sev-moderate/90" role="note">
+          <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700" role="note">
             {event.confidenceNote}
           </p>
         )}
-      </div>
+      </Reveal>
 
       {/* body: mini map + tabs */}
       <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-[340px_1fr] overflow-y-auto xl:overflow-hidden">
-        <aside className="xl:hairline-r bg-ink-900/20 flex flex-col xl:min-h-0">
+        <Reveal delay={0.06} className="xl:hairline-r bg-white flex flex-col xl:min-h-0">
           <div className="relative h-52 xl:h-64 shrink-0">
             <MapView events={[{
               id: event.id, code: event.code, title: event.title, category: event.category,
@@ -188,21 +199,21 @@ export function EventDetailView() {
               closedAt: event.closedAt, reopenedAt: event.reopenedAt,
               groundTruthHotspotId: event.groundTruthHotspotId, source: event.source,
             }]} initialZoom={14.2} />
-            <div className="absolute top-2 left-2 rounded-sm bg-ink-950/85 px-2 py-1 pointer-events-none">
+            <div className="absolute top-2 left-2 rounded-md bg-white/95 px-2 py-1 shadow-sm ring-1 ring-border/70 pointer-events-none">
               <p className="micro-label !text-[0.55rem]">event focus</p>
             </div>
           </div>
           <QuickFacts d={d} />
-        </aside>
+        </Reveal>
 
-        <div className="min-h-0 overflow-y-auto xl:overflow-hidden p-3 sm:p-4">
-          <Tabs defaultValue="overview" className="flex flex-col h-full min-h-0">
-            <TabsList className="bg-ink-900/60 border border-border/60 w-full justify-start overflow-x-auto rounded-md no-scrollbar h-9">
-              <TabsTrigger value="overview" className="text-xs data-[state=active]:bg-water/12 data-[state=active]:text-water">Overview</TabsTrigger>
-              <TabsTrigger value="evidence" className="text-xs data-[state=active]:bg-water/12 data-[state=active]:text-water">Evidence ({event.evidence.length})</TabsTrigger>
-              <TabsTrigger value="investigation" className="text-xs data-[state=active]:bg-water/12 data-[state=active]:text-water">AI Investigation</TabsTrigger>
-              <TabsTrigger value="response" className="text-xs data-[state=active]:bg-water/12 data-[state=active]:text-water">Response & Verification</TabsTrigger>
-              <TabsTrigger value="audit" className="text-xs data-[state=active]:bg-water/12 data-[state=active]:text-water">Audit</TabsTrigger>
+        <Reveal delay={0.1} className="min-h-0 overflow-y-auto xl:overflow-hidden p-3 sm:p-4">
+          <Tabs value={tab} onValueChange={setTab} className="flex flex-col h-full min-h-0">
+            <TabsList className="bg-ink-850 w-full justify-start overflow-x-auto rounded-lg no-scrollbar h-9">
+              <DossierTab value="overview" current={tab}>Overview</DossierTab>
+              <DossierTab value="evidence" current={tab}>Evidence ({event.evidence.length})</DossierTab>
+              <DossierTab value="investigation" current={tab}>AI Investigation</DossierTab>
+              <DossierTab value="response" current={tab}>Response & Verification</DossierTab>
+              <DossierTab value="audit" current={tab}>Audit</DossierTab>
             </TabsList>
 
             <div className="flex-1 min-h-0 overflow-y-auto mt-3 pr-0.5">
@@ -223,9 +234,36 @@ export function EventDetailView() {
               </TabsContent>
             </div>
           </Tabs>
-        </div>
+        </Reveal>
       </div>
     </div>
+  );
+}
+
+/** Tab trigger with an OriginKit-style sliding white pill (layout animation). */
+function DossierTab({ value, current, children }: { value: string; current: string; children: React.ReactNode }) {
+  const reduce = useReducedMotion();
+  const active = value === current;
+  return (
+    <TabsTrigger
+      value={value}
+      className={cn(
+        "relative rounded-md text-xs font-medium text-slate-500 hover:text-slate-700 data-[state=active]:text-slate-900",
+        reduce
+          ? "data-[state=active]:bg-white data-[state=active]:shadow-sm"
+          : "data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+      )}
+    >
+      {active && !reduce && (
+        <motion.span
+          layoutId="dossier-tab-indicator"
+          className="absolute inset-0 rounded-md bg-white shadow-sm"
+          aria-hidden
+          transition={{ type: "spring", stiffness: 420, damping: 34 }}
+        />
+      )}
+      <span className="relative z-10">{children}</span>
+    </TabsTrigger>
   );
 }
 
@@ -244,13 +282,13 @@ function QuickFacts({ d }: { d: D }) {
       </div>
       <dl className="space-y-2 text-xs">
         <Fact label="severity" value={<SeverityTicks severity={e.severity} />} />
-        <Fact label="reports" value={<span className="data-mono">{e.reportCount} ({e.reports.filter((r) => r.isDuplicate).length} merged)</span>} />
-        <Fact label="recurrence" value={<span className="data-mono">{e.recurrenceCount}×</span>} />
+        <Fact label="reports" value={<span className="data-mono"><CountUp value={e.reportCount} /> ({e.reports.filter((r) => r.isDuplicate).length} merged)</span>} />
+        <Fact label="recurrence" value={<span className="data-mono"><CountUp value={e.recurrenceCount} />×</span>} />
         <Fact label="rainfall 24h/72h" value={<span className="data-mono text-water">{Math.round(e.rainfall24hMm ?? 0)} / {Math.round(e.rainfall72hMm ?? 0)} mm</span>} />
         <Fact label="category" value={<span className="data-mono">{e.category.toLowerCase()}</span>} />
         <Fact label="classification" value={<ProviderChip provider={e.classificationProvider ?? "-"} model={e.modelVersion} />} />
         {e.groundTruthHotspotId && (
-          <Fact label="ground truth" value={<span className="text-[0.65rem] text-sev-moderate/80">{e.groundTruthHotspotId} · {e.groundTruthAgencyCode} (synthetic)</span>} />
+          <Fact label="ground truth" value={<span className="text-[0.65rem] text-sev-moderate">{e.groundTruthHotspotId} · {e.groundTruthAgencyCode} (synthetic)</span>} />
         )}
       </dl>
     </div>
@@ -286,97 +324,103 @@ function OverviewTab({ d }: { d: D }) {
 
   return (
     <>
-      <Panel title={`citizen reports · ${e.reportCount}`}>
-        <ul className="divide-y divide-border/60">
-          {e.reports.map((r) => (
-            <li key={r.id} className="py-2.5 first:pt-0 last:pb-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="data-mono text-[0.65rem] text-water/90">{r.publicRef}</span>
-                <span className="micro-label !text-[0.52rem]">{r.channel.toLowerCase()}</span>
-                {r.isDuplicate && <span className="micro-label !text-[0.52rem] text-sev-moderate/80">merged as duplicate</span>}
-                <TimeAgo iso={r.submittedAt} />
-              </div>
-              <p className="mt-1 text-[0.82rem] text-foreground/90 leading-relaxed">{r.description}</p>
-              {r.classification && (
-                <div className="mt-1.5 flex items-center gap-2 flex-wrap text-[0.65rem] text-muted-foreground">
-                  <span>assessed <span className={cn("font-medium", sevClass(r.classification.severity))}>{r.classification.severity.toLowerCase()}</span></span>
-                  <span className="data-mono">conf {Math.round(r.classification.confidence * 100)}%</span>
-                  {r.classificationProvider && <ProviderChip provider={r.classificationProvider} />}
+      <Reveal>
+        <Panel title={`citizen reports · ${e.reportCount}`} icon={<MessageSquare />}>
+          <Stagger className="divide-y divide-border/60">
+            {e.reports.map((r) => (
+              <StaggerItem key={r.id} className="py-2.5 first:pt-0 last:pb-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="data-mono text-[0.65rem] text-water">{r.publicRef}</span>
+                  <span className="micro-label !text-[0.52rem]">{r.channel.toLowerCase()}</span>
+                  {r.isDuplicate && <span className="micro-label !text-[0.52rem] text-sev-moderate">merged as duplicate</span>}
+                  <TimeAgo iso={r.submittedAt} />
                 </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      </Panel>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <Panel title={`infrastructure context · within 600m`}>
-          {nearbyAssets.length === 0 ? (
-            <EmptyState title="No assets recorded nearby" hint="Asset registry covers pilot jurisdictions only (synthetic)." />
-          ) : (
-            <ul className="space-y-2">
-              {nearbyAssets.map((a) => (
-                <li key={a.code} className="flex items-center gap-2.5 text-xs">
-                  <span className="data-mono text-[0.62rem] text-muted-foreground w-12 shrink-0">{a.d}m</span>
-                  <span className={cn("size-2 rounded-full shrink-0", a.conditionScore < 45 ? "bg-sev-high" : a.conditionScore < 65 ? "bg-sev-moderate" : "bg-verified")} aria-hidden />
-                  <span className="flex-1 min-w-0">
-                    <span className="block truncate">{a.name}</span>
-                    <span className="micro-label !text-[0.5rem]">{a.kind.toLowerCase().replace(/_/g, " ")} · {a.agencyCode} · condition {a.conditionScore}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Panel>
-
-        <Panel title="historical incidents · within 300m">
-          {nearIncidents.length === 0 ? (
-            <EmptyState title="No historical incidents nearby" hint="Synthetic archive covers the pilot jurisdictions." />
-          ) : (
-            <ul className="space-y-2">
-              {nearIncidents.map((i) => (
-                <li key={i.id} className="flex items-baseline gap-2.5 text-xs">
-                  <span className="data-mono text-[0.62rem] text-muted-foreground shrink-0 w-20">{new Date(i.occurredOn).toLocaleDateString("en-IN", { month: "short", year: "numeric" })}</span>
-                  <span className={cn("font-medium shrink-0", sevClass(i.severity))}>{i.severity.toLowerCase()}</span>
-                  <span className="text-muted-foreground truncate">{i.waterDepthCm ?? "?"}cm · {i.durationHours?.toFixed(0) ?? "?"}h · {i.reportedVia.toLowerCase()}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Panel>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <Panel title="maintenance nearby">
-          {nearMaint.length === 0 ? (
-            <EmptyState title="No maintenance records for nearby assets" />
-          ) : (
-            <ul className="space-y-2">
-              {nearMaint.map((m, i) => (
-                <li key={i} className="flex items-baseline gap-2.5 text-xs">
-                  <span className="data-mono text-[0.62rem] text-muted-foreground w-20 shrink-0">
-                    {m.performedAt ? new Date(m.performedAt).toLocaleDateString("en-IN", { month: "short", year: "numeric" }) : "scheduled"}
-                  </span>
-                  <span className="flex-1 truncate">{m.asset?.name ?? "asset"} · {m.kind.toLowerCase()}</span>
-                  <span className={cn("micro-label !text-[0.5rem]", m.status === "COMPLETED" ? "text-verified" : "text-water")}>{m.status.toLowerCase()}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Panel>
-
-        <Panel title={<span className="flex items-center gap-1.5"><Umbrella className="size-3 text-water" aria-hidden /> rainfall · 72h (synthetic)</span>}>
-          <ul className="space-y-1.5 text-xs">
-            {context.rainfallSeries.slice(-12).map((s, i) => (
-              <li key={i} className="flex items-center gap-2">
-                <span className="data-mono text-[0.6rem] text-muted-foreground w-11 shrink-0">{new Date(s.t).toLocaleTimeString("en-IN", { hour: "2-digit", hour12: false })}</span>
-                <span className="h-1.5 rounded-full bg-water/70" style={{ width: `${Math.min(100, s.mm * 3)}%` }} />
-                <span className="data-mono text-[0.62rem]">{s.mm}mm</span>
-              </li>
+                <p className="mt-1 text-[0.82rem] text-slate-700 leading-relaxed">{r.description}</p>
+                {r.classification && (
+                  <div className="mt-1.5 flex items-center gap-2 flex-wrap text-[0.65rem] text-muted-foreground">
+                    <span>assessed <span className={cn("font-medium", sevClass(r.classification.severity))}>{r.classification.severity.toLowerCase()}</span></span>
+                    <span className="data-mono">conf {Math.round(r.classification.confidence * 100)}%</span>
+                    {r.classificationProvider && <ProviderChip provider={r.classificationProvider} />}
+                  </div>
+                )}
+              </StaggerItem>
             ))}
-          </ul>
+          </Stagger>
         </Panel>
-      </div>
+      </Reveal>
+
+      <Reveal delay={0.06}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <Panel title="infrastructure context · within 600m" icon={<Network />}>
+            {nearbyAssets.length === 0 ? (
+              <EmptyState title="No assets recorded nearby" hint="Asset registry covers pilot jurisdictions only (synthetic)." />
+            ) : (
+              <ul className="space-y-2">
+                {nearbyAssets.map((a) => (
+                  <li key={a.code} className="flex items-center gap-2.5 text-xs">
+                    <span className="data-mono text-[0.62rem] text-muted-foreground w-12 shrink-0">{a.d}m</span>
+                    <span className={cn("size-2 rounded-full shrink-0", a.conditionScore < 45 ? "bg-sev-high" : a.conditionScore < 65 ? "bg-sev-moderate" : "bg-verified")} aria-hidden />
+                    <span className="flex-1 min-w-0">
+                      <span className="block truncate text-slate-700">{a.name}</span>
+                      <span className="micro-label !text-[0.5rem]">{a.kind.toLowerCase().replace(/_/g, " ")} · {a.agencyCode} · condition {a.conditionScore}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+
+          <Panel title="historical incidents · within 300m" icon={<History />}>
+            {nearIncidents.length === 0 ? (
+              <EmptyState title="No historical incidents nearby" hint="Synthetic archive covers the pilot jurisdictions." />
+            ) : (
+              <ul className="space-y-2">
+                {nearIncidents.map((i) => (
+                  <li key={i.id} className="flex items-baseline gap-2.5 text-xs">
+                    <span className="data-mono text-[0.62rem] text-muted-foreground shrink-0 w-20">{new Date(i.occurredOn).toLocaleDateString("en-IN", { month: "short", year: "numeric" })}</span>
+                    <span className={cn("font-medium shrink-0", sevClass(i.severity))}>{i.severity.toLowerCase()}</span>
+                    <span className="text-muted-foreground truncate">{i.waterDepthCm ?? "?"}cm · {i.durationHours?.toFixed(0) ?? "?"}h · {i.reportedVia.toLowerCase()}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+        </div>
+      </Reveal>
+
+      <Reveal delay={0.12}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <Panel title="maintenance nearby" icon={<Wrench />}>
+            {nearMaint.length === 0 ? (
+              <EmptyState title="No maintenance records for nearby assets" />
+            ) : (
+              <ul className="space-y-2">
+                {nearMaint.map((m, i) => (
+                  <li key={i} className="flex items-baseline gap-2.5 text-xs">
+                    <span className="data-mono text-[0.62rem] text-muted-foreground w-20 shrink-0">
+                      {m.performedAt ? new Date(m.performedAt).toLocaleDateString("en-IN", { month: "short", year: "numeric" }) : "scheduled"}
+                    </span>
+                    <span className="flex-1 truncate text-slate-700">{m.asset?.name ?? "asset"} · {m.kind.toLowerCase()}</span>
+                    <span className={cn("micro-label !text-[0.5rem]", m.status === "COMPLETED" ? "text-verified" : "text-water")}>{m.status.toLowerCase()}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+
+          <Panel title="rainfall · 72h (synthetic)" icon={<Umbrella />}>
+            <ul className="space-y-1.5 text-xs">
+              {context.rainfallSeries.slice(-12).map((s, i) => (
+                <li key={i} className="flex items-center gap-2">
+                  <span className="data-mono text-[0.6rem] text-muted-foreground w-11 shrink-0">{new Date(s.t).toLocaleTimeString("en-IN", { hour: "2-digit", hour12: false })}</span>
+                  <AnimatedProgress value={Math.min(100, s.mm * 3)} max={100} className="flex-1 h-1.5" fillClassName="bg-water-dim" delay={i * 0.04} />
+                  <span className="data-mono text-[0.62rem]">{s.mm}mm</span>
+                </li>
+              ))}
+            </ul>
+          </Panel>
+        </div>
+      </Reveal>
     </>
   );
 }
@@ -417,80 +461,85 @@ function EvidenceTab({ d, onMutated }: { d: D; onMutated: () => void }) {
 
   return (
     <>
-      <Panel title={`evidence chain · ${e.evidence.length} items`}>
-        {e.evidence.length === 0 ? (
-          <EmptyState icon={<Camera className="size-7" />} title="No evidence yet" hint="Field teams can attach photos and notes; the pipeline attaches AI outputs automatically." />
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {e.evidence.map((ev) => (
-              <figure key={ev.id} className="group">
-                <div className="relative rounded-sm overflow-hidden border border-border/70 aspect-[4/3] bg-ink-850">
-                  {ev.mediaType.startsWith("image/") ? (
-                     
-                    <img src={ev.content} alt={ev.caption ?? `${ev.kind} evidence`} className="size-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
-                  ) : (
-                    <div className="size-full p-2.5 overflow-auto">
-                      <p className="text-[0.6rem] data-mono text-muted-foreground break-words">{ev.content.slice(0, 260)}</p>
-                    </div>
-                  )}
-                  <span className="absolute top-1 left-1 rounded-sm bg-ink-950/85 px-1.5 py-0.5 micro-label !text-[0.48rem]">
-                    {ev.kind.toLowerCase().replace(/_/g, " ")}
-                  </span>
-                </div>
-                <figcaption className="mt-1.5 text-[0.65rem] text-muted-foreground leading-snug">
-                  <span className="block truncate">{ev.caption ?? "-"}</span>
-                  <span className="micro-label !text-[0.48rem] !text-muted-foreground/60">{ev.capturedBy.toLowerCase()} · {fmtDateTime(ev.capturedAt)}</span>
-                </figcaption>
-              </figure>
-            ))}
-          </div>
-        )}
-      </Panel>
-
-      <Panel title="attach field evidence">
-        <div className="space-y-3 max-w-lg">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Type</Label>
-              <Select value={kind} onValueChange={(v) => setKind(v as typeof kind)}>
-                <SelectTrigger className="h-9 bg-ink-900 border-border text-xs" aria-label="Evidence type"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="FIELD_PHOTO" className="text-xs">Field photo</SelectItem>
-                  <SelectItem value="FIELD_NOTE" className="text-xs">Field note</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="ev-caption" className="text-xs">Caption</Label>
-              <Input id="ev-caption" value={caption} onChange={(e2) => setCaption(e2.target.value)} placeholder="e.g. before intervention, drain intake blocked" className="h-9 bg-ink-900 border-border text-xs" maxLength={120} />
-            </div>
-          </div>
-          {kind === "FIELD_PHOTO" ? (
-            <div>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                id="evidence-file"
-                onChange={(e2) => e2.target.files?.[0] && onFile(e2.target.files[0])}
-              />
-              <Button type="button" variant="outline" size="sm" disabled={uploading || upload.isPending} onClick={() => fileRef.current?.click()} className="border-border">
-                <Camera className="size-3.5" /> {uploading || upload.isPending ? "Processing…" : "Select photo"}
-              </Button>
-              <p className="mt-1.5 text-[0.65rem] text-muted-foreground">Images are downscaled to ≤1024px and stored as data URLs in the demo database.</p>
-            </div>
+      <Reveal>
+        <Panel title={`evidence chain · ${e.evidence.length} items`} icon={<Camera />}>
+          {e.evidence.length === 0 ? (
+            <EmptyState icon={<Camera className="size-7" />} title="No evidence yet" hint="Field teams can attach photos and notes; the pipeline attaches AI outputs automatically." />
           ) : (
-            <div className="space-y-1.5">
-              <Label htmlFor="note-text" className="text-xs">Note</Label>
-              <Textarea id="note-text" value={noteText} onChange={(e2) => setNoteText(e2.target.value)} rows={3} className="bg-ink-900 border-border text-xs" placeholder="Field observation…" maxLength={600} />
-              <Button size="sm" disabled={!noteText.trim() || upload.isPending} onClick={() => upload.mutate({ kind: "FIELD_NOTE", caption: caption || "Field note", content: noteText, mediaType: "text/plain" })}>
-                Attach note
-              </Button>
-            </div>
+            <Stagger className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {e.evidence.map((ev) => (
+                <StaggerItem key={ev.id}>
+                  <figure className="group">
+                    <div className="relative rounded-lg overflow-hidden border border-border/70 aspect-[4/3] bg-ink-850">
+                      {ev.mediaType.startsWith("image/") ? (
+                        <img src={ev.content} alt={ev.caption ?? `${ev.kind} evidence`} className="size-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+                      ) : (
+                        <div className="size-full p-2.5 overflow-auto">
+                          <p className="text-[0.6rem] data-mono text-muted-foreground break-words">{ev.content.slice(0, 260)}</p>
+                        </div>
+                      )}
+                      <span className="absolute top-1 left-1 rounded-md bg-white/95 px-1.5 py-0.5 micro-label !text-[0.48rem] text-slate-500 shadow-sm">
+                        {ev.kind.toLowerCase().replace(/_/g, " ")}
+                      </span>
+                    </div>
+                    <figcaption className="mt-1.5 text-[0.65rem] text-muted-foreground leading-snug">
+                      <span className="block truncate">{ev.caption ?? "-"}</span>
+                      <span className="micro-label !text-[0.48rem] !text-muted-foreground/60">{ev.capturedBy.toLowerCase()} · {fmtDateTime(ev.capturedAt)}</span>
+                    </figcaption>
+                  </figure>
+                </StaggerItem>
+              ))}
+            </Stagger>
           )}
-        </div>
-      </Panel>
+        </Panel>
+      </Reveal>
+
+      <Reveal delay={0.06}>
+        <Panel title="attach field evidence" icon={<Upload />}>
+          <div className="space-y-3 max-w-lg">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Type</Label>
+                <Select value={kind} onValueChange={(v) => setKind(v as typeof kind)}>
+                  <SelectTrigger className="h-9 bg-ink-900 border-border text-xs" aria-label="Evidence type"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="FIELD_PHOTO" className="text-xs">Field photo</SelectItem>
+                    <SelectItem value="FIELD_NOTE" className="text-xs">Field note</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ev-caption" className="text-xs">Caption</Label>
+                <Input id="ev-caption" value={caption} onChange={(e2) => setCaption(e2.target.value)} placeholder="e.g. before intervention, drain intake blocked" className="h-9 bg-ink-900 border-border text-xs" maxLength={120} />
+              </div>
+            </div>
+            {kind === "FIELD_PHOTO" ? (
+              <div>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  id="evidence-file"
+                  onChange={(e2) => e2.target.files?.[0] && onFile(e2.target.files[0])}
+                />
+                <Button type="button" variant="outline" size="sm" disabled={uploading || upload.isPending} onClick={() => fileRef.current?.click()} className="border-border rounded-lg">
+                  <Camera className="size-3.5" /> {uploading || upload.isPending ? "Processing…" : "Select photo"}
+                </Button>
+                <p className="mt-1.5 text-[0.65rem] text-muted-foreground">Images are downscaled to ≤1024px and stored as data URLs in the demo database.</p>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <Label htmlFor="note-text" className="text-xs">Note</Label>
+                <Textarea id="note-text" value={noteText} onChange={(e2) => setNoteText(e2.target.value)} rows={3} className="bg-ink-900 border-border text-xs" placeholder="Field observation…" maxLength={600} />
+                <Button size="sm" disabled={!noteText.trim() || upload.isPending} onClick={() => upload.mutate({ kind: "FIELD_NOTE", caption: caption || "Field note", content: noteText, mediaType: "text/plain" })} className="rounded-lg">
+                  Attach note
+                </Button>
+              </div>
+            )}
+          </div>
+        </Panel>
+      </Reveal>
     </>
   );
 }
@@ -507,131 +556,140 @@ function InvestigationTab({ d }: { d: D }) {
   return (
     <>
       {cl && (
-        <Panel title="classification · structured model output" actions={<ProviderChip provider={latestReport?.classificationProvider ?? "-"} model={e.modelVersion} />}>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-            <Readout label="category" value={cl.category.toLowerCase().replace(/_/g, " ")} />
-            <Readout label="severity" value={cl.severity.toLowerCase()} tone={sevClass(cl.severity)} />
-            <Readout label="confidence" value={`${Math.round(cl.confidence * 100)}%`} />
-          </div>
-          <p className="text-sm text-foreground/90 leading-relaxed border-l-2 border-water/50 pl-3">{cl.summary}</p>
-          {cl.factors.length > 0 && (
-            <ul className="mt-3 flex flex-wrap gap-1.5">
-              {cl.factors.map((f, i) => (
-                <li key={i} className="rounded-sm border border-border/70 bg-ink-850/50 px-2 py-0.5 text-[0.65rem] text-muted-foreground">{f}</li>
-              ))}
-            </ul>
-          )}
-          <p className="mt-3 micro-label !text-[0.5rem] text-muted-foreground/60">
-            Structured output only. No chain-of-thought is exposed or stored.
-          </p>
-        </Panel>
+        <Reveal>
+          <Panel title="classification · structured model output" icon={<FileSearch />} actions={<ProviderChip provider={latestReport?.classificationProvider ?? "-"} model={e.modelVersion} />}>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+              <Readout label="category" value={cl.category.toLowerCase().replace(/_/g, " ")} />
+              <Readout label="severity" value={cl.severity.toLowerCase()} tone={sevClass(cl.severity)} />
+              <Readout label="confidence" value={<CountUp value={Math.round(cl.confidence * 100)} suffix="%" />} />
+            </div>
+            <p className="text-sm text-slate-700 leading-relaxed border-l-2 border-water/50 pl-3">{cl.summary}</p>
+            {cl.factors.length > 0 && (
+              <ul className="mt-3 flex flex-wrap gap-1.5">
+                {cl.factors.map((f, i) => (
+                  <li key={i} className="rounded-full border border-border/70 bg-slate-50 px-2 py-0.5 text-[0.65rem] text-slate-600">{f}</li>
+                ))}
+              </ul>
+            )}
+            <p className="mt-3 micro-label !text-[0.5rem] text-muted-foreground/60">
+              Structured output only. No chain-of-thought is exposed or stored.
+            </p>
+          </Panel>
+        </Reveal>
       )}
 
-      <Panel title={`risk assessment · ${e.riskModelVersion ?? "risk-engine"}`} actions={<RiskBadge band={e.riskBand} score={e.riskScore} />}>
-        <div className="space-y-2.5 max-w-2xl">
-          {riskFactors.map((f) => (
-            <div key={f.key} className="flex items-center gap-3">
-              <span className="w-36 sm:w-44 shrink-0 text-xs text-foreground/90 truncate" title={f.label}>{f.label}</span>
-              <div className="flex-1 h-2 rounded-full bg-ink-800 overflow-hidden" role="img" aria-label={`${f.label}: contribution ${f.contribution} of 100`}>
-                <div
-                  className={cn("h-full rounded-full transition-[width] duration-500", f.contribution > 12 ? "bg-sev-high" : f.contribution > 7 ? "bg-sev-moderate" : "bg-water/70")}
-                  style={{ width: `${(f.contribution / 20) * 100}%` }}
+      <Reveal delay={0.06}>
+        <Panel title={`risk assessment · ${e.riskModelVersion ?? "risk-engine"}`} icon={<Gauge />} actions={<RiskBadge band={e.riskBand} score={e.riskScore} />}>
+          <div className="space-y-2.5 max-w-2xl">
+            {riskFactors.map((f) => (
+              <div key={f.key} className="flex items-center gap-3">
+                <span className="w-36 sm:w-44 shrink-0 text-xs text-slate-700 truncate" title={f.label}>{f.label}</span>
+                <AnimatedProgress
+                  value={f.contribution}
+                  max={20}
+                  className="flex-1 h-2"
+                  fillClassName={f.contribution > 12 ? "bg-sev-high" : f.contribution > 7 ? "bg-sev-moderate" : "bg-water-dim"}
                 />
+                <span className="sr-only">{f.label}: contribution {f.contribution} of 100</span>
+                <span className="data-mono text-[0.65rem] w-10 text-right text-foreground">{f.contribution.toFixed(1)}</span>
+                <span className="data-mono text-[0.6rem] w-20 text-right text-muted-foreground hidden sm:block" title={`raw: ${f.raw}`}>{f.raw}</span>
               </div>
-              <span className="data-mono text-[0.65rem] w-10 text-right text-foreground">{f.contribution.toFixed(1)}</span>
-              <span className="data-mono text-[0.6rem] w-20 text-right text-muted-foreground hidden sm:block" title={`raw: ${f.raw}`}>{f.raw}</span>
-            </div>
-          ))}
+            ))}
+          </div>
+          <p className="mt-3 text-[0.68rem] text-muted-foreground">
+            Score = Σ(factor value × weight) × 100. Weights: severity 0.20, rainfall 0.18, reports 0.16, recurrence 0.14, infrastructure 0.12, maintenance 0.10, history 0.10.
+          </p>
+        </Panel>
+      </Reveal>
+
+      <Reveal delay={0.12}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <Panel title="duplicate & recurrence analysis" icon={<GitMerge />}>
+            <ul className="space-y-2 text-xs">
+              {e.reports.filter((r) => r.isDuplicate).length > 0 ? (
+                e.reports.filter((r) => r.isDuplicate).map((r) => (
+                  <li key={r.id} className="flex items-center gap-2">
+                    <GitMerge className="size-3.5 text-water shrink-0" aria-hidden />
+                    <span className="data-mono text-water">{r.publicRef}</span>
+                    <span className="text-muted-foreground">merged within 150m / 48h window</span>
+                  </li>
+                ))
+              ) : (
+                <li className="text-muted-foreground">No merged duplicates in this event.</li>
+              )}
+              {e.recurrenceCount > 0 && (
+                <li className="flex items-center gap-2 text-sev-high">
+                  <RefreshCw className="size-3.5 shrink-0" aria-hidden />
+                  <span>Recurred {e.recurrenceCount}× {e.reopenedAt ? `· reopened ${timeAgo(e.reopenedAt)}` : ""}</span>
+                </li>
+              )}
+              {cl?.isDuplicateSuspected && cl.duplicateReason && (
+                <li className="text-sev-moderate">Model suspects further duplication: {cl.duplicateReason}</li>
+              )}
+            </ul>
+          </Panel>
+
+          <Panel title="risk history" icon={<History />}>
+            <ul className="space-y-2">
+              {d.riskHistory.length === 0 ? (
+                <li className="text-xs text-muted-foreground">No assessments recorded.</li>
+              ) : (
+                d.riskHistory.slice(0, 6).map((r, i) => (
+                  <li key={i} className="flex items-center gap-3 text-xs">
+                    <span className="data-mono text-muted-foreground w-20 shrink-0">{timeAgo(r.computedAt)}</span>
+                    <RiskBadge band={r.band} score={r.score} />
+                    <span className="micro-label !text-[0.5rem] text-muted-foreground">{r.provider.toLowerCase()}</span>
+                  </li>
+                ))
+              )}
+            </ul>
+          </Panel>
         </div>
-        <p className="mt-3 text-[0.68rem] text-muted-foreground">
-          Score = Σ(factor value × weight) × 100. Weights: severity 0.20, rainfall 0.18, reports 0.16, recurrence 0.14, infrastructure 0.12, maintenance 0.10, history 0.10.
-        </p>
-      </Panel>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <Panel title="duplicate & recurrence analysis">
-          <ul className="space-y-2 text-xs">
-            {e.reports.filter((r) => r.isDuplicate).length > 0 ? (
-              e.reports.filter((r) => r.isDuplicate).map((r) => (
-                <li key={r.id} className="flex items-center gap-2">
-                  <GitMerge className="size-3.5 text-water shrink-0" aria-hidden />
-                  <span className="data-mono text-water/90">{r.publicRef}</span>
-                  <span className="text-muted-foreground">merged within 150m / 48h window</span>
-                </li>
-              ))
-            ) : (
-              <li className="text-muted-foreground">No merged duplicates in this event.</li>
-            )}
-            {e.recurrenceCount > 0 && (
-              <li className="flex items-center gap-2 text-sev-high">
-                <RefreshCw className="size-3.5 shrink-0" aria-hidden />
-                <span>Recurred {e.recurrenceCount}× {e.reopenedAt ? `· reopened ${timeAgo(e.reopenedAt)}` : ""}</span>
-              </li>
-            )}
-            {cl?.isDuplicateSuspected && cl.duplicateReason && (
-              <li className="text-sev-moderate/90">Model suspects further duplication: {cl.duplicateReason}</li>
-            )}
-          </ul>
-        </Panel>
-
-        <Panel title="risk history">
-          <ul className="space-y-2">
-            {d.riskHistory.length === 0 ? (
-              <li className="text-xs text-muted-foreground">No assessments recorded.</li>
-            ) : (
-              d.riskHistory.slice(0, 6).map((r, i) => (
-                <li key={i} className="flex items-center gap-3 text-xs">
-                  <span className="data-mono text-muted-foreground w-20 shrink-0">{timeAgo(r.computedAt)}</span>
-                  <RiskBadge band={r.band} score={r.score} />
-                  <span className="micro-label !text-[0.5rem] text-muted-foreground">{r.provider.toLowerCase()}</span>
-                </li>
-              ))
-            )}
-          </ul>
-        </Panel>
-      </div>
+      </Reveal>
 
       {aiEvidence.length > 0 && (
-        <Panel title="AI risk advisories · structured outputs">
-          <div className="space-y-3">
-            {aiEvidence.map((ev) => {
-              let parsed: { narrative: string; factors?: { key: string; label: string; direction: string; weight: number }[]; recommendedInvestigation?: string } | null = null;
-              try {
-                parsed = JSON.parse(ev.content);
-              } catch {
-                parsed = null;
-              }
-              return (
-                <div key={ev.id} className="rounded-sm border border-border/60 bg-ink-850/30 p-3">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <ProviderChip provider={ev.source === "MODEL_OUTPUT" ? "GLM" : "MOCK"} />
-                    <TimeAgo iso={ev.capturedAt} />
+        <Reveal delay={0.18}>
+          <Panel title="AI risk advisories · structured outputs" icon={<Sparkles />}>
+            <div className="space-y-3">
+              {aiEvidence.map((ev) => {
+                let parsed: { narrative: string; factors?: { key: string; label: string; direction: string; weight: number }[]; recommendedInvestigation?: string } | null = null;
+                try {
+                  parsed = JSON.parse(ev.content);
+                } catch {
+                  parsed = null;
+                }
+                return (
+                  <div key={ev.id} className="rounded-lg border border-border bg-slate-50 p-3">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <ProviderChip provider={ev.source === "MODEL_OUTPUT" ? "GLM" : "MOCK"} />
+                      <TimeAgo iso={ev.capturedAt} />
+                    </div>
+                    {parsed && (
+                      <>
+                        <p className="text-[0.82rem] text-slate-700 leading-relaxed">{parsed.narrative}</p>
+                        {parsed.factors && parsed.factors.length > 0 && (
+                          <ul className="mt-2 flex flex-wrap gap-1.5">
+                            {parsed.factors.map((f, i) => (
+                              <li key={i} className={cn(
+                                "rounded-full border px-2 py-0.5 text-[0.62rem] font-medium",
+                                f.direction === "AGGRAVATES" ? "border-orange-200 bg-orange-50 text-sev-high" : "border-emerald-200 bg-emerald-50 text-verified"
+                              )}>
+                                {f.label} · w {f.weight.toFixed(2)}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {parsed.recommendedInvestigation && (
+                          <p className="mt-2 text-xs text-water">Recommended: {parsed.recommendedInvestigation}</p>
+                        )}
+                      </>
+                    )}
                   </div>
-                  {parsed && (
-                    <>
-                      <p className="text-[0.82rem] text-foreground/90 leading-relaxed">{parsed.narrative}</p>
-                      {parsed.factors && parsed.factors.length > 0 && (
-                        <ul className="mt-2 flex flex-wrap gap-1.5">
-                          {parsed.factors.map((f, i) => (
-                            <li key={i} className={cn(
-                              "rounded-sm border px-1.5 py-0.5 text-[0.62rem]",
-                              f.direction === "AGGRAVATES" ? "border-sev-high/30 text-sev-high/90 bg-sev-high/6" : "border-verified/30 text-verified/90 bg-verified/6"
-                            )}>
-                              {f.label} · w {f.weight.toFixed(2)}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      {parsed.recommendedInvestigation && (
-                        <p className="mt-2 text-xs text-water/90">Recommended: {parsed.recommendedInvestigation}</p>
-                      )}
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </Panel>
+                );
+              })}
+            </div>
+          </Panel>
+        </Reveal>
       )}
     </>
   );
@@ -683,82 +741,92 @@ function ResponseTab({ d, onMutated }: { d: D; onMutated: () => void }) {
 
   return (
     <>
-      <Panel title="responsibility chain" actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/60">routing-rules v1.2</span>}>
-        <ol className="space-y-0">
-          <ChainLevel level="EVENT" label={e.code} detail={`${e.reportCount} reports · risk ${e.riskScore} (${e.riskBand})`} />
-          <ChainLevel level="JURISDICTION" label={e.jurisdiction?.name ?? "-"} detail={e.jurisdiction ? `${e.jurisdiction.kind.toLowerCase()} · administered by ${e.jurisdiction.agencyCode ?? "n/a"}` : "outside pilot"} />
-          {e.links.map((l) => (
-            <ChainLevel
-              key={l.id}
-              level={l.role}
-              label={l.agencyCode}
-              detail={l.reason ?? ""}
-              asset={l.asset ? `${l.asset.name} · condition ${l.asset.conditionScore}` : null}
-              status={l.status}
-              source={l.source}
-            />
-          ))}
-        </ol>
-        <AssignForm onAssign={(p) => assign.mutateAsync(p)} pending={assign.isPending} />
-        {e.groundTruthAgencyCode && (
-          <p className="mt-3 text-[0.65rem] text-sev-moderate/80">
-            Routing evaluation note: seeded ground truth for this location is <span className="data-mono">{e.groundTruthAgencyCode}</span> (synthetic label for research metrics).
-          </p>
-        )}
-      </Panel>
-
-      <Panel title={`action items · ${e.actions.length}`}>
-        {e.actions.length === 0 ? (
-          <EmptyState title="No action items" hint="Actions are recommended by the routing engine at triage." />
-        ) : (
-          <ul className="space-y-2">
-            {e.actions.map((a) => (
-              <li key={a.id} className="rounded-sm border border-border/60 bg-ink-850/30 p-3">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="data-mono text-[0.62rem] font-semibold text-water">{a.kind.replace(/_/g, " ").toLowerCase()}</span>
-                  <span className={cn("micro-label !text-[0.5rem]", a.priority === "URGENT" ? "text-sev-critical" : a.priority === "HIGH" ? "text-sev-high" : "text-muted-foreground")}>{a.priority.toLowerCase()}</span>
-                  <span className="ml-auto data-mono text-[0.62rem] text-muted-foreground">{a.agencyCode ?? "-"}{a.assignedTo ? ` · ${a.assignedTo}` : ""}</span>
-                </div>
-                <p className="mt-1 text-[0.8rem] text-foreground/90">{a.instruction}</p>
-                {a.outcome && <p className="mt-1 text-xs text-verified/90">Outcome: {a.outcome}</p>}
-                <div className="mt-2 flex items-center gap-2 flex-wrap">
-                  <span className={cn("micro-label !text-[0.5rem]", a.status === "COMPLETED" ? "text-verified" : a.status === "FAILED" ? "text-sev-critical" : "text-water")}>
-                    {a.status.toLowerCase().replace(/_/g, " ")}
-                  </span>
-                  {a.assignedAt && <span className="text-[0.62rem] text-muted-foreground">assigned {timeAgo(a.assignedAt)}</span>}
-                  {a.completedAt && <span className="text-[0.62rem] text-muted-foreground">· done {timeAgo(a.completedAt)}</span>}
-                  {(a.status === "RECOMMENDED" || a.status === "ASSIGNED") && (
-                    <div className="ml-auto flex gap-1.5">
-                      {a.status === "RECOMMENDED" && (
-                        <Button size="sm" variant="outline" className="h-7 text-[0.65rem] border-border" onClick={() => actionUpdate.mutate({ actionId: a.id, status: "ASSIGNED" })}>
-                          accept
-                        </Button>
-                      )}
-                      <Button size="sm" variant="outline" className="h-7 text-[0.65rem] border-border" onClick={() => actionUpdate.mutate({ actionId: a.id, status: "IN_PROGRESS" })}>
-                        start
-                      </Button>
-                      <Button size="sm" className="h-7 text-[0.65rem] bg-verified/85 text-ink-950 hover:bg-verified" onClick={() => actionUpdate.mutate({ actionId: a.id, status: "COMPLETED", outcome: "Completed via event dossier." })}>
-                        complete
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </li>
+      <Reveal>
+        <Panel title="responsibility chain" icon={<Network />} actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/60">routing-rules v1.2</span>}>
+          <ol className="space-y-0">
+            <ChainLevel level="EVENT" label={e.code} detail={`${e.reportCount} reports · risk ${e.riskScore} (${e.riskBand})`} />
+            <ChainLevel level="JURISDICTION" label={e.jurisdiction?.name ?? "-"} detail={e.jurisdiction ? `${e.jurisdiction.kind.toLowerCase()} · administered by ${e.jurisdiction.agencyCode ?? "n/a"}` : "outside pilot"} />
+            {e.links.map((l) => (
+              <ChainLevel
+                key={l.id}
+                level={l.role}
+                label={l.agencyCode}
+                detail={l.reason ?? ""}
+                asset={l.asset ? `${l.asset.name} · condition ${l.asset.conditionScore}` : null}
+                status={l.status}
+                source={l.source}
+              />
             ))}
-          </ul>
-        )}
-      </Panel>
+          </ol>
+          <AssignForm onAssign={(p) => assign.mutateAsync(p)} pending={assign.isPending} />
+          {e.groundTruthAgencyCode && (
+            <p className="mt-3 text-[0.65rem] text-sev-moderate">
+              Routing evaluation note: seeded ground truth for this location is <span className="data-mono">{e.groundTruthAgencyCode}</span> (synthetic label for research metrics).
+            </p>
+          )}
+        </Panel>
+      </Reveal>
 
-      <Panel title="field verification workflow">
-        <VerificationStepper stages={e.verifications.map((v) => v.stage)} />
-        <VerificationTimeline verifications={e.verifications} />
-        <VerificationForms
-          event={e}
-          onVerify={(p) => verify.mutateAsync(p)}
-          onReopen={(reason) => reopen.mutateAsync({ reopenReason: reason })}
-          pending={verify.isPending}
-        />
-      </Panel>
+      <Reveal delay={0.06}>
+        <Panel title={`action items · ${e.actions.length}`} icon={<ListChecks />}>
+          {e.actions.length === 0 ? (
+            <EmptyState title="No action items" hint="Actions are recommended by the routing engine at triage." />
+          ) : (
+            <ul>
+              <Stagger className="space-y-2">
+                {e.actions.map((a) => (
+                  <StaggerItem key={a.id}>
+                    <li className="rounded-lg border border-border bg-slate-50 p-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="data-mono text-[0.62rem] font-semibold text-water">{a.kind.replace(/_/g, " ").toLowerCase()}</span>
+                      <span className={cn("micro-label !text-[0.5rem]", a.priority === "URGENT" ? "text-sev-critical" : a.priority === "HIGH" ? "text-sev-high" : "text-muted-foreground")}>{a.priority.toLowerCase()}</span>
+                      <span className="ml-auto data-mono text-[0.62rem] text-muted-foreground">{a.agencyCode ?? "-"}{a.assignedTo ? ` · ${a.assignedTo}` : ""}</span>
+                    </div>
+                    <p className="mt-1 text-[0.8rem] text-slate-700">{a.instruction}</p>
+                    {a.outcome && <p className="mt-1 text-xs text-verified/90">Outcome: {a.outcome}</p>}
+                    <div className="mt-2 flex items-center gap-2 flex-wrap">
+                      <span className={cn("micro-label !text-[0.5rem]", a.status === "COMPLETED" ? "text-verified" : a.status === "FAILED" ? "text-sev-critical" : "text-water")}>
+                        {a.status.toLowerCase().replace(/_/g, " ")}
+                      </span>
+                      {a.assignedAt && <span className="text-[0.62rem] text-muted-foreground">assigned {timeAgo(a.assignedAt)}</span>}
+                      {a.completedAt && <span className="text-[0.62rem] text-muted-foreground">· done {timeAgo(a.completedAt)}</span>}
+                      {(a.status === "RECOMMENDED" || a.status === "ASSIGNED") && (
+                        <div className="ml-auto flex gap-1.5">
+                          {a.status === "RECOMMENDED" && (
+                            <Button size="sm" variant="outline" className="h-7 text-[0.65rem] border-border rounded-lg" onClick={() => actionUpdate.mutate({ actionId: a.id, status: "ASSIGNED" })}>
+                              accept
+                            </Button>
+                          )}
+                          <Button size="sm" variant="outline" className="h-7 text-[0.65rem] border-border rounded-lg" onClick={() => actionUpdate.mutate({ actionId: a.id, status: "IN_PROGRESS" })}>
+                            start
+                          </Button>
+                          <Button size="sm" className="h-7 text-[0.65rem] rounded-lg bg-verified text-white hover:bg-emerald-700" onClick={() => actionUpdate.mutate({ actionId: a.id, status: "COMPLETED", outcome: "Completed via event dossier." })}>
+                            complete
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    </li>
+                  </StaggerItem>
+                ))}
+              </Stagger>
+            </ul>
+          )}
+        </Panel>
+      </Reveal>
+
+      <Reveal delay={0.12}>
+        <Panel title="field verification workflow" icon={<ClipboardCheck />}>
+          <VerificationStepper stages={e.verifications.map((v) => v.stage)} />
+          <VerificationTimeline verifications={e.verifications} />
+          <VerificationForms
+            event={e}
+            onVerify={(p) => verify.mutateAsync(p)}
+            onReopen={(reason) => reopen.mutateAsync({ reopenReason: reason })}
+            pending={verify.isPending}
+          />
+        </Panel>
+      </Reveal>
     </>
   );
 }
@@ -791,7 +859,7 @@ function AssignForm({ onAssign, pending }: { onAssign: (p: { agencyCode: string;
           </Select>
         </div>
         <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="note (optional)" className="h-8 w-44 bg-ink-900 border-border text-xs" maxLength={200} aria-label="Assignment note" />
-        <Button size="sm" disabled={pending} onClick={() => onAssign({ agencyCode: agency, role, note: note || undefined })} className="bg-water text-ink-950 hover:bg-water/85 h-8">
+        <Button size="sm" disabled={pending} onClick={() => onAssign({ agencyCode: agency, role, note: note || undefined })} className="h-8 rounded-lg bg-water text-white hover:bg-water-dim">
           {pending ? "Assigning…" : "Assign"}
         </Button>
       </div>
@@ -819,9 +887,9 @@ function VerificationStepper({ stages }: { stages: string[] }) {
                 )}
                 aria-hidden
               >
-                {done && <span className="size-1.5 rounded-full bg-ink-950" />}
+                {done && <span className="size-1.5 rounded-full bg-white" />}
               </span>
-              <span className={cn("micro-label !text-[0.46rem] text-center leading-tight", done ? "text-verified/90" : current ? "text-water" : "text-muted-foreground/60")}>
+              <span className={cn("micro-label !text-[0.46rem] text-center leading-tight", done ? "text-verified" : current ? "text-water" : "text-muted-foreground/60")}>
                 {s.toLowerCase().replace(/_/g, " ")}
               </span>
             </div>
@@ -843,13 +911,13 @@ function VerificationTimeline({ verifications }: { verifications: D["event"]["ve
     <ol className="mt-4 space-y-0 relative">
       {verifications.map((v, i) => (
         <li key={v.id} className="relative pl-5 pb-3 last:pb-0">
-          <span className={cn("absolute left-0 top-1 size-2.5 rounded-full", v.stage === "VERIFIED" || v.stage === "CLOSED" ? "bg-verified" : "bg-water/80")} aria-hidden />
+          <span className={cn("absolute left-0 top-1 size-2.5 rounded-full", v.stage === "VERIFIED" || v.stage === "CLOSED" ? "bg-verified" : "bg-water-dim")} aria-hidden />
           {i < verifications.length - 1 && <span className="absolute left-[4.5px] top-3.5 bottom-0 w-px bg-border" aria-hidden />}
           <div className="flex items-baseline gap-2 flex-wrap">
             <span className="micro-label !text-[0.52rem]">{v.stage.toLowerCase().replace(/_/g, " ")}</span>
             <span className="text-[0.62rem] text-muted-foreground">{v.verifiedBy.toLowerCase()} · {fmtDateTime(v.verifiedAt)}</span>
           </div>
-          {v.notes && <p className="mt-0.5 text-xs text-foreground/80">{v.notes}</p>}
+          {v.notes && <p className="mt-0.5 text-xs text-slate-600">{v.notes}</p>}
           {(v.waterDepthCm != null || v.observedSeverity) && (
             <p className="mt-0.5 text-[0.65rem] data-mono text-muted-foreground">
               {v.waterDepthCm != null && <>depth {v.waterDepthCm}cm </>}
@@ -886,7 +954,7 @@ function VerificationForms({ event, onVerify, onReopen, pending }: {
         <p className="text-xs text-muted-foreground">Event closed {event.closedAt ? timeAgo(event.closedAt) : ""}. New citizen reports at this location will reopen it automatically (recurrence watch).</p>
         <div className="flex gap-2 items-end">
           <Textarea value={reopenReason} onChange={(e) => setReopenReason(e.target.value)} placeholder="manual reopen reason (e.g. re-flooding reported via hotline)" rows={2} className="bg-ink-900 border-border text-xs flex-1" maxLength={300} aria-label="Reopen reason" />
-          <Button size="sm" variant="outline" disabled={reopenReason.trim().length < 4 || pending} onClick={() => onReopen(reopenReason.trim())} className="border-sev-high/40 text-sev-high hover:bg-sev-high/10 h-9">
+          <Button size="sm" variant="outline" disabled={reopenReason.trim().length < 4 || pending} onClick={() => onReopen(reopenReason.trim())} className="h-9 rounded-lg border-red-200 text-sev-critical hover:bg-red-50">
             Reopen
           </Button>
         </div>
@@ -930,7 +998,7 @@ function VerificationForms({ event, onVerify, onReopen, pending }: {
               waterDepthCm: depth ? Number(depth) : undefined,
               notes: notes || undefined,
             })
-          } className="w-full bg-water text-ink-950 hover:bg-water/85 h-8">
+          } className="w-full h-8 rounded-lg bg-water text-white hover:bg-water-dim">
             {pending ? "Recording…" : "Record stage"}
           </Button>
         </div>
@@ -947,25 +1015,31 @@ function VerificationForms({ event, onVerify, onReopen, pending }: {
 
 function AuditTab({ d }: { d: D }) {
   return (
-    <Panel title={`audit history · ${d.auditHistory.length} entries`}>
-      {d.auditHistory.length === 0 ? (
-        <EmptyState title="No audit entries" />
-      ) : (
-        <ol className="relative">
-          {d.auditHistory.map((a) => (
-            <li key={a.id} className="relative pl-5 py-2 hairline-b last:border-0">
-              <span className={cn("absolute left-0 top-3.5 size-1.5 rounded-full", a.actor === "SYSTEM" ? "bg-muted-foreground" : a.actor === "CITIZEN" ? "bg-water" : "bg-sev-moderate")} aria-hidden />
-              <div className="flex items-baseline gap-2 flex-wrap">
-                <span className="data-mono text-[0.65rem] text-water/90">{a.action}</span>
-                <span className="micro-label !text-[0.5rem]">{a.actor.toLowerCase()}</span>
-                <span className="ml-auto"><TimeAgo iso={a.at} /></span>
-              </div>
-              {a.note && <p className="text-xs text-muted-foreground mt-0.5">{a.note}</p>}
-            </li>
-          ))}
-        </ol>
-      )}
-    </Panel>
+    <Reveal>
+      <Panel title={`audit history · ${d.auditHistory.length} entries`} icon={<ScrollText />}>
+        {d.auditHistory.length === 0 ? (
+          <EmptyState title="No audit entries" />
+        ) : (
+          <ol className="relative">
+            <Stagger>
+              {d.auditHistory.map((a) => (
+                <StaggerItem key={a.id}>
+                  <li className="relative pl-5 py-2 hairline-b last:border-0">
+                    <span className={cn("absolute left-0 top-3.5 size-1.5 rounded-full", a.actor === "SYSTEM" ? "bg-muted-foreground" : a.actor === "CITIZEN" ? "bg-water-dim" : "bg-sev-moderate")} aria-hidden />
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <span className="data-mono text-[0.65rem] text-water">{a.action}</span>
+                      <span className="micro-label !text-[0.5rem]">{a.actor.toLowerCase()}</span>
+                      <span className="ml-auto"><TimeAgo iso={a.at} /></span>
+                    </div>
+                    {a.note && <p className="text-xs text-muted-foreground mt-0.5">{a.note}</p>}
+                  </li>
+                </StaggerItem>
+              ))}
+            </Stagger>
+          </ol>
+        )}
+      </Panel>
+    </Reveal>
   );
 }
 
@@ -976,7 +1050,7 @@ function ChainLevel({ level, label, detail, asset, status, source }: {
 }) {
   return (
     <li className="relative pl-4 pb-3 last:pb-0">
-      <span className={cn("absolute left-0 top-1.5 size-2 rounded-sm", level === "ESCALATION" ? "bg-sev-critical" : level === "SUPPORT" ? "bg-sev-moderate" : level === "PRIMARY" || level === "AGENCY" ? "bg-water" : "bg-muted-foreground")} aria-hidden />
+      <span className={cn("absolute left-0 top-1.5 size-2 rounded-full", level === "ESCALATION" ? "bg-sev-critical" : level === "SUPPORT" ? "bg-sev-moderate" : level === "PRIMARY" || level === "AGENCY" ? "bg-water" : "bg-muted-foreground")} aria-hidden />
       <span className="absolute left-1 top-4.5 bottom-0 w-px bg-border" aria-hidden />
       <div className="flex items-baseline gap-2 flex-wrap">
         <span className="micro-label !text-[0.5rem]">{level.toLowerCase()}</span>
@@ -990,9 +1064,9 @@ function ChainLevel({ level, label, detail, asset, status, source }: {
   );
 }
 
-function Readout({ label, value, tone }: { label: string; value: string; tone?: string }) {
+function Readout({ label, value, tone }: { label: string; value: React.ReactNode; tone?: string }) {
   return (
-    <div className="rounded-sm border border-border/60 bg-ink-850/30 px-3 py-2">
+    <div className="rounded-lg border border-border/70 bg-slate-50 px-3 py-2">
       <p className="micro-label !text-[0.5rem]">{label}</p>
       <p className={cn("data-mono text-sm mt-0.5", tone ?? "text-foreground")}>{value}</p>
     </div>

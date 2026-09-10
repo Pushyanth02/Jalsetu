@@ -17,7 +17,7 @@ const MapCanvasDyn = dynamic<MapData & { className?: string; compact?: boolean; 
   {
     ssr: false,
     loading: () => (
-      <div className="size-full bg-ink-900/40 grid place-items-center" aria-busy="true">
+      <div className="size-full bg-ink-900 grid place-items-center" aria-busy="true">
         <LoadingRows rows={3} className="w-40" />
       </div>
     ),
@@ -75,7 +75,7 @@ export function MapSelectionCard({ events }: { events: EventSummary[] }) {
   return (
     <div
       className={cn(
-        "absolute z-20 bottom-3 left-3 right-3 sm:right-auto sm:w-96 panel rounded-md p-3.5 shadow-xl",
+        "absolute z-20 bottom-3 left-3 right-3 sm:right-auto sm:w-96 panel rounded-xl p-3.5 shadow-xl",
         "animate-in fade-in slide-in-from-bottom-2 duration-200"
       )}
       role="dialog"
@@ -108,7 +108,7 @@ export function MapSelectionCard({ events }: { events: EventSummary[] }) {
       <div className="mt-3 flex gap-2">
         <button
           onClick={() => navigate("event", ev.code)}
-          className="flex-1 rounded-sm bg-water text-ink-950 micro-label !text-[0.62rem] font-semibold !tracking-[0.12em] py-2 hover:bg-water/90 transition-colors"
+          className="flex-1 rounded-lg bg-water text-white micro-label !text-[0.62rem] font-semibold !tracking-[0.12em] py-2 hover:bg-water-dim transition-colors"
         >
           Open full dossier
         </button>
@@ -116,7 +116,7 @@ export function MapSelectionCard({ events }: { events: EventSummary[] }) {
           onClick={() => {
             useUi.getState().focusMap(ev.lat, ev.lng, 15.5);
           }}
-          className="rounded-sm border border-border px-3 micro-label !text-[0.62rem] hover:bg-ink-850 transition-colors"
+          className="rounded-lg border border-border text-slate-600 px-3 py-2 micro-label !text-[0.62rem] hover:bg-ink-850 transition-colors"
         >
           Zoom
         </button>

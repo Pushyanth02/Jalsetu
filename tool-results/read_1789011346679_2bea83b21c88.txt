@@ -1,0 +1,1027 @@
+     1→"use client";
+     2→
+     3→import { useUi, navigate } from "@/lib/client/store";
+     4→import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+     5→import { apiGet, apiPost, apiPut, ApiClientError, type EventSummary } from "@/lib/client/api";
+     6→import {
+     7→  LoadingRows, ErrorNote, Panel, EmptyState, StatusBadge, RiskBadge, RiskMeter, SeverityTicks,
+     8→  TimeAgo, ConfidenceChip, SourceBadge, ProviderChip, fmtDateTime, timeAgo,
+     9→} from "@/components/app/shared/domain";
+    10→import { MapView } from "@/components/app/map/MapView";
+    11→import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+    12→import { Button } from "@/components/ui/button";
+    13→import { Textarea } from "@/components/ui/textarea";
+    14→import { Input } from "@/components/ui/input";
+    15→import { Label } from "@/components/ui/label";
+    16→import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+    17→import { useToast } from "@/hooks/use-toast";
+    18→import { cn } from "@/lib/utils";
+    19→import { ArrowLeft, RefreshCw, ChevronRight, Camera, MapPin, Umbrella, HardHat, History, FileWarning, GitMerge, Network } from "lucide-react";
+    20→import { useState, useRef } from "react";
+    21→
+    22→// URBAN EVENT DETAIL - full dossier: evidence, AI investigation, risk
+    23→// breakdown, responsibility, verification workflow, audit history.
+    24→
+    25→interface EventDetailResponse {
+    26→  event: {
+    27→    id: string; code: string; title: string; category: string; status: string; severity: number;
+    28→    lat: number; lng: number; locationText: string; jurisdictionId: string | null; agencyCode: string | null;
+    29→    firstReportedAt: string; lastActivityAt: string; reportCount: number; recurrenceCount: number;
+    30→    riskScore: number; riskBand: string; riskModelVersion: string | null; riskAssessedAt: string | null;
+    31→    confidence: number; confidenceNote: string | null; classificationProvider: string | null; modelVersion: string | null;
+    32→    rainfall24hMm: number | null; rainfall72hMm: number | null; closedAt: string | null; reopenedAt: string | null;
+    33→    groundTruthHotspotId: string | null; groundTruthAgencyCode: string | null; source: string;
+    34→    jurisdiction: { id: string; code: string; name: string; kind: string; agencyCode: string | null } | null;
+    35→    reports: {
+    36→      id: string; publicRef: string; description: string; category: string; severityReported: string;
+    37→      submittedAt: string; channel: string; status: string; isDuplicate: boolean; source: string;
+    38→      classificationProvider: string | null; classificationConfidence: number | null;
+    39→      classification: {
+    40→        category: string; severity: string; confidence: number; summary: string;
+    41→        factors: string[]; isDuplicateSuspected: boolean; duplicateReason?: string;
+    42→      } | null;
+    43→    }[];
+    44→    evidence: {
+    45→      id: string; kind: string; caption: string | null; content: string; mediaType: string;
+    46→      capturedAt: string; capturedBy: string; lat: number | null; lng: number | null; source: string;
+    47→    }[];
+    48→    links: {
+    49→      id: string; agencyCode: string; role: string; status: string; reason: string | null;
+    50→      assignedAt: string; source: string;
+    51→      asset: { code: string; name: string; kind: string; conditionScore: number } | null;
+    52→    }[];
+    53→    actions: {
+    54→      id: string; kind: string; instruction: string; priority: string; status: string;
+    55→      agencyCode: string | null; assignedTo: string | null; assignedAt: string | null;
+    56→      dueAt: string | null; completedAt: string | null; outcome: string | null;
+    57→    }[];
+    58→    verifications: {
+    59→      id: string; stage: string; observedSeverity: string | null; waterDepthCm: number | null;
+    60→      notes: string | null; verifiedBy: string; verifiedAt: string;
+    61→    }[];
+    62→    riskFactors: { key: string; label: string; value: number; weight: number; contribution: number; raw: string }[];
+    63→  };
+    64→  context: {
+    65→    assets: { code: string; name: string; kind: string; agencyCode: string; lat: number; lng: number; conditionScore: number; lastInspectedAt: string | null }[];
+    66→    historicalIncidents: { id: string; lat: number; lng: number; occurredOn: string; severity: string; durationHours: number | null; waterDepthCm: number | null; reportedVia: string }[];
+    67→    maintenance: { kind: string; status: string; performedAt: string | null; scheduledAt: string; notes: string | null; agencyCode: string; asset: { code: string; name: string } | null }[];
+    68→    rainfallSeries: { t: string; mm: number }[];
+    69→  };
+    70→  riskHistory: { score: number; band: string; computedAt: string; provider: string; factors: { key: string; label: string; value: number; weight: number; contribution: number; raw: string }[] }[];
+    71→  auditHistory: { id: string; at: string; actor: string; action: string; note: string | null }[];
+    72→}
+    73→
+    74→export function EventDetailView() {
+    75→  const eventId = useUi((s) => s.eventId);
+    76→  const { toast } = useToast();
+    77→  const qc = useQueryClient();
+    78→
+    79→  const detailQ = useQuery({
+    80→    queryKey: ["event", eventId],
+    81→    queryFn: () => apiGet<EventDetailResponse>(`/api/events/${eventId}`).then((r) => r.data),
+    82→    enabled: !!eventId,
+    83→  });
+    84→
+    85→  const invalidate = () => {
+    86→    qc.invalidateQueries({ queryKey: ["event", eventId] });
+    87→    qc.invalidateQueries({ queryKey: ["events"] });
+    88→    qc.invalidateQueries({ queryKey: ["overview"] });
+    89→    qc.invalidateQueries({ queryKey: ["risk"] });
+    90→  };
+    91→
+    92→  const reassess = useMutation({
+    93→    mutationFn: () => apiPost<{ event: { riskScore: number; riskBand: string }; advisory: { provider: string } | null }>(`/api/events/${eventId}/reassess`, { useProvider: true }, "ANALYST"),
+    94→    onSuccess: (r) => {
+    95→      invalidate();
+    96→      toast({ title: "Risk reassessed", description: `New score ${r.data.event.riskScore} (${r.data.event.riskBand}). Advisory provider: ${r.data.advisory?.provider ?? "rule engine"}.` });
+    97→    },
+    98→    onError: (e) => toast({ title: "Reassessment failed", description: (e as ApiClientError).message, variant: "destructive" }),
+    99→  });
+   100→
+   101→  if (!eventId) {
+   102→    return (
+   103→      <div className="flex-1 grid place-items-center">
+   104→        <EmptyState icon={<FileWarning className="size-8" />} title="No event selected" hint="Open an event from the command center or map." action={
+   105→          <Button variant="outline" size="sm" onClick={() => navigate("command")} className="mt-2">← Command Center</Button>
+   106→        } />
+   107→      </div>
+   108→    );
+   109→  }
+   110→  if (detailQ.isLoading) return <div className="p-6"><LoadingRows rows={8} /></div>;
+   111→  if (detailQ.isError)
+   112→    return (
+   113→      <div className="p-6 max-w-lg">
+   114→        <ErrorNote message={(detailQ.error as Error).message} onRetry={() => detailQ.refetch()} />
+   115→        <Button variant="outline" size="sm" className="mt-3" onClick={() => navigate("command")}>← Back to Command Center</Button>
+   116→      </div>
+   117→    );
+   118→
+   119→  if (!detailQ.data) return null;
+   120→  const { event, context, riskHistory, auditHistory } = detailQ.data;
+   121→  const d = { event, context, riskHistory, auditHistory } satisfies { event: EventDetailResponse["event"]; context: EventDetailResponse["context"]; riskHistory: EventDetailResponse["riskHistory"]; auditHistory: EventDetailResponse["auditHistory"] };
+   122→
+   123→
+   124→  return (
+   125→    <div className="flex-1 min-h-0 flex flex-col">
+   126→      {/* header */}
+   127→      <div className="hairline-b bg-ink-900/30 px-4 sm:px-6 py-3.5">
+   128→        <div className="flex items-start gap-3 flex-wrap">
+   129→          <button onClick={() => navigate(useUi.getState().view === "event" ? "command" : "map")} className="p-1.5 -ml-1.5 mt-0.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-ink-850 transition-colors" aria-label="Back">
+   130→            <ArrowLeft className="size-4" />
+   131→          </button>
+   132→          <div className="min-w-0 flex-1">
+   133→            <div className="flex items-center gap-2 flex-wrap">
+   134→              <h1 className="data-mono text-sm font-semibold text-water">{event.code}</h1>
+   135→              <StatusBadge status={event.status} />
+   136→              <RiskBadge band={event.riskBand} score={event.riskScore} />
+   137→              <ConfidenceChip confidence={event.confidence} note={event.confidenceNote} />
+   138→              <SourceBadge source={event.source} />
+   139→            </div>
+   140→            <h2 className="mt-1.5 text-base sm:text-lg font-medium leading-snug">{event.title}</h2>
+   141→            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+   142→              <span className="inline-flex items-center gap-1"><MapPin className="size-3" aria-hidden /> {event.locationText}</span>
+   143→              <span className="data-mono">{event.lat.toFixed(4)}, {event.lng.toFixed(4)}</span>
+   144→              <span className="inline-flex items-center gap-1"><HardHat className="size-3" aria-hidden /> {event.agencyCode ?? "unassigned"}</span>
+   145→              <span>first report <TimeAgo iso={event.firstReportedAt} /></span>
+   146→              {event.jurisdiction && <span className="hidden sm:inline">{event.jurisdiction.name}</span>}
+   147→            </div>
+   148→          </div>
+   149→          <div className="flex items-center gap-2">
+   150→            <Button
+   151→              size="sm" variant="outline"
+   152→              onClick={() => {
+   153→                useUi.getState().focusMap(event.lat, event.lng, 15);
+   154→                navigate("map");
+   155→              }}
+   156→              className="border-border"
+   157→            >
+   158→              <MapPin className="size-3.5" /> <span className="hidden sm:inline">Locate on map</span>
+   159→            </Button>
+   160→            <Button size="sm" onClick={() => reassess.mutateAsync()} disabled={reassess.isPending} className="bg-water text-ink-950 hover:bg-water/85">
+   161→              <RefreshCw className={cn("size-3.5", reassess.isPending && "animate-spin")} />
+   162→              {reassess.isPending ? "Reassessing…" : "Reassess risk"}
+   163→            </Button>
+   164→          </div>
+   165→        </div>
+   166→        {event.confidenceNote && (
+   167→          <p className="mt-2 rounded-sm border border-sev-moderate/25 bg-sev-moderate/6 px-2.5 py-1.5 text-xs text-sev-moderate/90" role="note">
+   168→            {event.confidenceNote}
+   169→          </p>
+   170→        )}
+   171→      </div>
+   172→
+   173→      {/* body: mini map + tabs */}
+   174→      <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-[340px_1fr] overflow-y-auto xl:overflow-hidden">
+   175→        <aside className="xl:hairline-r bg-ink-900/20 flex flex-col xl:min-h-0">
+   176→          <div className="relative h-52 xl:h-64 shrink-0">
+   177→            <MapView events={[{
+   178→              id: event.id, code: event.code, title: event.title, category: event.category,
+   179→              status: event.status, severity: event.severity, lat: event.lat, lng: event.lng,
+   180→              locationText: event.locationText, jurisdictionId: event.jurisdictionId, agencyCode: event.agencyCode,
+   181→              firstReportedAt: event.firstReportedAt, lastActivityAt: event.lastActivityAt,
+   182→              reportCount: event.reportCount, recurrenceCount: event.recurrenceCount,
+   183→              riskScore: event.riskScore, riskBand: event.riskBand as EventSummary["riskBand"],
+   184→              riskModelVersion: event.riskModelVersion, riskAssessedAt: event.riskAssessedAt,
+   185→              confidence: event.confidence, confidenceNote: event.confidenceNote,
+   186→              classificationProvider: event.classificationProvider, modelVersion: event.modelVersion,
+   187→              rainfall24hMm: event.rainfall24hMm, rainfall72hMm: event.rainfall72hMm,
+   188→              closedAt: event.closedAt, reopenedAt: event.reopenedAt,
+   189→              groundTruthHotspotId: event.groundTruthHotspotId, source: event.source,
+   190→            }]} initialZoom={14.2} />
+   191→            <div className="absolute top-2 left-2 rounded-sm bg-ink-950/85 px-2 py-1 pointer-events-none">
+   192→              <p className="micro-label !text-[0.55rem]">event focus</p>
+   193→            </div>
+   194→          </div>
+   195→          <QuickFacts d={d} />
+   196→        </aside>
+   197→
+   198→        <div className="min-h-0 overflow-y-auto xl:overflow-hidden p-3 sm:p-4">
+   199→          <Tabs defaultValue="overview" className="flex flex-col h-full min-h-0">
+   200→            <TabsList className="bg-ink-900/60 border border-border/60 w-full justify-start overflow-x-auto rounded-md no-scrollbar h-9">
+   201→              <TabsTrigger value="overview" className="text-xs data-[state=active]:bg-water/12 data-[state=active]:text-water">Overview</TabsTrigger>
+   202→              <TabsTrigger value="evidence" className="text-xs data-[state=active]:bg-water/12 data-[state=active]:text-water">Evidence ({event.evidence.length})</TabsTrigger>
+   203→              <TabsTrigger value="investigation" className="text-xs data-[state=active]:bg-water/12 data-[state=active]:text-water">AI Investigation</TabsTrigger>
+   204→              <TabsTrigger value="response" className="text-xs data-[state=active]:bg-water/12 data-[state=active]:text-water">Response & Verification</TabsTrigger>
+   205→              <TabsTrigger value="audit" className="text-xs data-[state=active]:bg-water/12 data-[state=active]:text-water">Audit</TabsTrigger>
+   206→            </TabsList>
+   207→
+   208→            <div className="flex-1 min-h-0 overflow-y-auto mt-3 pr-0.5">
+   209→              <TabsContent value="overview" className="mt-0 space-y-3">
+   210→                <OverviewTab d={d} />
+   211→              </TabsContent>
+   212→              <TabsContent value="evidence" className="mt-0 space-y-3">
+   213→                <EvidenceTab d={d} onMutated={invalidate} />
+   214→              </TabsContent>
+   215→              <TabsContent value="investigation" className="mt-0 space-y-3">
+   216→                <InvestigationTab d={d} />
+   217→              </TabsContent>
+   218→              <TabsContent value="response" className="mt-0 space-y-3">
+   219→                <ResponseTab d={d} onMutated={invalidate} />
+   220→              </TabsContent>
+   221→              <TabsContent value="audit" className="mt-0 space-y-3">
+   222→                <AuditTab d={d} />
+   223→              </TabsContent>
+   224→            </div>
+   225→          </Tabs>
+   226→        </div>
+   227→      </div>
+   228→    </div>
+   229→  );
+   230→}
+   231→
+   232→type D = { event: EventDetailResponse["event"]; context: EventDetailResponse["context"]; riskHistory: EventDetailResponse["riskHistory"]; auditHistory: EventDetailResponse["auditHistory"] };
+   233→
+   234→function QuickFacts({ d }: { d: D }) {
+   235→  const e = d.event;
+   236→  return (
+   237→    <div className="p-4 space-y-4 xl:overflow-y-auto">
+   238→      <div>
+   239→        <p className="micro-label mb-1.5">risk</p>
+   240→        <RiskMeter score={e.riskScore} band={e.riskBand} />
+   241→        <p className="mt-1 micro-label !text-[0.52rem] text-muted-foreground/70">
+   242→          {e.riskModelVersion} · assessed {e.riskAssessedAt ? timeAgo(e.riskAssessedAt) : "-"}
+   243→        </p>
+   244→      </div>
+   245→      <dl className="space-y-2 text-xs">
+   246→        <Fact label="severity" value={<SeverityTicks severity={e.severity} />} />
+   247→        <Fact label="reports" value={<span className="data-mono">{e.reportCount} ({e.reports.filter((r) => r.isDuplicate).length} merged)</span>} />
+   248→        <Fact label="recurrence" value={<span className="data-mono">{e.recurrenceCount}×</span>} />
+   249→        <Fact label="rainfall 24h/72h" value={<span className="data-mono text-water">{Math.round(e.rainfall24hMm ?? 0)} / {Math.round(e.rainfall72hMm ?? 0)} mm</span>} />
+   250→        <Fact label="category" value={<span className="data-mono">{e.category.toLowerCase()}</span>} />
+   251→        <Fact label="classification" value={<ProviderChip provider={e.classificationProvider ?? "-"} model={e.modelVersion} />} />
+   252→        {e.groundTruthHotspotId && (
+   253→          <Fact label="ground truth" value={<span className="text-[0.65rem] text-sev-moderate/80">{e.groundTruthHotspotId} · {e.groundTruthAgencyCode} (synthetic)</span>} />
+   254→        )}
+   255→      </dl>
+   256→    </div>
+   257→  );
+   258→}
+   259→
+   260→function Fact({ label, value }: { label: string; value: React.ReactNode }) {
+   261→  return (
+   262→    <div className="flex items-center justify-between gap-2">
+   263→      <dt className="micro-label !text-[0.55rem]">{label}</dt>
+   264→      <dd className="flex items-center">{value}</dd>
+   265→    </div>
+   266→  );
+   267→}
+   268→
+   269→// --- Overview tab -----------------------------------------------------------------
+   270→
+   271→function OverviewTab({ d }: { d: D }) {
+   272→  const { event: e, context } = d;
+   273→  const nearbyAssets = context.assets
+   274→    .map((a) => ({ ...a, d: Math.round(hav({ lat: e.lat, lng: e.lng }, a)) }))
+   275→    .filter((a) => a.d <= 600)
+   276→    .sort((a, b) => a.d - b.d)
+   277→    .slice(0, 6);
+   278→  const nearIncidents = context.historicalIncidents
+   279→    .map((i) => ({ ...i, d: Math.round(hav({ lat: e.lat, lng: e.lng }, i)) }))
+   280→    .filter((i) => i.d <= 300)
+   281→    .sort((a, b) => b.occurredOn.localeCompare(a.occurredOn))
+   282→    .slice(0, 5);
+   283→  const nearMaint = context.maintenance
+   284→    .filter((m) => m.asset && nearbyAssets.some((a) => a.code === m.asset?.code))
+   285→    .slice(0, 4);
+   286→
+   287→  return (
+   288→    <>
+   289→      <Panel title={`citizen reports · ${e.reportCount}`}>
+   290→        <ul className="divide-y divide-border/60">
+   291→          {e.reports.map((r) => (
+   292→            <li key={r.id} className="py-2.5 first:pt-0 last:pb-0">
+   293→              <div className="flex items-center gap-2 flex-wrap">
+   294→                <span className="data-mono text-[0.65rem] text-water/90">{r.publicRef}</span>
+   295→                <span className="micro-label !text-[0.52rem]">{r.channel.toLowerCase()}</span>
+   296→                {r.isDuplicate && <span className="micro-label !text-[0.52rem] text-sev-moderate/80">merged as duplicate</span>}
+   297→                <TimeAgo iso={r.submittedAt} />
+   298→              </div>
+   299→              <p className="mt-1 text-[0.82rem] text-foreground/90 leading-relaxed">{r.description}</p>
+   300→              {r.classification && (
+   301→                <div className="mt-1.5 flex items-center gap-2 flex-wrap text-[0.65rem] text-muted-foreground">
+   302→                  <span>assessed <span className={cn("font-medium", sevClass(r.classification.severity))}>{r.classification.severity.toLowerCase()}</span></span>
+   303→                  <span className="data-mono">conf {Math.round(r.classification.confidence * 100)}%</span>
+   304→                  {r.classificationProvider && <ProviderChip provider={r.classificationProvider} />}
+   305→                </div>
+   306→              )}
+   307→            </li>
+   308→          ))}
+   309→        </ul>
+   310→      </Panel>
+   311→
+   312→      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+   313→        <Panel title={`infrastructure context · within 600m`}>
+   314→          {nearbyAssets.length === 0 ? (
+   315→            <EmptyState title="No assets recorded nearby" hint="Asset registry covers pilot jurisdictions only (synthetic)." />
+   316→          ) : (
+   317→            <ul className="space-y-2">
+   318→              {nearbyAssets.map((a) => (
+   319→                <li key={a.code} className="flex items-center gap-2.5 text-xs">
+   320→                  <span className="data-mono text-[0.62rem] text-muted-foreground w-12 shrink-0">{a.d}m</span>
+   321→                  <span className={cn("size-2 rounded-full shrink-0", a.conditionScore < 45 ? "bg-sev-high" : a.conditionScore < 65 ? "bg-sev-moderate" : "bg-verified")} aria-hidden />
+   322→                  <span className="flex-1 min-w-0">
+   323→                    <span className="block truncate">{a.name}</span>
+   324→                    <span className="micro-label !text-[0.5rem]">{a.kind.toLowerCase().replace(/_/g, " ")} · {a.agencyCode} · condition {a.conditionScore}</span>
+   325→                  </span>
+   326→                </li>
+   327→              ))}
+   328→            </ul>
+   329→          )}
+   330→        </Panel>
+   331→
+   332→        <Panel title="historical incidents · within 300m">
+   333→          {nearIncidents.length === 0 ? (
+   334→            <EmptyState title="No historical incidents nearby" hint="Synthetic archive covers the pilot jurisdictions." />
+   335→          ) : (
+   336→            <ul className="space-y-2">
+   337→              {nearIncidents.map((i) => (
+   338→                <li key={i.id} className="flex items-baseline gap-2.5 text-xs">
+   339→                  <span className="data-mono text-[0.62rem] text-muted-foreground shrink-0 w-20">{new Date(i.occurredOn).toLocaleDateString("en-IN", { month: "short", year: "numeric" })}</span>
+   340→                  <span className={cn("font-medium shrink-0", sevClass(i.severity))}>{i.severity.toLowerCase()}</span>
+   341→                  <span className="text-muted-foreground truncate">{i.waterDepthCm ?? "?"}cm · {i.durationHours?.toFixed(0) ?? "?"}h · {i.reportedVia.toLowerCase()}</span>
+   342→                </li>
+   343→              ))}
+   344→            </ul>
+   345→          )}
+   346→        </Panel>
+   347→      </div>
+   348→
+   349→      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+   350→        <Panel title="maintenance nearby">
+   351→          {nearMaint.length === 0 ? (
+   352→            <EmptyState title="No maintenance records for nearby assets" />
+   353→          ) : (
+   354→            <ul className="space-y-2">
+   355→              {nearMaint.map((m, i) => (
+   356→                <li key={i} className="flex items-baseline gap-2.5 text-xs">
+   357→                  <span className="data-mono text-[0.62rem] text-muted-foreground w-20 shrink-0">
+   358→                    {m.performedAt ? new Date(m.performedAt).toLocaleDateString("en-IN", { month: "short", year: "numeric" }) : "scheduled"}
+   359→                  </span>
+   360→                  <span className="flex-1 truncate">{m.asset?.name ?? "asset"} · {m.kind.toLowerCase()}</span>
+   361→                  <span className={cn("micro-label !text-[0.5rem]", m.status === "COMPLETED" ? "text-verified" : "text-water")}>{m.status.toLowerCase()}</span>
+   362→                </li>
+   363→              ))}
+   364→            </ul>
+   365→          )}
+   366→        </Panel>
+   367→
+   368→        <Panel title={<span className="flex items-center gap-1.5"><Umbrella className="size-3 text-water" aria-hidden /> rainfall · 72h (synthetic)</span>}>
+   369→          <ul className="space-y-1.5 text-xs">
+   370→            {context.rainfallSeries.slice(-12).map((s, i) => (
+   371→              <li key={i} className="flex items-center gap-2">
+   372→                <span className="data-mono text-[0.6rem] text-muted-foreground w-11 shrink-0">{new Date(s.t).toLocaleTimeString("en-IN", { hour: "2-digit", hour12: false })}</span>
+   373→                <span className="h-1.5 rounded-full bg-water/70" style={{ width: `${Math.min(100, s.mm * 3)}%` }} />
+   374→                <span className="data-mono text-[0.62rem]">{s.mm}mm</span>
+   375→              </li>
+   376→            ))}
+   377→          </ul>
+   378→        </Panel>
+   379→      </div>
+   380→    </>
+   381→  );
+   382→}
+   383→
+   384→// --- Evidence tab ------------------------------------------------------------------
+   385→
+   386→function EvidenceTab({ d, onMutated }: { d: D; onMutated: () => void }) {
+   387→  const { event: e } = d;
+   388→  const { toast } = useToast();
+   389→  const fileRef = useRef<HTMLInputElement>(null);
+   390→  const [caption, setCaption] = useState("");
+   391→  const [kind, setKind] = useState<"FIELD_PHOTO" | "FIELD_NOTE">("FIELD_PHOTO");
+   392→  const [noteText, setNoteText] = useState("");
+   393→  const [uploading, setUploading] = useState(false);
+   394→
+   395→  const upload = useMutation({
+   396→    mutationFn: async (payload: { kind: string; caption: string; content: string; mediaType: string }) =>
+   397→      apiPost(`/api/events/${e.id}/verify`, { stage: "EVIDENCE_UPLOADED", notes: payload.caption, photoDataUrl: kind === "FIELD_PHOTO" ? payload.content : undefined, photoCaption: payload.caption }, "FIELD_TEAM"),
+   398→    onSuccess: () => {
+   399→      onMutated();
+   400→      toast({ title: "Evidence attached", description: "Field evidence recorded in the event dossier." });
+   401→      setCaption("");
+   402→      setNoteText("");
+   403→    },
+   404→    onError: (err) => toast({ title: "Upload failed", description: (err as ApiClientError).message, variant: "destructive" }),
+   405→  });
+   406→
+   407→  const onFile = async (file: File) => {
+   408→    setUploading(true);
+   409→    try {
+   410→      const dataUrl = await fileToDataUrl(file, 1024, 0.7);
+   411→      upload.mutate({ kind: "FIELD_PHOTO", caption: caption || `Field photo (${file.name})`, content: dataUrl, mediaType: "image/jpeg" });
+   412→    } finally {
+   413→      setUploading(false);
+   414→      if (fileRef.current) fileRef.current.value = "";
+   415→    }
+   416→  };
+   417→
+   418→  return (
+   419→    <>
+   420→      <Panel title={`evidence chain · ${e.evidence.length} items`}>
+   421→        {e.evidence.length === 0 ? (
+   422→          <EmptyState icon={<Camera className="size-7" />} title="No evidence yet" hint="Field teams can attach photos and notes; the pipeline attaches AI outputs automatically." />
+   423→        ) : (
+   424→          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+   425→            {e.evidence.map((ev) => (
+   426→              <figure key={ev.id} className="group">
+   427→                <div className="relative rounded-sm overflow-hidden border border-border/70 aspect-[4/3] bg-ink-850">
+   428→                  {ev.mediaType.startsWith("image/") ? (
+   429→                     
+   430→                    <img src={ev.content} alt={ev.caption ?? `${ev.kind} evidence`} className="size-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+   431→                  ) : (
+   432→                    <div className="size-full p-2.5 overflow-auto">
+   433→                      <p className="text-[0.6rem] data-mono text-muted-foreground break-words">{ev.content.slice(0, 260)}</p>
+   434→                    </div>
+   435→                  )}
+   436→                  <span className="absolute top-1 left-1 rounded-sm bg-ink-950/85 px-1.5 py-0.5 micro-label !text-[0.48rem]">
+   437→                    {ev.kind.toLowerCase().replace(/_/g, " ")}
+   438→                  </span>
+   439→                </div>
+   440→                <figcaption className="mt-1.5 text-[0.65rem] text-muted-foreground leading-snug">
+   441→                  <span className="block truncate">{ev.caption ?? "-"}</span>
+   442→                  <span className="micro-label !text-[0.48rem] !text-muted-foreground/60">{ev.capturedBy.toLowerCase()} · {fmtDateTime(ev.capturedAt)}</span>
+   443→                </figcaption>
+   444→              </figure>
+   445→            ))}
+   446→          </div>
+   447→        )}
+   448→      </Panel>
+   449→
+   450→      <Panel title="attach field evidence">
+   451→        <div className="space-y-3 max-w-lg">
+   452→          <div className="grid grid-cols-2 gap-3">
+   453→            <div className="space-y-1.5">
+   454→              <Label className="text-xs">Type</Label>
+   455→              <Select value={kind} onValueChange={(v) => setKind(v as typeof kind)}>
+   456→                <SelectTrigger className="h-9 bg-ink-900 border-border text-xs" aria-label="Evidence type"><SelectValue /></SelectTrigger>
+   457→                <SelectContent>
+   458→                  <SelectItem value="FIELD_PHOTO" className="text-xs">Field photo</SelectItem>
+   459→                  <SelectItem value="FIELD_NOTE" className="text-xs">Field note</SelectItem>
+   460→                </SelectContent>
+   461→              </Select>
+   462→            </div>
+   463→            <div className="space-y-1.5">
+   464→              <Label htmlFor="ev-caption" className="text-xs">Caption</Label>
+   465→              <Input id="ev-caption" value={caption} onChange={(e2) => setCaption(e2.target.value)} placeholder="e.g. before intervention, drain intake blocked" className="h-9 bg-ink-900 border-border text-xs" maxLength={120} />
+   466→            </div>
+   467→          </div>
+   468→          {kind === "FIELD_PHOTO" ? (
+   469→            <div>
+   470→              <input
+   471→                ref={fileRef}
+   472→                type="file"
+   473→                accept="image/*"
+   474→                className="sr-only"
+   475→                id="evidence-file"
+   476→                onChange={(e2) => e2.target.files?.[0] && onFile(e2.target.files[0])}
+   477→              />
+   478→              <Button type="button" variant="outline" size="sm" disabled={uploading || upload.isPending} onClick={() => fileRef.current?.click()} className="border-border">
+   479→                <Camera className="size-3.5" /> {uploading || upload.isPending ? "Processing…" : "Select photo"}
+   480→              </Button>
+   481→              <p className="mt-1.5 text-[0.65rem] text-muted-foreground">Images are downscaled to ≤1024px and stored as data URLs in the demo database.</p>
+   482→            </div>
+   483→          ) : (
+   484→            <div className="space-y-1.5">
+   485→              <Label htmlFor="note-text" className="text-xs">Note</Label>
+   486→              <Textarea id="note-text" value={noteText} onChange={(e2) => setNoteText(e2.target.value)} rows={3} className="bg-ink-900 border-border text-xs" placeholder="Field observation…" maxLength={600} />
+   487→              <Button size="sm" disabled={!noteText.trim() || upload.isPending} onClick={() => upload.mutate({ kind: "FIELD_NOTE", caption: caption || "Field note", content: noteText, mediaType: "text/plain" })}>
+   488→                Attach note
+   489→              </Button>
+   490→            </div>
+   491→          )}
+   492→        </div>
+   493→      </Panel>
+   494→    </>
+   495→  );
+   496→}
+   497→
+   498→// --- AI Investigation tab -------------------------------------------------------------
+   499→
+   500→function InvestigationTab({ d }: { d: D }) {
+   501→  const { event: e } = d;
+   502→  const latestReport = e.reports.find((r) => r.classification);
+   503→  const cl = latestReport?.classification ?? null;
+   504→  const riskFactors = e.riskFactors ?? [];
+   505→  const aiEvidence = e.evidence.filter((ev) => ev.kind === "AI_OUTPUT");
+   506→
+   507→  return (
+   508→    <>
+   509→      {cl && (
+   510→        <Panel title="classification · structured model output" actions={<ProviderChip provider={latestReport?.classificationProvider ?? "-"} model={e.modelVersion} />}>
+   511→          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+   512→            <Readout label="category" value={cl.category.toLowerCase().replace(/_/g, " ")} />
+   513→            <Readout label="severity" value={cl.severity.toLowerCase()} tone={sevClass(cl.severity)} />
+   514→            <Readout label="confidence" value={`${Math.round(cl.confidence * 100)}%`} />
+   515→          </div>
+   516→          <p className="text-sm text-foreground/90 leading-relaxed border-l-2 border-water/50 pl-3">{cl.summary}</p>
+   517→          {cl.factors.length > 0 && (
+   518→            <ul className="mt-3 flex flex-wrap gap-1.5">
+   519→              {cl.factors.map((f, i) => (
+   520→                <li key={i} className="rounded-sm border border-border/70 bg-ink-850/50 px-2 py-0.5 text-[0.65rem] text-muted-foreground">{f}</li>
+   521→              ))}
+   522→            </ul>
+   523→          )}
+   524→          <p className="mt-3 micro-label !text-[0.5rem] text-muted-foreground/60">
+   525→            Structured output only. No chain-of-thought is exposed or stored.
+   526→          </p>
+   527→        </Panel>
+   528→      )}
+   529→
+   530→      <Panel title={`risk assessment · ${e.riskModelVersion ?? "risk-engine"}`} actions={<RiskBadge band={e.riskBand} score={e.riskScore} />}>
+   531→        <div className="space-y-2.5 max-w-2xl">
+   532→          {riskFactors.map((f) => (
+   533→            <div key={f.key} className="flex items-center gap-3">
+   534→              <span className="w-36 sm:w-44 shrink-0 text-xs text-foreground/90 truncate" title={f.label}>{f.label}</span>
+   535→              <div className="flex-1 h-2 rounded-full bg-ink-800 overflow-hidden" role="img" aria-label={`${f.label}: contribution ${f.contribution} of 100`}>
+   536→                <div
+   537→                  className={cn("h-full rounded-full transition-[width] duration-500", f.contribution > 12 ? "bg-sev-high" : f.contribution > 7 ? "bg-sev-moderate" : "bg-water/70")}
+   538→                  style={{ width: `${(f.contribution / 20) * 100}%` }}
+   539→                />
+   540→              </div>
+   541→              <span className="data-mono text-[0.65rem] w-10 text-right text-foreground">{f.contribution.toFixed(1)}</span>
+   542→              <span className="data-mono text-[0.6rem] w-20 text-right text-muted-foreground hidden sm:block" title={`raw: ${f.raw}`}>{f.raw}</span>
+   543→            </div>
+   544→          ))}
+   545→        </div>
+   546→        <p className="mt-3 text-[0.68rem] text-muted-foreground">
+   547→          Score = Σ(factor value × weight) × 100. Weights: severity 0.20, rainfall 0.18, reports 0.16, recurrence 0.14, infrastructure 0.12, maintenance 0.10, history 0.10.
+   548→        </p>
+   549→      </Panel>
+   550→
+   551→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+   552→        <Panel title="duplicate & recurrence analysis">
+   553→          <ul className="space-y-2 text-xs">
+   554→            {e.reports.filter((r) => r.isDuplicate).length > 0 ? (
+   555→              e.reports.filter((r) => r.isDuplicate).map((r) => (
+   556→                <li key={r.id} className="flex items-center gap-2">
+   557→                  <GitMerge className="size-3.5 text-water shrink-0" aria-hidden />
+   558→                  <span className="data-mono text-water/90">{r.publicRef}</span>
+   559→                  <span className="text-muted-foreground">merged within 150m / 48h window</span>
+   560→                </li>
+   561→              ))
+   562→            ) : (
+   563→              <li className="text-muted-foreground">No merged duplicates in this event.</li>
+   564→            )}
+   565→            {e.recurrenceCount > 0 && (
+   566→              <li className="flex items-center gap-2 text-sev-high">
+   567→                <RefreshCw className="size-3.5 shrink-0" aria-hidden />
+   568→                <span>Recurred {e.recurrenceCount}× {e.reopenedAt ? `· reopened ${timeAgo(e.reopenedAt)}` : ""}</span>
+   569→              </li>
+   570→            )}
+   571→            {cl?.isDuplicateSuspected && cl.duplicateReason && (
+   572→              <li className="text-sev-moderate/90">Model suspects further duplication: {cl.duplicateReason}</li>
+   573→            )}
+   574→          </ul>
+   575→        </Panel>
+   576→
+   577→        <Panel title="risk history">
+   578→          <ul className="space-y-2">
+   579→            {d.riskHistory.length === 0 ? (
+   580→              <li className="text-xs text-muted-foreground">No assessments recorded.</li>
+   581→            ) : (
+   582→              d.riskHistory.slice(0, 6).map((r, i) => (
+   583→                <li key={i} className="flex items-center gap-3 text-xs">
+   584→                  <span className="data-mono text-muted-foreground w-20 shrink-0">{timeAgo(r.computedAt)}</span>
+   585→                  <RiskBadge band={r.band} score={r.score} />
+   586→                  <span className="micro-label !text-[0.5rem] text-muted-foreground">{r.provider.toLowerCase()}</span>
+   587→                </li>
+   588→              ))
+   589→            )}
+   590→          </ul>
+   591→        </Panel>
+   592→      </div>
+   593→
+   594→      {aiEvidence.length > 0 && (
+   595→        <Panel title="AI risk advisories · structured outputs">
+   596→          <div className="space-y-3">
+   597→            {aiEvidence.map((ev) => {
+   598→              let parsed: { narrative: string; factors?: { key: string; label: string; direction: string; weight: number }[]; recommendedInvestigation?: string } | null = null;
+   599→              try {
+   600→                parsed = JSON.parse(ev.content);
+   601→              } catch {
+   602→                parsed = null;
+   603→              }
+   604→              return (
+   605→                <div key={ev.id} className="rounded-sm border border-border/60 bg-ink-850/30 p-3">
+   606→                  <div className="flex items-center gap-2 mb-1.5">
+   607→                    <ProviderChip provider={ev.source === "MODEL_OUTPUT" ? "GLM" : "MOCK"} />
+   608→                    <TimeAgo iso={ev.capturedAt} />
+   609→                  </div>
+   610→                  {parsed && (
+   611→                    <>
+   612→                      <p className="text-[0.82rem] text-foreground/90 leading-relaxed">{parsed.narrative}</p>
+   613→                      {parsed.factors && parsed.factors.length > 0 && (
+   614→                        <ul className="mt-2 flex flex-wrap gap-1.5">
+   615→                          {parsed.factors.map((f, i) => (
+   616→                            <li key={i} className={cn(
+   617→                              "rounded-sm border px-1.5 py-0.5 text-[0.62rem]",
+   618→                              f.direction === "AGGRAVATES" ? "border-sev-high/30 text-sev-high/90 bg-sev-high/6" : "border-verified/30 text-verified/90 bg-verified/6"
+   619→                            )}>
+   620→                              {f.label} · w {f.weight.toFixed(2)}
+   621→                            </li>
+   622→                          ))}
+   623→                        </ul>
+   624→                      )}
+   625→                      {parsed.recommendedInvestigation && (
+   626→                        <p className="mt-2 text-xs text-water/90">Recommended: {parsed.recommendedInvestigation}</p>
+   627→                      )}
+   628→                    </>
+   629→                  )}
+   630→                </div>
+   631→              );
+   632→            })}
+   633→          </div>
+   634→        </Panel>
+   635→      )}
+   636→    </>
+   637→  );
+   638→}
+   639→
+   640→// --- Response tab (responsibility + actions + verification) ------------------------------
+   641→
+   642→function ResponseTab({ d, onMutated }: { d: D; onMutated: () => void }) {
+   643→  const { event: e } = d;
+   644→  const { toast } = useToast();
+   645→  const qc = useQueryClient();
+   646→
+   647→  const actionUpdate = useMutation({
+   648→    mutationFn: (p: { actionId: string; status: string; outcome?: string }) => apiPut(`/api/events/${e.id}/actions`, p, "AGENCY"),
+   649→    onSuccess: () => {
+   650→      onMutated();
+   651→      toast({ title: "Action updated" });
+   652→    },
+   653→    onError: (err) => toast({ title: "Update failed", description: (err as ApiClientError).message, variant: "destructive" }),
+   654→  });
+   655→
+   656→  const verify = useMutation({
+   657→    mutationFn: (p: Record<string, unknown>) => apiPost(`/api/events/${e.id}/verify`, p, "FIELD_TEAM"),
+   658→    onSuccess: () => {
+   659→      onMutated();
+   660→      qc.invalidateQueries({ queryKey: ["overview"] });
+   661→      toast({ title: "Verification stage recorded" });
+   662→    },
+   663→    onError: (err) => toast({ title: "Verification failed", description: (err as ApiClientError).message, variant: "destructive" }),
+   664→  });
+   665→
+   666→  const reopen = useMutation({
+   667→    mutationFn: (p: { reopenReason: string }) => apiPut(`/api/events/${e.id}/verify`, p, "AGENCY"),
+   668→    onSuccess: () => {
+   669→      onMutated();
+   670→      toast({ title: "Event reopened", description: "Recurrence watch incremented." });
+   671→    },
+   672→    onError: (err) => toast({ title: "Reopen failed", description: (err as ApiClientError).message, variant: "destructive" }),
+   673→  });
+   674→
+   675→  const assign = useMutation({
+   676→    mutationFn: (p: { agencyCode: string; role: string; note?: string }) => apiPost(`/api/events/${e.id}/assign`, p, "ANALYST"),
+   677→    onSuccess: () => {
+   678→      onMutated();
+   679→      toast({ title: "Responsibility assigned" });
+   680→    },
+   681→    onError: (err) => toast({ title: "Assignment failed", description: (err as ApiClientError).message, variant: "destructive" }),
+   682→  });
+   683→
+   684→  return (
+   685→    <>
+   686→      <Panel title="responsibility chain" actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/60">routing-rules v1.2</span>}>
+   687→        <ol className="space-y-0">
+   688→          <ChainLevel level="EVENT" label={e.code} detail={`${e.reportCount} reports · risk ${e.riskScore} (${e.riskBand})`} />
+   689→          <ChainLevel level="JURISDICTION" label={e.jurisdiction?.name ?? "-"} detail={e.jurisdiction ? `${e.jurisdiction.kind.toLowerCase()} · administered by ${e.jurisdiction.agencyCode ?? "n/a"}` : "outside pilot"} />
+   690→          {e.links.map((l) => (
+   691→            <ChainLevel
+   692→              key={l.id}
+   693→              level={l.role}
+   694→              label={l.agencyCode}
+   695→              detail={l.reason ?? ""}
+   696→              asset={l.asset ? `${l.asset.name} · condition ${l.asset.conditionScore}` : null}
+   697→              status={l.status}
+   698→              source={l.source}
+   699→            />
+   700→          ))}
+   701→        </ol>
+   702→        <AssignForm onAssign={(p) => assign.mutateAsync(p)} pending={assign.isPending} />
+   703→        {e.groundTruthAgencyCode && (
+   704→          <p className="mt-3 text-[0.65rem] text-sev-moderate/80">
+   705→            Routing evaluation note: seeded ground truth for this location is <span className="data-mono">{e.groundTruthAgencyCode}</span> (synthetic label for research metrics).
+   706→          </p>
+   707→        )}
+   708→      </Panel>
+   709→
+   710→      <Panel title={`action items · ${e.actions.length}`}>
+   711→        {e.actions.length === 0 ? (
+   712→          <EmptyState title="No action items" hint="Actions are recommended by the routing engine at triage." />
+   713→        ) : (
+   714→          <ul className="space-y-2">
+   715→            {e.actions.map((a) => (
+   716→              <li key={a.id} className="rounded-sm border border-border/60 bg-ink-850/30 p-3">
+   717→                <div className="flex items-center gap-2 flex-wrap">
+   718→                  <span className="data-mono text-[0.62rem] font-semibold text-water">{a.kind.replace(/_/g, " ").toLowerCase()}</span>
+   719→                  <span className={cn("micro-label !text-[0.5rem]", a.priority === "URGENT" ? "text-sev-critical" : a.priority === "HIGH" ? "text-sev-high" : "text-muted-foreground")}>{a.priority.toLowerCase()}</span>
+   720→                  <span className="ml-auto data-mono text-[0.62rem] text-muted-foreground">{a.agencyCode ?? "-"}{a.assignedTo ? ` · ${a.assignedTo}` : ""}</span>
+   721→                </div>
+   722→                <p className="mt-1 text-[0.8rem] text-foreground/90">{a.instruction}</p>
+   723→                {a.outcome && <p className="mt-1 text-xs text-verified/90">Outcome: {a.outcome}</p>}
+   724→                <div className="mt-2 flex items-center gap-2 flex-wrap">
+   725→                  <span className={cn("micro-label !text-[0.5rem]", a.status === "COMPLETED" ? "text-verified" : a.status === "FAILED" ? "text-sev-critical" : "text-water")}>
+   726→                    {a.status.toLowerCase().replace(/_/g, " ")}
+   727→                  </span>
+   728→                  {a.assignedAt && <span className="text-[0.62rem] text-muted-foreground">assigned {timeAgo(a.assignedAt)}</span>}
+   729→                  {a.completedAt && <span className="text-[0.62rem] text-muted-foreground">· done {timeAgo(a.completedAt)}</span>}
+   730→                  {(a.status === "RECOMMENDED" || a.status === "ASSIGNED") && (
+   731→                    <div className="ml-auto flex gap-1.5">
+   732→                      {a.status === "RECOMMENDED" && (
+   733→                        <Button size="sm" variant="outline" className="h-7 text-[0.65rem] border-border" onClick={() => actionUpdate.mutate({ actionId: a.id, status: "ASSIGNED" })}>
+   734→                          accept
+   735→                        </Button>
+   736→                      )}
+   737→                      <Button size="sm" variant="outline" className="h-7 text-[0.65rem] border-border" onClick={() => actionUpdate.mutate({ actionId: a.id, status: "IN_PROGRESS" })}>
+   738→                        start
+   739→                      </Button>
+   740→                      <Button size="sm" className="h-7 text-[0.65rem] bg-verified/85 text-ink-950 hover:bg-verified" onClick={() => actionUpdate.mutate({ actionId: a.id, status: "COMPLETED", outcome: "Completed via event dossier." })}>
+   741→                        complete
+   742→                      </Button>
+   743→                    </div>
+   744→                  )}
+   745→                </div>
+   746→              </li>
+   747→            ))}
+   748→          </ul>
+   749→        )}
+   750→      </Panel>
+   751→
+   752→      <Panel title="field verification workflow">
+   753→        <VerificationStepper stages={e.verifications.map((v) => v.stage)} />
+   754→        <VerificationTimeline verifications={e.verifications} />
+   755→        <VerificationForms
+   756→          event={e}
+   757→          onVerify={(p) => verify.mutateAsync(p)}
+   758→          onReopen={(reason) => reopen.mutateAsync({ reopenReason: reason })}
+   759→          pending={verify.isPending}
+   760→        />
+   761→      </Panel>
+   762→    </>
+   763→  );
+   764→}
+   765→
+   766→function AssignForm({ onAssign, pending }: { onAssign: (p: { agencyCode: string; role: string; note?: string }) => Promise<unknown>; pending: boolean }) {
+   767→  const [agency, setAgency] = useState("PWD");
+   768→  const [role, setRole] = useState("PRIMARY");
+   769→  const [note, setNote] = useState("");
+   770→  const agencies = ["MCD", "PWD", "NDMC", "DJB", "IFC", "DDMA", "DCP"];
+   771→  return (
+   772→    <div className="mt-4 pt-3 hairline-t">
+   773→      <p className="micro-label mb-2">assign / escalate manually</p>
+   774→      <div className="flex flex-wrap gap-2 items-end">
+   775→        <div className="space-y-1">
+   776→          <Label htmlFor="asg-agency" className="text-[0.65rem]">Agency</Label>
+   777→          <Select value={agency} onValueChange={setAgency}>
+   778→            <SelectTrigger id="asg-agency" className="h-8 w-28 bg-ink-900 border-border text-xs" aria-label="Agency"><SelectValue /></SelectTrigger>
+   779→            <SelectContent>
+   780→              {agencies.map((a) => <SelectItem key={a} value={a} className="text-xs">{a}</SelectItem>)}
+   781→            </SelectContent>
+   782→          </Select>
+   783→        </div>
+   784→        <div className="space-y-1">
+   785→          <Label htmlFor="asg-role" className="text-[0.65rem]">Role</Label>
+   786→          <Select value={role} onValueChange={setRole}>
+   787→            <SelectTrigger id="asg-role" className="h-8 w-32 bg-ink-900 border-border text-xs" aria-label="Role"><SelectValue /></SelectTrigger>
+   788→            <SelectContent>
+   789→              {["PRIMARY", "SUPPORT", "ESCALATION"].map((r) => <SelectItem key={r} value={r} className="text-xs">{r.toLowerCase()}</SelectItem>)}
+   790→            </SelectContent>
+   791→          </Select>
+   792→        </div>
+   793→        <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="note (optional)" className="h-8 w-44 bg-ink-900 border-border text-xs" maxLength={200} aria-label="Assignment note" />
+   794→        <Button size="sm" disabled={pending} onClick={() => onAssign({ agencyCode: agency, role, note: note || undefined })} className="bg-water text-ink-950 hover:bg-water/85 h-8">
+   795→          {pending ? "Assigning…" : "Assign"}
+   796→        </Button>
+   797→      </div>
+   798→    </div>
+   799→  );
+   800→}
+   801→
+   802→const VERIFICATION_STAGES = ["ASSIGNED", "DISPATCHED", "OBSERVED", "EVIDENCE_UPLOADED", "ACTION_RECORDED", "VERIFIED", "CLOSED"] as const;
+   803→
+   804→function VerificationStepper({ stages }: { stages: string[] }) {
+   805→  const reached = new Set(stages);
+   806→  const currentIdx = VERIFICATION_STAGES.findIndex((s) => !reached.has(s));
+   807→  return (
+   808→    <ol className="flex items-center gap-0 overflow-x-auto no-scrollbar pb-1" aria-label="Verification progress">
+   809→      {VERIFICATION_STAGES.map((s, i) => {
+   810→        const done = reached.has(s);
+   811→        const current = i === currentIdx;
+   812→        return (
+   813→          <li key={s} className="flex items-center shrink-0">
+   814→            <div className="flex flex-col items-center gap-1 w-16">
+   815→              <span
+   816→                className={cn(
+   817→                  "size-4 rounded-full border-2 grid place-items-center transition-colors",
+   818→                  done ? "bg-verified border-verified" : current ? "border-water" : "border-border"
+   819→                )}
+   820→                aria-hidden
+   821→              >
+   822→                {done && <span className="size-1.5 rounded-full bg-ink-950" />}
+   823→              </span>
+   824→              <span className={cn("micro-label !text-[0.46rem] text-center leading-tight", done ? "text-verified/90" : current ? "text-water" : "text-muted-foreground/60")}>
+   825→                {s.toLowerCase().replace(/_/g, " ")}
+   826→              </span>
+   827→            </div>
+   828→            {i < VERIFICATION_STAGES.length - 1 && (
+   829→              <span className={cn("h-[2px] w-4 sm:w-6", done ? "bg-verified/60" : "bg-border")} aria-hidden />
+   830→            )}
+   831→          </li>
+   832→        );
+   833→      })}
+   834→    </ol>
+   835→  );
+   836→}
+   837→
+   838→function VerificationTimeline({ verifications }: { verifications: D["event"]["verifications"] }) {
+   839→  if (verifications.length === 0) {
+   840→    return <p className="mt-4 text-xs text-muted-foreground">No verification stages recorded yet.</p>;
+   841→  }
+   842→  return (
+   843→    <ol className="mt-4 space-y-0 relative">
+   844→      {verifications.map((v, i) => (
+   845→        <li key={v.id} className="relative pl-5 pb-3 last:pb-0">
+   846→          <span className={cn("absolute left-0 top-1 size-2.5 rounded-full", v.stage === "VERIFIED" || v.stage === "CLOSED" ? "bg-verified" : "bg-water/80")} aria-hidden />
+   847→          {i < verifications.length - 1 && <span className="absolute left-[4.5px] top-3.5 bottom-0 w-px bg-border" aria-hidden />}
+   848→          <div className="flex items-baseline gap-2 flex-wrap">
+   849→            <span className="micro-label !text-[0.52rem]">{v.stage.toLowerCase().replace(/_/g, " ")}</span>
+   850→            <span className="text-[0.62rem] text-muted-foreground">{v.verifiedBy.toLowerCase()} · {fmtDateTime(v.verifiedAt)}</span>
+   851→          </div>
+   852→          {v.notes && <p className="mt-0.5 text-xs text-foreground/80">{v.notes}</p>}
+   853→          {(v.waterDepthCm != null || v.observedSeverity) && (
+   854→            <p className="mt-0.5 text-[0.65rem] data-mono text-muted-foreground">
+   855→              {v.waterDepthCm != null && <>depth {v.waterDepthCm}cm </>}
+   856→              {v.observedSeverity && <>· observed {v.observedSeverity.toLowerCase()}</>}
+   857→            </p>
+   858→          )}
+   859→        </li>
+   860→      ))}
+   861→    </ol>
+   862→  );
+   863→}
+   864→
+   865→function VerificationForms({ event, onVerify, onReopen, pending }: {
+   866→  event: D["event"];
+   867→  onVerify: (p: Record<string, unknown>) => Promise<unknown>;
+   868→  onReopen: (reason: string) => Promise<unknown>;
+   869→  pending: boolean;
+   870→}) {
+   871→  const [stage, setStage] = useState<string>("DISPATCHED");
+   872→  const [observedSeverity, setObservedSeverity] = useState<string>("MEDIUM");
+   873→  const [depth, setDepth] = useState("");
+   874→  const [notes, setNotes] = useState("");
+   875→  const [reopenReason, setReopenReason] = useState("");
+   876→
+   877→  const reached = new Set(event.verifications.map((v) => v.stage));
+   878→  const nextStage = VERIFICATION_STAGES.find((s) => !reached.has(s));
+   879→  const effectiveStage = nextStage ?? "CLOSED";
+   880→  const closed = event.status === "CLOSED";
+   881→  const canClose = reached.has("VERIFIED") || nextStage === "VERIFIED" || nextStage === "CLOSED";
+   882→
+   883→  if (closed) {
+   884→    return (
+   885→      <div className="mt-4 pt-3 hairline-t space-y-2">
+   886→        <p className="text-xs text-muted-foreground">Event closed {event.closedAt ? timeAgo(event.closedAt) : ""}. New citizen reports at this location will reopen it automatically (recurrence watch).</p>
+   887→        <div className="flex gap-2 items-end">
+   888→          <Textarea value={reopenReason} onChange={(e) => setReopenReason(e.target.value)} placeholder="manual reopen reason (e.g. re-flooding reported via hotline)" rows={2} className="bg-ink-900 border-border text-xs flex-1" maxLength={300} aria-label="Reopen reason" />
+   889→          <Button size="sm" variant="outline" disabled={reopenReason.trim().length < 4 || pending} onClick={() => onReopen(reopenReason.trim())} className="border-sev-high/40 text-sev-high hover:bg-sev-high/10 h-9">
+   890→            Reopen
+   891→          </Button>
+   892→        </div>
+   893→      </div>
+   894→    );
+   895→  }
+   896→
+   897→  return (
+   898→    <div className="mt-4 pt-3 hairline-t">
+   899→      <p className="micro-label mb-2">record verification stage</p>
+   900→      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+   901→        <div className="space-y-1">
+   902→          <Label className="text-[0.65rem]">Stage</Label>
+   903→          <Select value={stage} onValueChange={setStage}>
+   904→            <SelectTrigger className="h-8 bg-ink-900 border-border text-xs" aria-label="Stage"><SelectValue /></SelectTrigger>
+   905→            <SelectContent>
+   906→              {VERIFICATION_STAGES.filter((s) => s !== "ASSIGNED" || !reached.has("ASSIGNED")).map((s) => (
+   907→                <SelectItem key={s} value={s} className="text-xs">{s.toLowerCase().replace(/_/g, " ")}</SelectItem>
+   908→              ))}
+   909→            </SelectContent>
+   910→          </Select>
+   911→        </div>
+   912→        <div className="space-y-1">
+   913→          <Label className="text-[0.65rem]">Observed severity</Label>
+   914→          <Select value={observedSeverity} onValueChange={setObservedSeverity}>
+   915→            <SelectTrigger className="h-8 bg-ink-900 border-border text-xs" aria-label="Observed severity"><SelectValue /></SelectTrigger>
+   916→            <SelectContent>
+   917→              {["LOW", "MEDIUM", "HIGH", "CRITICAL"].map((s) => <SelectItem key={s} value={s} className="text-xs">{s.toLowerCase()}</SelectItem>)}
+   918→            </SelectContent>
+   919→          </Select>
+   920→        </div>
+   921→        <div className="space-y-1">
+   922→          <Label htmlFor="vf-depth" className="text-[0.65rem]">Water depth (cm)</Label>
+   923→          <Input id="vf-depth" inputMode="numeric" value={depth} onChange={(e) => setDepth(e.target.value.replace(/\D/g, ""))} placeholder="e.g. 35" className="h-8 bg-ink-900 border-border text-xs" maxLength={3} />
+   924→        </div>
+   925→        <div className="space-y-1 self-end">
+   926→          <Button size="sm" disabled={pending || !stage} onClick={() =>
+   927→            onVerify({
+   928→              stage,
+   929→              observedSeverity,
+   930→              waterDepthCm: depth ? Number(depth) : undefined,
+   931→              notes: notes || undefined,
+   932→            })
+   933→          } className="w-full bg-water text-ink-950 hover:bg-water/85 h-8">
+   934→            {pending ? "Recording…" : "Record stage"}
+   935→          </Button>
+   936→        </div>
+   937→      </div>
+   938→      <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="field notes (optional)" className="mt-2.5 bg-ink-900 border-border text-xs" maxLength={600} aria-label="Field notes" />
+   939→      <p className="mt-1.5 text-[0.62rem] text-muted-foreground">
+   940→        Next expected stage: <span className="text-water">{effectiveStage.toLowerCase().replace(/_/g, " ")}</span>. Stages are validated in order.
+   941→      </p>
+   942→    </div>
+   943→  );
+   944→}
+   945→
+   946→// --- Audit tab -----------------------------------------------------------------------
+   947→
+   948→function AuditTab({ d }: { d: D }) {
+   949→  return (
+   950→    <Panel title={`audit history · ${d.auditHistory.length} entries`}>
+   951→      {d.auditHistory.length === 0 ? (
+   952→        <EmptyState title="No audit entries" />
+   953→      ) : (
+   954→        <ol className="relative">
+   955→          {d.auditHistory.map((a) => (
+   956→            <li key={a.id} className="relative pl-5 py-2 hairline-b last:border-0">
+   957→              <span className={cn("absolute left-0 top-3.5 size-1.5 rounded-full", a.actor === "SYSTEM" ? "bg-muted-foreground" : a.actor === "CITIZEN" ? "bg-water" : "bg-sev-moderate")} aria-hidden />
+   958→              <div className="flex items-baseline gap-2 flex-wrap">
+   959→                <span className="data-mono text-[0.65rem] text-water/90">{a.action}</span>
+   960→                <span className="micro-label !text-[0.5rem]">{a.actor.toLowerCase()}</span>
+   961→                <span className="ml-auto"><TimeAgo iso={a.at} /></span>
+   962→              </div>
+   963→              {a.note && <p className="text-xs text-muted-foreground mt-0.5">{a.note}</p>}
+   964→            </li>
+   965→          ))}
+   966→        </ol>
+   967→      )}
+   968→    </Panel>
+   969→  );
+   970→}
+   971→
+   972→// --- helpers ---------------------------------------------------------------------------
+   973→
+   974→function ChainLevel({ level, label, detail, asset, status, source }: {
+   975→  level: string; label: string; detail: string; asset?: string | null; status?: string; source?: string;
+   976→}) {
+   977→  return (
+   978→    <li className="relative pl-4 pb-3 last:pb-0">
+   979→      <span className={cn("absolute left-0 top-1.5 size-2 rounded-sm", level === "ESCALATION" ? "bg-sev-critical" : level === "SUPPORT" ? "bg-sev-moderate" : level === "PRIMARY" || level === "AGENCY" ? "bg-water" : "bg-muted-foreground")} aria-hidden />
+   980→      <span className="absolute left-1 top-4.5 bottom-0 w-px bg-border" aria-hidden />
+   981→      <div className="flex items-baseline gap-2 flex-wrap">
+   982→        <span className="micro-label !text-[0.5rem]">{level.toLowerCase()}</span>
+   983→        <span className="data-mono text-xs font-semibold text-foreground">{label}</span>
+   984→        {status && <span className="micro-label !text-[0.46rem] text-muted-foreground/70">{status.toLowerCase()}</span>}
+   985→        {source && <span className="micro-label !text-[0.46rem] text-muted-foreground/60">via {source.toLowerCase()}</span>}
+   986→      </div>
+   987→      <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{detail}</p>
+   988→      {asset && <p className="text-[0.65rem] text-muted-foreground/80 mt-0.5">asset: {asset}</p>}
+   989→    </li>
+   990→  );
+   991→}
+   992→
+   993→function Readout({ label, value, tone }: { label: string; value: string; tone?: string }) {
+   994→  return (
+   995→    <div className="rounded-sm border border-border/60 bg-ink-850/30 px-3 py-2">
+   996→      <p className="micro-label !text-[0.5rem]">{label}</p>
+   997→      <p className={cn("data-mono text-sm mt-0.5", tone ?? "text-foreground")}>{value}</p>
+   998→    </div>
+   999→  );
+  1000→}
+  1001→
+  1002→function sevClass(s: string): string {
+  1003→  return s === "CRITICAL" ? "text-sev-critical" : s === "HIGH" ? "text-sev-high" : s === "MODERATE" ? "text-sev-moderate" : "text-muted-foreground";
+  1004→}
+  1005→
+  1006→function hav(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  1007→  const R = 6371000;
+  1008→  const rad = (x: number) => (x * Math.PI) / 180;
+  1009→  const dLat = rad(b.lat - a.lat);
+  1010→  const dLng = rad(b.lng - a.lng);
+  1011→  const s = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  1012→  return 2 * R * Math.asin(Math.sqrt(s));
+  1013→}
+  1014→
+  1015→async function fileToDataUrl(file: File, maxDim: number, quality: number): Promise<string> {
+  1016→  const bitmap = await createImageBitmap(file);
+  1017→  const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+  1018→  const canvas = document.createElement("canvas");
+  1019→  canvas.width = Math.round(bitmap.width * scale);
+  1020→  canvas.height = Math.round(bitmap.height * scale);
+  1021→  const ctx = canvas.getContext("2d");
+  1022→  if (!ctx) throw new Error("Canvas unavailable");
+  1023→  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  1024→  bitmap.close();
+  1025→  return canvas.toDataURL("image/jpeg", quality);
+  1026→}
+  1027→

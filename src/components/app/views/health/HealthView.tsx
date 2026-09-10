@@ -1,16 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "@/lib/client/api";
 import {
   LoadingRows, ErrorNote, Panel, EmptyState, TimeAgo, ProviderChip,
 } from "@/components/app/shared/domain";
+import { Reveal, Stagger, StaggerItem, CountUp, HoverLift, PulseDot } from "@/components/motion/kit";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { BarChart, Bar, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { cn } from "@/lib/utils";
-import { Activity, Database, Cpu, RefreshCw, Gauge, HeartPulse, History, Server } from "lucide-react";
+import { motion, useReducedMotion, type Variants } from "framer-motion";
+import {
+  Activity, Database, BrainCircuit, RefreshCw, Gauge, HeartPulse, History, Server,
+  ShieldCheck, AlertTriangle,
+} from "lucide-react";
 
 // DATA & MODEL HEALTH - source freshness, provider state, run log,
 // confidence distribution and live client-side endpoint checks.
@@ -91,17 +96,20 @@ interface HealthResponse {
   dataLabel: string;
 }
 
-const TEAL = "#45c4b0";
-const AMBER = "#d9a62e";
-const GRID_STROKE = "rgba(148,180,186,0.12)";
-const TICK = { fill: "#5c7076", fontSize: 9, fontFamily: "var(--font-plex-mono)" };
+const BLUE = "#3b82f6";  // at/above confidence flag threshold (blue-500)
+const AMBER = "#f59e0b"; // below confidence flag threshold (amber-500)
+const GRID_STROKE = "#e2e8f0";
+const TICK = { fill: "#94a3b8", fontSize: 9, fontFamily: "var(--font-plex-mono)" };
 const TOOLTIP_STYLE = {
-  background: "#141b20",
-  border: "1px solid rgba(148,180,186,0.18)",
-  borderRadius: 4,
+  background: "#ffffff",
+  border: "1px solid #e2e8f0",
+  borderRadius: 8,
   fontSize: 11,
   fontFamily: "var(--font-plex-mono)",
+  boxShadow: "0 4px 12px rgba(15,23,42,0.08)",
 };
+const LABEL_STYLE = { color: "#64748b" };
+const CURSOR_FILL = { fill: "rgba(37, 99, 235, 0.05)" };
 
 const clean = (s: string) => s.replace(/-/g, "-").replace(/-/g, "-");
 
@@ -127,6 +135,9 @@ async function ping(path: string): Promise<PingState> {
 }
 
 const SEVERITY: Record<string, number> = { EMPTY: 0, STALE: 1, OK: 2 };
+
+// motion-enhanced table row (keeps semantic <tr> nesting inside tbody)
+const MotionRow = motion.tr;
 
 export function HealthView() {
   const dataQ = useQuery({
@@ -175,19 +186,31 @@ export function HealthView() {
     healthQ.refetch();
   };
 
+  // staggered table-row entrance variants (respects prefers-reduced-motion)
+  const reduce = useReducedMotion();
+  const rowVariants: Variants = reduce
+    ? { hidden: { opacity: 0 }, show: { opacity: 1, transition: { duration: 0.25 } } }
+    : { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } } };
+
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* header strip */}
-      <div className="hairline-b bg-ink-900/30 px-4 sm:px-6 py-3">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <HeartPulse className="size-3.5 text-water" aria-hidden />
-          <h1 className="font-display text-base font-bold tracking-tight">Data &amp; model health</h1>
-          <p className="text-xs text-muted-foreground">
-            source freshness · provider state · run log · confidence · endpoint checks
-          </p>
+      <div className="hairline-b bg-white px-4 sm:px-6 py-3.5">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="font-display text-lg font-bold tracking-tight text-slate-900 leading-tight">Data &amp; Model Health</h1>
+              <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 micro-label !text-[0.58rem] text-water">
+                <HeartPulse className="size-3" aria-hidden /> telemetry
+              </span>
+            </div>
+            <p className="text-[0.7rem] text-muted-foreground mt-0.5">
+              source freshness · provider state · run log · confidence · endpoint checks
+            </p>
+          </div>
           <button
             onClick={refetchAll}
-            className="ml-auto micro-label !text-[0.58rem] text-water hover:text-foreground transition-colors inline-flex items-center gap-1.5"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 micro-label !text-[0.58rem] text-water hover:bg-blue-100 hover:border-blue-300 transition-colors"
           >
             <RefreshCw className={cn("size-3", (dataQ.isFetching || modelQ.isFetching || healthQ.isFetching) && "animate-spin")} aria-hidden />
             refresh all
@@ -195,450 +218,492 @@ export function HealthView() {
         </div>
         <div className="mt-1.5 flex items-center gap-3 flex-wrap">
           {dh && (
-            <span className="data-mono text-[0.65rem] text-muted-foreground">
+            <span className="data-mono text-[0.65rem] text-slate-500">
               data snapshot <TimeAgo iso={dh.generatedAt} />
             </span>
           )}
           {mh && (
-            <span className="data-mono text-[0.65rem] text-muted-foreground">
+            <span className="data-mono text-[0.65rem] text-slate-500">
               model snapshot <TimeAgo iso={mh.generatedAt} />
             </span>
           )}
-          {hb && <span className="data-mono text-[0.65rem] text-muted-foreground">{clean(hb.dataLabel)}</span>}
+          {hb && <span className="data-mono text-[0.65rem] text-slate-500">{clean(hb.dataLabel)}</span>}
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-3 pb-8 space-y-3">
-        {/* SECTION A - overall status strip */}
-        <Panel
-          title={
-            <span className="flex items-center gap-2">
-              <Activity className="size-3 text-water" aria-hidden />
-              overall status
-            </span>
-          }
-          actions={hb && <ProviderChip provider={hb.ai.provider} model={hb.ai.modelId} />}
-        >
-          {healthQ.isLoading ? (
-            <LoadingRows rows={2} />
-          ) : healthQ.isError ? (
-            <ErrorNote message={(healthQ.error as Error).message} onRetry={() => healthQ.refetch()} />
-          ) : !hb ? null : (
-            <div className="space-y-3">
-              <div className="flex flex-wrap rounded-sm border border-border/60 overflow-hidden bg-ink-900/40">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 pb-8 space-y-4">
+        {/* SECTION A - overall status strip (stat cards + system details) */}
+        <Reveal>
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3.5 sm:gap-4">
+            {healthQ.isLoading ? (
+              Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-32 rounded-xl shimmer" />)
+            ) : healthQ.isError ? (
+              <div className="col-span-full max-w-lg">
+                <ErrorNote message={(healthQ.error as Error).message} onRetry={() => healthQ.refetch()} />
+              </div>
+            ) : hb ? (
+              <>
+                <StatCard
+                  icon={<Database className="size-5" aria-hidden />}
+                  tint="bg-blue-50 text-water"
+                  value={<CountUp value={hb.db.events} />}
+                  label="Database events"
+                  sub={hb.db.reachable ? `${hb.db.reports} reports · ${hb.db.observations} obs` : "db unreachable"}
+                />
+                <StatCard
+                  icon={<Gauge className="size-5" aria-hidden />}
+                  tint={hb.latencyMs > 5000 ? "bg-amber-50 text-sev-moderate" : "bg-blue-50 text-water"}
+                  value={<CountUp value={hb.latencyMs} suffix=" ms" />}
+                  label="API latency"
+                  sub="health endpoint round-trip"
+                />
                 {dh && (
-                  <Segment
-                    label="data health"
-                    value={dh.overall === "OK" ? "OK" : "EMPTY"}
-                    tone={dh.overall === "OK" ? "teal" : "amber"}
+                  <StatCard
+                    icon={<ShieldCheck className="size-5" aria-hidden />}
+                    tint={dh.overall === "OK" ? "bg-emerald-50 text-verified" : "bg-amber-50 text-sev-moderate"}
+                    value={
+                      <span className={dh.overall === "OK" ? "text-verified" : "text-sev-moderate"}>
+                        {dh.overall === "OK" ? "OK" : "EMPTY"}
+                      </span>
+                    }
+                    label="Data health"
+                    sub={`${dh.sources.length} sources · ${dh.pilot.jurisdictions} juris · ${dh.pilot.groundTruthHotspots} GT sites`}
                   />
                 )}
-                <Segment
-                  label="db"
+                <StatCard
+                  icon={<BrainCircuit className="size-5" aria-hidden />}
+                  tint={hb.ai.available ? "bg-emerald-50 text-verified" : "bg-amber-50 text-sev-moderate"}
                   value={
-                    hb.db.reachable
-                      ? `${hb.db.events} ev · ${hb.db.reports} rep · ${hb.db.observations} obs`
-                      : "unreachable"
+                    <span className={cn("inline-flex items-center gap-2", hb.ai.available ? "text-verified" : "text-sev-moderate")}>
+                      {hb.ai.available && <PulseDot color="bg-emerald-500" size={8} />}
+                      {hb.ai.available ? "available" : "fallback"}
+                    </span>
                   }
-                  tone={hb.db.reachable ? "plain" : "red"}
+                  label="AI provider"
+                  sub={hb.ai.provider}
                 />
-                <Segment label="api latency" value={`${hb.latencyMs} ms`} tone={hb.latencyMs > 5000 ? "amber" : "plain"} />
-                <Segment label="provider" value={hb.ai.available ? "available" : "fallback"} tone={hb.ai.available ? "teal" : "amber"} />
-                {dh && <Segment label="pilot" value={`${dh.pilot.jurisdictions} juris · ${dh.pilot.groundTruthHotspots} GT sites`} tone="plain" />}
-              </div>
+              </>
+            ) : null}
+          </div>
+        </Reveal>
 
-              {dh && dh.overall === "EMPTY_DATABASE" ? (
-                <div className="rounded-sm border border-sev-moderate/35 bg-sev-moderate/8 px-3 py-2.5 space-y-1.5">
-                  <p className="text-xs text-sev-moderate/90 leading-relaxed">{clean(dh.note)}</p>
-                  <p className="data-mono text-[0.65rem] text-muted-foreground">
-                    POST /api/admin/seed · body {"{ confirm: true }"} · header x-demo-role: ADMIN
-                  </p>
+        <Reveal delay={0.05}>
+          <Panel
+            title="system details"
+            icon={<Activity />}
+            actions={hb && <ProviderChip provider={hb.ai.provider} model={hb.ai.modelId} />}
+          >
+            {healthQ.isLoading ? (
+              <LoadingRows rows={2} />
+            ) : !hb ? null : (
+              <div className="space-y-3">
+                {dh && dh.overall === "EMPTY_DATABASE" ? (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 space-y-1.5">
+                    <p className="text-xs text-amber-800 leading-relaxed flex items-start gap-2.5">
+                      <AlertTriangle className="size-4 text-amber-600 shrink-0 mt-px" aria-hidden />
+                      <span>{clean(dh.note)}</span>
+                    </p>
+                    <p className="data-mono text-[0.65rem] text-amber-700/80">
+                      POST /api/admin/seed · body {"{ confirm: true }"} · header x-demo-role: ADMIN
+                    </p>
+                  </div>
+                ) : (
+                  dh && <p className="micro-label !text-[0.55rem] text-slate-400 !tracking-[0.08em] normal-case">{clean(dh.note)}</p>
+                )}
+
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                  {hb.lastModelRun && (
+                    <span className="data-mono text-[0.65rem] text-slate-500">
+                      last model run: <span className="text-slate-800">{hb.lastModelRun.modelId}</span> ·{" "}
+                      {hb.lastModelRun.status} · {hb.lastModelRun.provider} · <TimeAgo iso={hb.lastModelRun.startedAt} />
+                    </span>
+                  )}
+                  {hb.ai.fallback && (
+                    <span className="micro-label !text-[0.55rem] text-slate-500" title="Used when the AI provider is unavailable">
+                      fallback: {clean(hb.ai.fallback)}
+                    </span>
+                  )}
                 </div>
-              ) : (
-                dh && <p className="micro-label !text-[0.55rem] text-muted-foreground/70 !tracking-[0.08em] normal-case">{clean(dh.note)}</p>
-              )}
-
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-                {hb.lastModelRun && (
-                  <span className="data-mono text-[0.65rem] text-muted-foreground">
-                    last model run: <span className="text-foreground/90">{hb.lastModelRun.modelId}</span> ·{" "}
-                    {hb.lastModelRun.status} · {hb.lastModelRun.provider} · <TimeAgo iso={hb.lastModelRun.startedAt} />
-                  </span>
-                )}
-                {hb.ai.fallback && (
-                  <span className="micro-label !text-[0.55rem] text-muted-foreground/60" title="Used when the AI provider is unavailable">
-                    fallback: {clean(hb.ai.fallback)}
-                  </span>
-                )}
               </div>
-            </div>
-          )}
-        </Panel>
+            )}
+          </Panel>
+        </Reveal>
 
         {/* SECTION B - source health table */}
-        <Panel
-          title={
-            <span className="flex items-center gap-2">
-              <Database className="size-3 text-water" aria-hidden />
-              source health
-              {dh && <span className="data-mono ml-1 !text-[0.62rem] !tracking-normal !normal-case text-muted-foreground">{dh.sources.length} sources</span>}
-            </span>
-          }
-          actions={
-            <button onClick={() => dataQ.refetch()} className="micro-label !text-[0.58rem] text-water hover:text-foreground transition-colors">
-              refetch
-            </button>
-          }
-          dense
-        >
-          {dataQ.isLoading ? (
-            <LoadingRows rows={6} className="p-4" />
-          ) : dataQ.isError ? (
-            <ErrorNote message={(dataQ.error as Error).message} onRetry={() => dataQ.refetch()} className="m-4" />
-          ) : !dh ? null : dh.sources.length === 0 ? (
-            <EmptyState title="No sources reporting" />
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="micro-label !text-[0.55rem] h-8">source</TableHead>
-                    <TableHead className="micro-label !text-[0.55rem] h-8 text-right">records</TableHead>
-                    <TableHead className="micro-label !text-[0.55rem] h-8">freshness</TableHead>
-                    <TableHead className="micro-label !text-[0.55rem] h-8">status</TableHead>
-                    <TableHead className="micro-label !text-[0.55rem] h-8">missingness</TableHead>
-                    <TableHead className="micro-label !text-[0.55rem] h-8 hidden md:table-cell">provenance</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {[...dh.sources]
-                    .sort((a, b) => (SEVERITY[a.status] ?? 3) - (SEVERITY[b.status] ?? 3) || b.records - a.records)
-                    .map((s) => (
-                      <TableRow key={s.key} className="hover:bg-ink-850/40">
-                        <TableCell className="py-2">
-                          <span className="text-xs text-foreground/90">{s.label}</span>
-                          <span className="block data-mono text-[0.58rem] text-muted-foreground/60">{s.key}</span>
-                        </TableCell>
-                        <TableCell className="py-2 text-right data-mono text-[0.72rem] text-foreground">{s.records.toLocaleString("en-IN")}</TableCell>
-                        <TableCell className="py-2">
-                          {s.lastRecordAt ? (
-                            <TimeAgo iso={s.lastRecordAt} />
-                          ) : (
-                            <span className="data-mono text-[0.65rem] text-muted-foreground/60">never</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="py-2"><SourceStatusBadge status={s.status} /></TableCell>
-                        <TableCell className="py-2 max-w-56">
-                          {Object.keys(s.missingness).length > 0 ? (
-                            <span className="data-mono text-[0.62rem] text-muted-foreground" title={Object.entries(s.missingness).map(([k, v]) => `${k}: ${v}`).join(" · ")}>
-                              {Object.entries(s.missingness).map(([k, v]) => `${k}: ${v}`).join(" · ")}
+        <Reveal delay={0.1}>
+          <Panel
+            title={
+              <span className="flex items-center gap-2">
+                source health
+                {dh && <span className="data-mono ml-1 !text-[0.62rem] !tracking-normal !normal-case font-normal text-slate-400">{dh.sources.length} sources</span>}
+              </span>
+            }
+            icon={<Database />}
+            actions={
+              <button
+                onClick={() => dataQ.refetch()}
+                className="micro-label !text-[0.58rem] text-water hover:text-water-dim transition-colors"
+              >
+                refetch
+              </button>
+            }
+            dense
+          >
+            {dataQ.isLoading ? (
+              <LoadingRows rows={6} className="p-4" />
+            ) : dataQ.isError ? (
+              <ErrorNote message={(dataQ.error as Error).message} onRetry={() => dataQ.refetch()} className="m-4" />
+            ) : !dh ? null : dh.sources.length === 0 ? (
+              <EmptyState title="No sources reporting" />
+            ) : (
+              <Stagger className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-ink-850/60 hover:bg-ink-850/60">
+                      <TableHead className="micro-label !text-[0.55rem] h-8">source</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8 text-right">records</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8">freshness</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8">status</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8">missingness</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8 hidden md:table-cell">provenance</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[...dh.sources]
+                      .sort((a, b) => (SEVERITY[a.status] ?? 3) - (SEVERITY[b.status] ?? 3) || b.records - a.records)
+                      .map((s) => (
+                        <MotionRow key={s.key} variants={rowVariants} className="hover:bg-ink-850/50 border-b transition-colors">
+                          <TableCell className="py-2">
+                            <span className="text-xs text-slate-700">{s.label}</span>
+                            <span className="block data-mono text-[0.58rem] text-slate-400">{s.key}</span>
+                          </TableCell>
+                          <TableCell className="py-2 text-right data-mono text-[0.72rem] text-slate-800">{s.records.toLocaleString("en-IN")}</TableCell>
+                          <TableCell className="py-2">
+                            {s.lastRecordAt ? (
+                              <TimeAgo iso={s.lastRecordAt} />
+                            ) : (
+                              <span className="data-mono text-[0.65rem] text-slate-400">never</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="py-2"><SourceStatusBadge status={s.status} /></TableCell>
+                          <TableCell className="py-2 max-w-56">
+                            {Object.keys(s.missingness).length > 0 ? (
+                              <span className="data-mono text-[0.62rem] text-slate-500" title={Object.entries(s.missingness).map(([k, v]) => `${k}: ${v}`).join(" · ")}>
+                                {Object.entries(s.missingness).map(([k, v]) => `${k}: ${v}`).join(" · ")}
+                              </span>
+                            ) : (
+                              <span className="data-mono text-[0.62rem] text-slate-400">none</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="py-2 hidden md:table-cell">
+                            <span className="micro-label !text-[0.52rem] text-slate-500 !tracking-[0.06em]" title={s.sourceLabel}>
+                              {clean(s.sourceLabel)}
                             </span>
-                          ) : (
-                            <span className="data-mono text-[0.62rem] text-muted-foreground/60">none</span>
-                          )}
+                          </TableCell>
+                        </MotionRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </Stagger>
+            )}
+          </Panel>
+        </Reveal>
+
+        {/* SECTION C - model & provider */}
+        <Reveal delay={0.15}>
+          <Panel
+            title="model & provider"
+            icon={<BrainCircuit />}
+            actions={
+              <button onClick={() => modelQ.refetch()} className="micro-label !text-[0.58rem] text-water hover:text-water-dim transition-colors">
+                refetch
+              </button>
+            }
+          >
+            {modelQ.isLoading ? (
+              <LoadingRows rows={4} />
+            ) : modelQ.isError ? (
+              <ErrorNote message={(modelQ.error as Error).message} onRetry={() => modelQ.refetch()} />
+            ) : !mh ? null : (
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-border bg-ink-850/50 px-3.5 py-3 space-y-2">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <ProviderChip provider={mh.provider.provider} model={mh.provider.modelId} />
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 micro-label !text-[0.6rem] font-medium",
+                          mh.provider.available
+                            ? "text-emerald-700 border-emerald-200 bg-emerald-50"
+                            : "text-amber-700 border-amber-200 bg-amber-50"
+                        )}
+                      >
+                        {mh.provider.available ? (
+                          <PulseDot color="bg-emerald-500" size={6} />
+                        ) : (
+                          <span aria-hidden className="size-1.5 rounded-full bg-amber-500" />
+                        )}
+                        {mh.provider.available ? "available" : "unavailable"}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1">
+                      <span className="data-mono text-[0.65rem] text-slate-500">
+                        model <span className="text-slate-800">{mh.provider.modelId}</span>
+                      </span>
+                      <span className="data-mono text-[0.65rem] text-slate-500">
+                        configured by <span className="text-slate-800">{mh.provider.configuredBy}</span>
+                      </span>
+                      <span className="data-mono text-[0.65rem] text-slate-500">
+                        checked <TimeAgo iso={mh.provider.lastCheckedAt} />
+                      </span>
+                    </div>
+                    {!mh.provider.available && mh.provider.lastError && (
+                      <div role="alert" className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs">
+                        <AlertTriangle className="size-4 text-amber-600 shrink-0 mt-px" aria-hidden />
+                        <span className="text-amber-800 leading-relaxed">{mh.provider.lastError}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-ink-850/50 px-3.5 py-3 space-y-1.5">
+                    <p className="micro-label !text-[0.55rem] text-slate-500 mb-1">component versions</p>
+                    {Object.entries(mh.versions).map(([k, v]) => (
+                      <div key={k} className="flex items-baseline justify-between gap-3">
+                        <span className="micro-label !text-[0.52rem] text-slate-500 !tracking-[0.08em]">{k}</span>
+                        <span className="data-mono text-[0.68rem] text-slate-800">{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-border bg-ink-850/50 px-3.5 py-3">
+                  <p className="micro-label !text-[0.55rem] text-slate-500 mb-2">model runs · last 25</p>
+                  <div className="flex flex-wrap divide-x divide-border rounded-lg border border-border bg-white">
+                    <Segment label="total" value={<CountUp value={mh.runsSummary.total} />} tone="plain" border={false} />
+                    <Segment label="succeeded" value={<CountUp value={mh.runsSummary.succeeded} />} tone="teal" border={false} />
+                    <Segment label="failed" value={<CountUp value={mh.runsSummary.failed} />} tone={mh.runsSummary.failed > 0 ? "red" : "plain"} border={false} />
+                    <Segment
+                      label="success rate"
+                      value={`${(mh.runsSummary.successRate * 100).toFixed(0)}%`}
+                      tone={mh.runsSummary.failed > 0 ? "amber" : "teal"}
+                      border={false}
+                    />
+                  </div>
+                </div>
+
+                <p className="micro-label !text-[0.55rem] text-slate-400 !tracking-[0.08em] normal-case leading-relaxed">
+                  {clean(mh.note)}
+                </p>
+              </div>
+            )}
+          </Panel>
+        </Reveal>
+
+        {/* SECTION D - model runs table */}
+        <Reveal delay={0.2}>
+          <Panel
+            title={
+              <span className="flex items-center gap-2">
+                model run log
+                {mh && <span className="data-mono ml-1 !text-[0.62rem] !tracking-normal !normal-case font-normal text-slate-400">{Math.min(25, mh.runs.length)} of {mh.runsSummary.total}</span>}
+              </span>
+            }
+            icon={<History />}
+            dense
+          >
+            {modelQ.isLoading ? (
+              <LoadingRows rows={6} className="p-4" />
+            ) : modelQ.isError ? (
+              <ErrorNote message={(modelQ.error as Error).message} onRetry={() => modelQ.refetch()} className="m-4" />
+            ) : !mh ? null : mh.runs.length === 0 ? (
+              <EmptyState title="No model runs recorded" hint="Runs appear after reports are classified or events reassessed." />
+            ) : (
+              <ScrollArea className="max-h-96">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-ink-850/60 hover:bg-ink-850/60">
+                      <TableHead className="micro-label !text-[0.55rem] h-8">model</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8">provider</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8">status</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8 text-right">in/out</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8 text-right">latency</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8">started</TableHead>
+                      <TableHead className="micro-label !text-[0.55rem] h-8 hidden lg:table-cell">notes / error</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {mh.runs.slice(0, 25).map((r) => (
+                      <TableRow key={r.id} className="hover:bg-ink-850/50">
+                        <TableCell className="py-2">
+                          <span className="data-mono text-[0.68rem] text-slate-700">{r.modelId}</span>
+                          <span className="block data-mono text-[0.55rem] text-slate-400">{r.version}</span>
                         </TableCell>
-                        <TableCell className="py-2 hidden md:table-cell">
-                          <span className="micro-label !text-[0.52rem] text-muted-foreground/70 !tracking-[0.06em]" title={s.sourceLabel}>
-                            {clean(s.sourceLabel)}
-                          </span>
+                        <TableCell className="py-2 data-mono text-[0.65rem] text-slate-500">{r.provider}</TableCell>
+                        <TableCell className="py-2"><RunStatusBadge status={r.status} /></TableCell>
+                        <TableCell className="py-2 text-right data-mono text-[0.65rem] text-slate-500">
+                          {r.inputCount}<span className="text-slate-400">→</span>{r.outputCount}
+                        </TableCell>
+                        <TableCell className="py-2 text-right data-mono text-[0.65rem] text-slate-500">
+                          {r.latencyMs != null ? `${r.latencyMs} ms` : "-"}
+                        </TableCell>
+                        <TableCell className="py-2"><TimeAgo iso={r.startedAt} /></TableCell>
+                        <TableCell
+                          className={cn("py-2 hidden lg:table-cell max-w-72 truncate text-[0.62rem]", r.error ? "text-sev-critical" : "text-slate-500")}
+                          title={r.error ?? r.notes ?? undefined}
+                        >
+                          {r.error ?? r.notes ?? "-"}
                         </TableCell>
                       </TableRow>
                     ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </Panel>
-
-        {/* SECTION C - model & provider */}
-        <Panel
-          title={
-            <span className="flex items-center gap-2">
-              <Cpu className="size-3 text-water" aria-hidden />
-              model &amp; provider
-            </span>
-          }
-          actions={
-            <button onClick={() => modelQ.refetch()} className="micro-label !text-[0.58rem] text-water hover:text-foreground transition-colors">
-              refetch
-            </button>
-          }
-        >
-          {modelQ.isLoading ? (
-            <LoadingRows rows={4} />
-          ) : modelQ.isError ? (
-            <ErrorNote message={(modelQ.error as Error).message} onRetry={() => modelQ.refetch()} />
-          ) : !mh ? null : (
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="rounded-sm border border-border/60 bg-ink-900/40 px-3 py-2.5 space-y-2">
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <ProviderChip provider={mh.provider.provider} model={mh.provider.modelId} />
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-1.5 rounded-sm border px-1.5 py-0.5 micro-label !text-[0.6rem] font-medium",
-                        mh.provider.available
-                          ? "text-verified border-verified/30 bg-verified/10"
-                          : "text-sev-moderate border-sev-moderate/35 bg-sev-moderate/10"
-                      )}
-                    >
-                      <span aria-hidden className={cn("size-1.5 rounded-full", mh.provider.available ? "bg-verified" : "bg-sev-moderate")} />
-                      {mh.provider.available ? "available" : "unavailable"}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1">
-                    <span className="data-mono text-[0.65rem] text-muted-foreground">
-                      model <span className="text-foreground/90">{mh.provider.modelId}</span>
-                    </span>
-                    <span className="data-mono text-[0.65rem] text-muted-foreground">
-                      configured by <span className="text-foreground/90">{mh.provider.configuredBy}</span>
-                    </span>
-                    <span className="data-mono text-[0.65rem] text-muted-foreground">
-                      checked <TimeAgo iso={mh.provider.lastCheckedAt} />
-                    </span>
-                  </div>
-                  {!mh.provider.available && mh.provider.lastError && (
-                    <div role="alert" className="flex items-start gap-2.5 rounded-sm border border-sev-moderate/35 bg-sev-moderate/8 px-3 py-2 text-xs">
-                      <span className="text-sev-moderate" aria-hidden>⚠</span>
-                      <span className="text-sev-moderate/90 leading-relaxed">{mh.provider.lastError}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="rounded-sm border border-border/60 bg-ink-900/40 px-3 py-2.5 space-y-1.5">
-                  <p className="micro-label !text-[0.55rem] text-muted-foreground mb-1">component versions</p>
-                  {Object.entries(mh.versions).map(([k, v]) => (
-                    <div key={k} className="flex items-baseline justify-between gap-3">
-                      <span className="micro-label !text-[0.52rem] text-muted-foreground/80 !tracking-[0.08em]">{k}</span>
-                      <span className="data-mono text-[0.68rem] text-foreground/90">{v}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-sm border border-border/60 bg-ink-900/40 px-3 py-2.5">
-                <p className="micro-label !text-[0.55rem] text-muted-foreground mb-2">model runs · last 25</p>
-                <div className="flex flex-wrap divide-x divide-border/60">
-                  <Segment label="total" value={mh.runsSummary.total} tone="plain" border={false} />
-                  <Segment label="succeeded" value={mh.runsSummary.succeeded} tone="teal" border={false} />
-                  <Segment label="failed" value={mh.runsSummary.failed} tone={mh.runsSummary.failed > 0 ? "red" : "plain"} border={false} />
-                  <Segment
-                    label="success rate"
-                    value={`${(mh.runsSummary.successRate * 100).toFixed(0)}%`}
-                    tone={mh.runsSummary.failed > 0 ? "amber" : "teal"}
-                    border={false}
-                  />
-                </div>
-              </div>
-
-              <p className="micro-label !text-[0.55rem] text-muted-foreground/70 !tracking-[0.08em] normal-case leading-relaxed">
-                {clean(mh.note)}
-              </p>
-            </div>
-          )}
-        </Panel>
-
-        {/* SECTION D - model runs table */}
-        <Panel
-          title={
-            <span className="flex items-center gap-2">
-              <History className="size-3 text-water" aria-hidden />
-              model run log
-              {mh && <span className="data-mono ml-1 !text-[0.62rem] !tracking-normal !normal-case text-muted-foreground">{Math.min(25, mh.runs.length)} of {mh.runsSummary.total}</span>}
-            </span>
-          }
-          dense
-        >
-          {modelQ.isLoading ? (
-            <LoadingRows rows={6} className="p-4" />
-          ) : modelQ.isError ? (
-            <ErrorNote message={(modelQ.error as Error).message} onRetry={() => modelQ.refetch()} className="m-4" />
-          ) : !mh ? null : mh.runs.length === 0 ? (
-            <EmptyState title="No model runs recorded" hint="Runs appear after reports are classified or events reassessed." />
-          ) : (
-            <ScrollArea className="max-h-96">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="micro-label !text-[0.55rem] h-8">model</TableHead>
-                    <TableHead className="micro-label !text-[0.55rem] h-8">provider</TableHead>
-                    <TableHead className="micro-label !text-[0.55rem] h-8">status</TableHead>
-                    <TableHead className="micro-label !text-[0.55rem] h-8 text-right">in/out</TableHead>
-                    <TableHead className="micro-label !text-[0.55rem] h-8 text-right">latency</TableHead>
-                    <TableHead className="micro-label !text-[0.55rem] h-8">started</TableHead>
-                    <TableHead className="micro-label !text-[0.55rem] h-8 hidden lg:table-cell">notes / error</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mh.runs.slice(0, 25).map((r) => (
-                    <TableRow key={r.id} className="hover:bg-ink-850/40">
-                      <TableCell className="py-2">
-                        <span className="data-mono text-[0.68rem] text-foreground/90">{r.modelId}</span>
-                        <span className="block data-mono text-[0.55rem] text-muted-foreground/60">{r.version}</span>
-                      </TableCell>
-                      <TableCell className="py-2 data-mono text-[0.65rem] text-muted-foreground">{r.provider}</TableCell>
-                      <TableCell className="py-2"><RunStatusBadge status={r.status} /></TableCell>
-                      <TableCell className="py-2 text-right data-mono text-[0.65rem] text-muted-foreground">
-                        {r.inputCount}<span className="text-muted-foreground/50">→</span>{r.outputCount}
-                      </TableCell>
-                      <TableCell className="py-2 text-right data-mono text-[0.65rem] text-muted-foreground">
-                        {r.latencyMs != null ? `${r.latencyMs} ms` : "-"}
-                      </TableCell>
-                      <TableCell className="py-2"><TimeAgo iso={r.startedAt} /></TableCell>
-                      <TableCell
-                        className={cn("py-2 hidden lg:table-cell max-w-72 truncate text-[0.62rem]", r.error ? "text-sev-critical/90" : "text-muted-foreground/80")}
-                        title={r.error ?? r.notes ?? undefined}
-                      >
-                        {r.error ?? r.notes ?? "-"}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          )}
-        </Panel>
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            )}
+          </Panel>
+        </Reveal>
 
         {/* SECTION E - confidence distribution */}
-        <Panel
-          title={
-            <span className="flex items-center gap-2">
-              <Gauge className="size-3 text-water" aria-hidden />
-              classification confidence distribution
-            </span>
-          }
-        >
-          {modelQ.isLoading ? (
-            <LoadingRows rows={3} />
-          ) : modelQ.isError ? (
-            <ErrorNote message={(modelQ.error as Error).message} onRetry={() => modelQ.refetch()} />
-          ) : !mh ? null : (
-            <div className="space-y-3">
-              <div className="h-40">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={mh.confidenceDistribution.buckets.map((b) => {
-                      const [lo, hi] = clean(b.range).split("-").map(Number);
-                      const mid = Number.isFinite(lo) && Number.isFinite(hi) ? (lo + hi) / 2 : 1;
-                      return { range: clean(b.range), count: b.count, low: mid < mh.confidenceDistribution.lowConfidenceFlag };
-                    })}
-                    margin={{ top: 4, right: 8, left: 0, bottom: 0 }}
-                  >
-                    <CartesianGrid stroke={GRID_STROKE} strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="range" tick={TICK} axisLine={{ stroke: GRID_STROKE }} tickLine={false} />
-                    <YAxis allowDecimals={false} width={28} tick={TICK} axisLine={false} tickLine={false} />
-                    <Tooltip
-                      contentStyle={TOOLTIP_STYLE}
-                      labelStyle={{ color: "#93a6ac" }}
-                      cursor={{ fill: "rgba(148,180,186,0.06)" }}
-                      formatter={(v: number) => [v, "reports"]}
-                    />
-                    <Bar dataKey="count" radius={[1, 1, 0, 0]} barSize={22}>
-                      {mh.confidenceDistribution.buckets.map((b, i) => {
+        <Reveal delay={0.25}>
+          <Panel
+            title="classification confidence distribution"
+            icon={<Gauge />}
+          >
+            {modelQ.isLoading ? (
+              <LoadingRows rows={3} />
+            ) : modelQ.isError ? (
+              <ErrorNote message={(modelQ.error as Error).message} onRetry={() => modelQ.refetch()} />
+            ) : !mh ? null : (
+              <div className="space-y-3">
+                <div className="h-40">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={mh.confidenceDistribution.buckets.map((b) => {
                         const [lo, hi] = clean(b.range).split("-").map(Number);
                         const mid = Number.isFinite(lo) && Number.isFinite(hi) ? (lo + hi) / 2 : 1;
-                        return <Cell key={i} fill={mid < mh.confidenceDistribution.lowConfidenceFlag ? AMBER : TEAL} />;
+                        return { range: clean(b.range), count: b.count, low: mid < mh.confidenceDistribution.lowConfidenceFlag };
                       })}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
-                <span className="flex items-center gap-1.5 micro-label !text-[0.52rem] text-muted-foreground">
-                  <span className="size-2 rounded-[1px]" style={{ background: TEAL }} aria-hidden /> at/above flag threshold
-                </span>
-                <span className="flex items-center gap-1.5 micro-label !text-[0.52rem] text-muted-foreground">
-                  <span className="size-2 rounded-[1px]" style={{ background: AMBER }} aria-hidden /> below flag threshold
-                </span>
-                <span className="data-mono text-[0.65rem] text-muted-foreground ml-auto">
-                  mean <span className="text-foreground/90">{mh.confidenceDistribution.mean.toFixed(2)}</span> · min{" "}
-                  <span className="text-foreground/90">{mh.confidenceDistribution.min.toFixed(2)}</span> · max{" "}
-                  <span className="text-foreground/90">{mh.confidenceDistribution.max.toFixed(2)}</span>
-                </span>
-              </div>
-              <p className="micro-label !text-[0.55rem] text-muted-foreground/70 !tracking-[0.08em] normal-case leading-relaxed">
-                Classifications below {mh.confidenceDistribution.lowConfidenceFlag} confidence are flagged for review
-                (see confidence chips in the event queue). The 0.4-0.6 bucket straddles the flag threshold, so its
-                colouring is indicative only.
-              </p>
-              <div className="hairline-t pt-2.5 flex flex-wrap items-center gap-2">
-                <span className="micro-label !text-[0.55rem] text-muted-foreground">classified reports by provider</span>
-                {Object.entries(mh.classificationProviders).map(([k, count]) => (
-                  <span key={k} className="inline-flex items-center gap-1.5">
-                    <ProviderChip provider={k} />
-                    <span className="data-mono text-[0.62rem] text-muted-foreground">×{count}</span>
+                      margin={{ top: 4, right: 8, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid stroke={GRID_STROKE} strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="range" tick={TICK} axisLine={{ stroke: GRID_STROKE }} tickLine={false} />
+                      <YAxis allowDecimals={false} width={28} tick={TICK} axisLine={false} tickLine={false} />
+                      <Tooltip
+                        contentStyle={TOOLTIP_STYLE}
+                        labelStyle={LABEL_STYLE}
+                        cursor={CURSOR_FILL}
+                        formatter={(v: number) => [v, "reports"]}
+                      />
+                      <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={22} animationDuration={700}>
+                        {mh.confidenceDistribution.buckets.map((b, i) => {
+                          const [lo, hi] = clean(b.range).split("-").map(Number);
+                          const mid = Number.isFinite(lo) && Number.isFinite(hi) ? (lo + hi) / 2 : 1;
+                          return <Cell key={i} fill={mid < mh.confidenceDistribution.lowConfidenceFlag ? AMBER : BLUE} />;
+                        })}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
+                  <span className="flex items-center gap-1.5 micro-label !text-[0.52rem] text-slate-500">
+                    <span className="size-2.5 rounded-[2px]" style={{ background: BLUE }} aria-hidden /> at/above flag threshold
                   </span>
-                ))}
+                  <span className="flex items-center gap-1.5 micro-label !text-[0.52rem] text-slate-500">
+                    <span className="size-2.5 rounded-[2px]" style={{ background: AMBER }} aria-hidden /> below flag threshold
+                  </span>
+                  <span className="data-mono text-[0.65rem] text-slate-500 ml-auto">
+                    mean <span className="text-slate-800">{mh.confidenceDistribution.mean.toFixed(2)}</span> · min{" "}
+                    <span className="text-slate-800">{mh.confidenceDistribution.min.toFixed(2)}</span> · max{" "}
+                    <span className="text-slate-800">{mh.confidenceDistribution.max.toFixed(2)}</span>
+                  </span>
+                </div>
+                <p className="micro-label !text-[0.55rem] text-slate-400 !tracking-[0.08em] normal-case leading-relaxed">
+                  Classifications below {mh.confidenceDistribution.lowConfidenceFlag} confidence are flagged for review
+                  (see confidence chips in the event queue). The 0.4-0.6 bucket straddles the flag threshold, so its
+                  colouring is indicative only.
+                </p>
+                <div className="hairline-t pt-2.5 flex flex-wrap items-center gap-2">
+                  <span className="micro-label !text-[0.55rem] text-slate-500">classified reports by provider</span>
+                  {Object.entries(mh.classificationProviders).map(([k, count]) => (
+                    <span key={k} className="inline-flex items-center gap-1.5">
+                      <ProviderChip provider={k} />
+                      <span className="data-mono text-[0.62rem] text-slate-500">×{count}</span>
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-        </Panel>
+            )}
+          </Panel>
+        </Reveal>
 
         {/* SECTION F - client-side endpoint checks */}
-        <Panel
-          title={
-            <span className="flex items-center gap-2">
-              <Server className="size-3 text-water" aria-hidden />
-              api endpoint checks
-              <span className="micro-label !text-[0.5rem] text-muted-foreground/60">client-side · same-origin</span>
-            </span>
-          }
-          actions={
-            <div className="flex items-center gap-3">
-              {lastPingAt != null && (
-                <span className="data-mono text-[0.62rem] text-muted-foreground">
-                  checked {Math.max(0, Math.round((Date.now() - lastPingAt) / 1000))}s ago
-                </span>
-              )}
-              <button
-                onClick={() => runPings()}
-                disabled={pinging}
-                className="micro-label !text-[0.58rem] text-water hover:text-foreground transition-colors inline-flex items-center gap-1.5 disabled:opacity-50"
-              >
-                <RefreshCw className={cn("size-3", pinging && "animate-spin")} aria-hidden />
-                refresh checks
-              </button>
-            </div>
-          }
-          dense
-        >
-          {pings.length === 0 ? (
-            <LoadingRows rows={4} className="p-4" />
-          ) : (
-            <ul aria-busy={pinging}>
-              {pings.map((p) => (
-                <li key={p.path} className="flex items-center gap-3 px-3.5 py-2 hairline-b last:border-0">
-                  <span
-                    aria-hidden
-                    className={cn(
-                      "size-1.5 rounded-full shrink-0",
-                      p.status === "ok" ? "bg-verified" : p.status === "err" ? "bg-sev-critical" : "bg-muted-foreground/50 animate-pulse"
-                    )}
-                  />
-                  <span className="data-mono text-[0.7rem] text-foreground/90 flex-1 truncate">{p.path}</span>
-                  {p.status === "err" && p.code != null && (
-                    <span className="data-mono text-[0.62rem] text-sev-critical/80">HTTP {p.code}</span>
-                  )}
-                  <span className="data-mono text-[0.68rem] text-muted-foreground w-16 text-right shrink-0">
-                    {p.ms != null ? `${p.ms} ms` : "-"}
+        <Reveal delay={0.3}>
+          <Panel
+            title={
+              <span className="flex items-center gap-2">
+                api endpoint checks
+                <span className="micro-label !text-[0.5rem] text-slate-400">client-side · same-origin</span>
+              </span>
+            }
+            icon={<Server />}
+            actions={
+              <div className="flex items-center gap-3">
+                {lastPingAt != null && (
+                  <span className="data-mono text-[0.62rem] text-slate-500">
+                    checked {Math.max(0, Math.round((Date.now() - lastPingAt) / 1000))}s ago
                   </span>
-                  <span
-                    className={cn(
-                      "micro-label !text-[0.55rem] w-14 text-right shrink-0",
-                      p.status === "ok" ? "text-verified" : p.status === "err" ? "text-sev-critical" : "text-muted-foreground"
+                )}
+                <button
+                  onClick={() => runPings()}
+                  disabled={pinging}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 micro-label !text-[0.58rem] text-water hover:bg-blue-100 hover:border-blue-300 transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw className={cn("size-3", pinging && "animate-spin")} aria-hidden />
+                  refresh checks
+                </button>
+              </div>
+            }
+            dense
+          >
+            {pings.length === 0 ? (
+              <LoadingRows rows={4} className="p-4" />
+            ) : (
+              <div aria-busy={pinging}>
+                <Stagger>
+                  {pings.map((p) => (
+                  <StaggerItem key={p.path} className="flex items-center gap-3 px-4 py-2.5 hairline-b last:border-0">
+                    {p.status === "ok" ? (
+                      <PulseDot color="bg-emerald-500" size={7} />
+                    ) : p.status === "err" ? (
+                      <PulseDot color="bg-red-500" size={7} />
+                    ) : (
+                      <span aria-hidden className="size-[7px] rounded-full bg-slate-400 animate-pulse shrink-0" />
                     )}
-                  >
-                    {p.status === "ok" ? "ok" : p.status === "err" ? "error" : "checking"}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-          <p className="micro-label !text-[0.55rem] text-muted-foreground/70 !tracking-[0.08em] normal-case leading-relaxed px-3.5 py-2 hairline-t">
-            Latency is measured client-side from this browser session. /api/health probes the AI provider, so its check
-            can take several seconds.
-          </p>
-        </Panel>
+                    <span className="data-mono text-[0.7rem] text-slate-700 flex-1 truncate">{p.path}</span>
+                    {p.status === "err" && p.code != null && (
+                      <span className="data-mono text-[0.62rem] text-sev-critical">HTTP {p.code}</span>
+                    )}
+                    <span className="data-mono text-[0.68rem] text-slate-500 w-16 text-right shrink-0">
+                      {p.ms != null ? `${p.ms} ms` : "-"}
+                    </span>
+                    <span
+                      className={cn(
+                        "micro-label !text-[0.55rem] w-14 text-right shrink-0",
+                        p.status === "ok" ? "text-verified" : p.status === "err" ? "text-sev-critical" : "text-slate-500"
+                      )}
+                    >
+                      {p.status === "ok" ? "ok" : p.status === "err" ? "error" : "checking"}
+                    </span>
+                  </StaggerItem>
+                  ))}
+                </Stagger>
+              </div>
+            )}
+            <p className="micro-label !text-[0.55rem] text-slate-400 !tracking-[0.08em] normal-case leading-relaxed px-4 py-2.5 hairline-t">
+              Latency is measured client-side from this browser session. /api/health probes the AI provider, so its check
+              can take several seconds.
+            </p>
+          </Panel>
+        </Reveal>
       </div>
     </div>
   );
@@ -646,14 +711,33 @@ export function HealthView() {
 
 // --- local primitives -----------------------------------------------------------
 
-function Segment({ label, value, tone = "plain", border = true }: { label: string; value: string | number; tone?: "plain" | "teal" | "amber" | "red"; border?: boolean }) {
+function StatCard({ icon, tint, value, label, sub }: {
+  icon: ReactNode;
+  tint: string;
+  value: ReactNode;
+  label: string;
+  sub?: ReactNode;
+}) {
   return (
-    <div className={cn("px-3.5 py-2 min-w-fit", border && "border-l border-border/60 first:border-l-0")}>
-      <p className="micro-label !text-[0.5rem] text-muted-foreground !tracking-[0.08em]">{label}</p>
+    <HoverLift className="h-full">
+      <div className="panel rounded-xl h-full p-4">
+        <span className={cn("grid size-10 place-items-center rounded-lg shrink-0", tint)}>{icon}</span>
+        <p className="mt-3 font-display text-2xl font-bold tabular-nums text-slate-900 leading-none">{value}</p>
+        <p className="mt-1.5 text-[0.72rem] font-medium text-slate-500 leading-snug">{label}</p>
+        {sub && <p className="mt-1 data-mono text-[0.6rem] text-slate-400 leading-relaxed">{sub}</p>}
+      </div>
+    </HoverLift>
+  );
+}
+
+function Segment({ label, value, tone = "plain", border = true }: { label: string; value: ReactNode; tone?: "plain" | "teal" | "amber" | "red"; border?: boolean }) {
+  return (
+    <div className={cn("px-3.5 py-2 min-w-fit flex-1", border && "border-l border-border first:border-l-0")}>
+      <p className="micro-label !text-[0.5rem] text-slate-500 !tracking-[0.08em]">{label}</p>
       <p
         className={cn(
           "data-mono text-[0.72rem] mt-0.5",
-          tone === "teal" ? "text-verified" : tone === "amber" ? "text-sev-moderate" : tone === "red" ? "text-sev-critical" : "text-foreground"
+          tone === "teal" ? "text-verified" : tone === "amber" ? "text-sev-moderate" : tone === "red" ? "text-sev-critical" : "text-slate-800"
         )}
       >
         {value}
@@ -665,12 +749,12 @@ function Segment({ label, value, tone = "plain", border = true }: { label: strin
 function SourceStatusBadge({ status }: { status: string }) {
   const meta =
     status === "OK"
-      ? { label: "OK", cls: "text-verified border-verified/30 bg-verified/10", dot: "bg-verified" }
+      ? { label: "OK", cls: "text-emerald-700 border-emerald-200 bg-emerald-50", dot: "bg-emerald-500" }
       : status === "STALE"
-        ? { label: "STALE", cls: "text-sev-moderate border-sev-moderate/35 bg-sev-moderate/10", dot: "bg-sev-moderate" }
-        : { label: "EMPTY", cls: "text-slate-300 border-slate-400/25 bg-slate-400/8", dot: "bg-slate-400" };
+        ? { label: "STALE", cls: "text-amber-700 border-amber-200 bg-amber-50", dot: "bg-amber-500" }
+        : { label: "EMPTY", cls: "text-red-700 border-red-200 bg-red-50", dot: "bg-red-500" };
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-sm border px-1.5 py-0.5 micro-label !text-[0.6rem] !tracking-[0.1em] font-medium", meta.cls)}>
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 micro-label !text-[0.6rem] !tracking-[0.1em] font-medium", meta.cls)}>
       <span aria-hidden className={cn("size-1.5 rounded-full", meta.dot)} />
       {meta.label}
     </span>
@@ -680,14 +764,14 @@ function SourceStatusBadge({ status }: { status: string }) {
 function RunStatusBadge({ status }: { status: string }) {
   const meta =
     status === "SUCCEEDED"
-      ? { label: "succeeded", cls: "text-verified border-verified/30 bg-verified/10", dot: "bg-verified" }
+      ? { label: "succeeded", cls: "text-emerald-700 border-emerald-200 bg-emerald-50", dot: "bg-emerald-500" }
       : status === "FAILED"
-        ? { label: "failed", cls: "text-sev-critical border-sev-critical/35 bg-sev-critical/12", dot: "bg-sev-critical" }
+        ? { label: "failed", cls: "text-red-700 border-red-200 bg-red-50", dot: "bg-red-500" }
         : status === "RUNNING"
-          ? { label: "running", cls: "text-water border-water/30 bg-water/8", dot: "bg-water" }
-          : { label: status.toLowerCase(), cls: "text-slate-300 border-slate-400/25 bg-slate-400/8", dot: "bg-slate-400" };
+          ? { label: "running", cls: "text-water border-blue-200 bg-blue-50", dot: "bg-water-dim" }
+          : { label: status.toLowerCase(), cls: "text-slate-600 border-slate-200 bg-slate-100", dot: "bg-slate-400" };
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-sm border px-1.5 py-0.5 micro-label !text-[0.6rem] !tracking-[0.08em] font-medium", meta.cls)}>
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 micro-label !text-[0.6rem] !tracking-[0.08em] font-medium", meta.cls)}>
       <span aria-hidden className={cn("size-1.5 rounded-full", meta.dot)} />
       {meta.label}
     </span>

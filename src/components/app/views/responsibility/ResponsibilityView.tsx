@@ -7,12 +7,15 @@ import { navigate } from "@/lib/client/store";
 import {
   LoadingRows, ErrorNote, Panel, EmptyState, StatusBadge, RiskBadge, SourceBadge, TimeAgo,
 } from "@/components/app/shared/domain";
+import { Stagger, StaggerItem, AnimatedProgress } from "@/components/motion/kit";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { Network, HardHat, Phone, ChevronRight, ArrowDownWideNarrow, ArrowUpNarrowWide, FileWarning } from "lucide-react";
+import {
+  Network, ChevronRight, ArrowDownWideNarrow, ArrowUpNarrowWide, FileWarning,
+  GitBranch, Activity, ShieldAlert,
+} from "lucide-react";
 
 // RESPONSIBILITY MODEL - the full chain: Urban Event → Asset → Jurisdiction →
 // Agency → Action → Escalation. Cross-agency register, agency workload, chain
@@ -54,11 +57,11 @@ export function ResponsibilityView() {
   return (
     <div className="flex flex-1 min-h-0 flex-col">
       {/* header strip */}
-      <div className="hairline-b bg-ink-900/30 px-4 sm:px-5 py-2.5">
+      <div className="hairline-b bg-ink-900 px-4 sm:px-5 py-2.5">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
           <span className="flex items-center gap-2">
             <Network className="size-3.5 text-water" aria-hidden />
-            <span className="micro-label !text-[0.62rem] text-foreground/80">responsibility model</span>
+            <span className="micro-label !text-[0.62rem] text-slate-600">responsibility model</span>
           </span>
           <span className="text-[0.65rem] text-muted-foreground">
             event → asset → jurisdiction → agency → action → escalation
@@ -133,18 +136,14 @@ function CrossAgencyRegister() {
 
   return (
     <Panel
-      title={
-        <span className="flex items-center gap-2">
-          <HardHat className="size-3 text-water" aria-hidden />
-          cross-agency register · {filtered.length} events
-        </span>
-      }
+      title={`cross-agency register · ${filtered.length} events`}
+      icon={<Network />}
       actions={
         <Button
           size="sm"
           variant="outline"
           onClick={() => setSortDesc((d) => !d)}
-          className="h-7 text-[0.62rem] border-border"
+          className="h-7 text-[0.62rem] rounded-lg border-border text-slate-600 hover:bg-ink-850"
           aria-label={sortDesc ? "Sort by risk ascending" : "Sort by risk descending"}
         >
           {sortDesc ? <ArrowDownWideNarrow className="size-3" aria-hidden /> : <ArrowUpNarrowWide className="size-3" aria-hidden />}
@@ -161,7 +160,7 @@ function CrossAgencyRegister() {
           {/* filters */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-3">
             <span className="micro-label !text-[0.52rem] text-muted-foreground/70">agency</span>
-            <div className="flex flex-wrap gap-1" role="group" aria-label="Filter by agency">
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by agency">
               {AGENCY_CODES.map((a) => {
                 const on = agencyFilter.has(a);
                 return (
@@ -170,8 +169,10 @@ function CrossAgencyRegister() {
                     onClick={() => toggleAgency(a)}
                     aria-pressed={on}
                     className={cn(
-                      "rounded-sm border micro-label !text-[0.55rem] px-1.5 py-1 transition-colors data-mono !tracking-normal !normal-case",
-                      on ? "border-water/40 bg-water/12 text-water" : "border-border text-muted-foreground hover:text-foreground"
+                      "rounded-full border micro-label !text-[0.55rem] px-2.5 py-1 transition-colors data-mono !tracking-normal !normal-case font-medium",
+                      on
+                        ? "bg-blue-50 text-water border-blue-200"
+                        : "border-border bg-ink-900 text-slate-500 hover:bg-ink-850 hover:text-slate-700"
                     )}
                   >
                     {a}
@@ -179,7 +180,7 @@ function CrossAgencyRegister() {
                 );
               })}
               {agencyFilter.size > 0 && (
-                <button onClick={() => setAgencyFilter(new Set())} className="micro-label !text-[0.52rem] text-muted-foreground hover:text-foreground transition-colors px-1">
+                <button onClick={() => setAgencyFilter(new Set())} className="micro-label !text-[0.52rem] text-muted-foreground hover:text-water transition-colors px-1">
                   clear
                 </button>
               )}
@@ -197,7 +198,7 @@ function CrossAgencyRegister() {
             <span className="micro-label !text-[0.5rem] text-muted-foreground/60">events per agency</span>
             {AGENCY_CODES.filter((a) => perAgency.has(a)).map((a) => (
               <span key={a} className="data-mono text-[0.62rem]">
-                <span className="text-water/90">{a}</span>
+                <span className="text-water">{a}</span>
                 <span className="text-muted-foreground"> {perAgency.get(a)}</span>
               </span>
             ))}
@@ -214,36 +215,36 @@ function CrossAgencyRegister() {
           {filtered.length === 0 ? (
             <EmptyState title="No events match the filters" hint="Clear the agency toggles or the escalated-only switch." />
           ) : (
-            <ul>
+            <Stagger>
               {filtered.map((e) => (
-                <li key={e.id} className="hairline-b last:border-0">
+                <StaggerItem key={e.id} className="hairline-b last:border-0">
                   <button
                     onClick={() => navigate("event", e.code)}
-                    className="w-full text-left py-2.5 hover:bg-ink-850/50 transition-colors group"
+                    className="w-full text-left py-2.5 px-1.5 -mx-1.5 rounded-lg hover:bg-ink-850/50 transition-colors group"
                     aria-label={`${e.code}: ${e.title}`}
                   >
                     {/* line 1: code + badges */}
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="data-mono text-[0.68rem] font-semibold text-water group-hover:text-water/90">{e.code}</span>
+                      <span className="data-mono text-[0.68rem] font-semibold text-water group-hover:text-water-dim">{e.code}</span>
                       <RiskBadge band={e.riskBand} score={e.riskScore} />
                       <StatusBadge status={e.status} />
                       <span className="data-mono text-[0.62rem] text-muted-foreground">{e.reportCount} rep</span>
-                      <ChevronRight className="size-3.5 text-muted-foreground group-hover:text-water ml-auto shrink-0" aria-hidden />
+                      <ChevronRight className="size-3.5 text-slate-400 group-hover:text-water ml-auto shrink-0" aria-hidden />
                     </div>
                     {/* line 2: title */}
-                    <p className="mt-1 text-[0.78rem] text-foreground/90 leading-snug line-clamp-1">{e.title}</p>
+                    <p className="mt-1 text-[0.78rem] text-slate-700 leading-snug line-clamp-1">{e.title}</p>
                     {/* line 3: jurisdiction + agency */}
                     <div className="mt-1 flex items-center gap-x-3 gap-y-1 flex-wrap">
-                      <span className="data-mono text-[0.62rem] text-water/90">{e.agencyCode ?? "unassigned"}</span>
+                      <span className="data-mono text-[0.62rem] text-water">{e.agencyCode ?? "unassigned"}</span>
                       <span className="text-[0.62rem] text-muted-foreground truncate max-w-72">
                         {e.jurisdictionId ? (jurisName.get(e.jurisdictionId) ?? "jurisdiction") : "outside pilot"}
                       </span>
                       {e.groundTruthHotspotId != null && <SourceBadge source="SYNTHETIC_DEMO" />}
                     </div>
                   </button>
-                </li>
+                </StaggerItem>
               ))}
-            </ul>
+            </Stagger>
           )}
         </>
       )}
@@ -267,14 +268,14 @@ function AgencyWorkload() {
 
   if (agenciesQ.isLoading) {
     return (
-      <Panel title="agency workload">
+      <Panel title="agency workload" icon={<Activity />}>
         <LoadingRows rows={7} />
       </Panel>
     );
   }
   if (agenciesQ.isError) {
     return (
-      <Panel title="agency workload">
+      <Panel title="agency workload" icon={<Activity />}>
         <ErrorNote message={(agenciesQ.error as Error).message} onRetry={() => agenciesQ.refetch()} />
       </Panel>
     );
@@ -286,45 +287,46 @@ function AgencyWorkload() {
 
   return (
     <Panel
-      title={
-        <span className="flex items-center gap-2">
-          <Phone className="size-3 text-water" aria-hidden />
-          agency workload · {agencies.length} agencies
-        </span>
-      }
+      title={`agency workload · ${agencies.length} agencies`}
+      icon={<Activity />}
       actions={overviewQ.isError ? <span className="micro-label !text-[0.5rem] text-sev-moderate">verified counts unavailable</span> : undefined}
     >
-      <ul className="space-y-2.5">
+      <Stagger className="space-y-2.5">
         {agencies.map((a) => {
           const s = stats.get(a.code);
           const verified = s?.verified ?? 0;
-          const load = Math.min(100, (a.activeEvents / maxLoad) * 100);
           return (
-            <li key={a.code} className="rounded-sm border border-border/60 bg-ink-850/30 px-3 py-2.5">
-              <div className="flex items-baseline gap-2.5 flex-wrap">
-                <span className="data-mono text-xs font-semibold text-water w-10 shrink-0">{a.code}</span>
-                <span className="text-xs text-foreground/90 flex-1 min-w-40 truncate" title={a.name}>{a.name}</span>
-                <span className="micro-label !text-[0.5rem] text-muted-foreground/70">{a.kind.toLowerCase()}</span>
-                <a
-                  href={`tel:${a.hotline.replace(/[^+\d]/g, "")}`}
-                  className="data-mono text-[0.62rem] text-water hover:text-foreground transition-colors"
-                  title={`call ${a.code} hotline`}
-                >
-                  {a.hotline}
-                </a>
-              </div>
-              <p className="mt-1 text-[0.65rem] text-muted-foreground leading-snug">{a.notes}</p>
-              <div className="mt-2 flex items-center gap-2.5">
-                <div className="flex-1 h-1.5 rounded-full bg-ink-800 overflow-hidden" role="img" aria-label={`${a.code}: ${a.activeEvents} active links, ${verified} verified or closed events as primary agency`}>
-                  <div className="h-full bg-water/70 rounded-full" style={{ width: `${load}%` }} />
+            <StaggerItem key={a.code}>
+              <div className="rounded-lg border border-border bg-slate-50 px-3 py-2.5">
+                <div className="flex items-baseline gap-2.5 flex-wrap">
+                  <span className="data-mono text-xs font-semibold text-water w-10 shrink-0">{a.code}</span>
+                  <span className="text-xs text-slate-700 flex-1 min-w-40 truncate" title={a.name}>{a.name}</span>
+                  <span className="micro-label !text-[0.5rem] text-muted-foreground/70">{a.kind.toLowerCase()}</span>
+                  <a
+                    href={`tel:${a.hotline.replace(/[^+\d]/g, "")}`}
+                    className="data-mono text-[0.62rem] text-water hover:text-water-dim transition-colors"
+                    title={`call ${a.code} hotline`}
+                  >
+                    {a.hotline}
+                  </a>
                 </div>
-                <span className="data-mono text-[0.62rem] text-foreground">{a.activeEvents}<span className="text-muted-foreground"> links</span></span>
-                <span className="data-mono text-[0.62rem] text-verified">{verified}<span className="text-muted-foreground"> ver</span></span>
+                <p className="mt-1 text-[0.65rem] text-muted-foreground leading-snug">{a.notes}</p>
+                <div className="mt-2 flex items-center gap-2.5">
+                  <span
+                    className="flex-1"
+                    role="img"
+                    aria-label={`${a.code}: ${a.activeEvents} active links, ${verified} verified or closed events as primary agency`}
+                  >
+                    <AnimatedProgress value={a.activeEvents} max={maxLoad} fillClassName="bg-water-dim" />
+                  </span>
+                  <span className="data-mono text-[0.62rem] text-slate-900">{a.activeEvents}<span className="text-muted-foreground"> links</span></span>
+                  <span className="data-mono text-[0.62rem] text-verified">{verified}<span className="text-muted-foreground"> ver</span></span>
+                </div>
               </div>
-            </li>
+            </StaggerItem>
           );
         })}
-      </ul>
+      </Stagger>
       <p className="mt-3 micro-label !text-[0.5rem] text-muted-foreground/60">
         links: active responsibility links (any role) · bar length relative to the busiest agency · ver: verified or closed events where the agency is primary
       </p>
@@ -353,12 +355,8 @@ function ChainInspector() {
 
   return (
     <Panel
-      title={
-        <span className="flex items-center gap-2">
-          <Network className="size-3 text-water" aria-hidden />
-          chain inspector
-        </span>
-      }
+      title="chain inspector"
+      icon={<GitBranch />}
       actions={respQ.data ? <span className="micro-label !text-[0.5rem] text-muted-foreground/70">{respQ.data.ruleVersion}</span> : undefined}
     >
       <div className="flex items-center gap-3 flex-wrap mb-3">
@@ -370,7 +368,7 @@ function ChainInspector() {
             <SelectContent className="max-h-72">
               {events.map((e) => (
                 <SelectItem key={e.id} value={e.code} className="text-xs">
-                  <span className="data-mono text-water/90 mr-1.5">{e.code}</span>
+                  <span className="data-mono text-water mr-1.5">{e.code}</span>
                   <span className="truncate">{e.title}</span>
                 </SelectItem>
               ))}
@@ -382,7 +380,7 @@ function ChainInspector() {
             size="sm"
             variant="outline"
             onClick={() => navigate("event", respQ.data!.event.code)}
-            className="h-8 text-[0.62rem] border-border"
+            className="h-8 text-[0.62rem] rounded-lg border-border text-slate-600 hover:bg-ink-850"
           >
             open dossier <ChevronRight className="size-3" aria-hidden />
           </Button>
@@ -404,14 +402,14 @@ function ChainInspector() {
       ) : respQ.data ? (
         <>
           {/* chain stepper */}
-          <ol className="space-y-0">
+          <Stagger>
             {respQ.data.chain.map((c, i) => (
-              <ChainStep key={`${c.level}-${c.ref}-${i}`} step={c} />
+              <ChainStep key={`${c.level}-${c.ref}-${i}`} step={c} last={i === respQ.data!.chain.length - 1} />
             ))}
-          </ol>
+          </Stagger>
 
           {respQ.data.groundTruth && (
-            <p className="mt-3 text-[0.65rem] text-sev-moderate/80">
+            <p className="mt-3 text-[0.65rem] text-sev-moderate">
               Routing evaluation note: seeded ground-truth responsible agency{" "}
               <span className="data-mono">{respQ.data.groundTruth.agency}</span> (synthetic, for routing evaluation).
             </p>
@@ -425,7 +423,7 @@ function ChainInspector() {
             ) : (
               <ul className="space-y-2">
                 {respQ.data.actions.map((a) => (
-                  <li key={a.id} className="rounded-sm border border-border/60 bg-ink-850/30 p-3">
+                  <li key={a.id} className="rounded-lg border border-border bg-slate-50 p-3">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="data-mono text-[0.62rem] font-semibold text-water">{a.kind.replace(/_/g, " ").toLowerCase()}</span>
                       <span className={cn("micro-label !text-[0.5rem]", a.priority === "URGENT" ? "text-sev-critical" : a.priority === "HIGH" ? "text-sev-high" : "text-muted-foreground")}>
@@ -438,8 +436,8 @@ function ChainInspector() {
                         {a.agencyCode ?? "n/a"}{a.assignedTo ? ` · ${a.assignedTo}` : ""}
                       </span>
                     </div>
-                    <p className="mt-1 text-[0.78rem] text-foreground/90">{a.instruction}</p>
-                    {a.outcome && <p className="mt-1 text-xs text-verified/90">Outcome: {a.outcome}</p>}
+                    <p className="mt-1 text-[0.78rem] text-slate-700">{a.instruction}</p>
+                    {a.outcome && <p className="mt-1 text-xs text-verified">Outcome: {a.outcome}</p>}
                     {a.dueAt && <p className="mt-1 text-[0.62rem] text-muted-foreground">due <TimeAgo iso={a.dueAt} /></p>}
                   </li>
                 ))}
@@ -455,38 +453,44 @@ function ChainInspector() {
   );
 }
 
-function ChainStep({ step }: { step: ChainLevelData }) {
+function ChainStep({ step, last }: { step: ChainLevelData; last?: boolean }) {
   const c = step;
   return (
-    <li className="relative pl-4 pb-3 last:pb-0">
+    <StaggerItem className="relative pl-5 pb-3.5 last:pb-0">
       <span
         className={cn(
-          "absolute left-0 top-1.5 size-2 rounded-sm",
-          c.level === "ESCALATION" ? "bg-sev-critical" : c.level === "SUPPORT" ? "bg-sev-moderate" : c.level === "AGENCY" ? "bg-water" : "bg-muted-foreground"
+          "absolute left-0 top-1 size-2.5 rounded-full ring-4",
+          c.level === "ESCALATION"
+            ? "bg-sev-critical ring-red-100"
+            : c.level === "SUPPORT"
+              ? "bg-sev-moderate ring-amber-100"
+              : c.level === "AGENCY"
+                ? "bg-water ring-blue-100"
+                : "bg-slate-400 ring-slate-100"
         )}
         aria-hidden
       />
-      <span className="absolute left-1 top-4.5 bottom-0 w-px bg-border" aria-hidden />
+      {!last && <span className="absolute left-[4px] top-4 bottom-0 w-px bg-border" aria-hidden />}
       <div className="flex items-baseline gap-2 flex-wrap">
         <span className="micro-label !text-[0.5rem]">{c.level.toLowerCase()}</span>
-        <span className="data-mono text-xs font-semibold text-foreground">{c.ref}</span>
+        <span className="data-mono text-xs font-semibold text-slate-900">{c.ref}</span>
         {c.status && <span className="micro-label !text-[0.46rem] text-muted-foreground/70">{c.status.toLowerCase()}</span>}
         {c.hotline && (
-          <a href={`tel:${c.hotline.replace(/[^+\d]/g, "")}`} className="data-mono text-[0.6rem] text-water hover:text-foreground transition-colors">
+          <a href={`tel:${c.hotline.replace(/[^+\d]/g, "")}`} className="data-mono text-[0.6rem] text-water hover:text-water-dim transition-colors">
             {c.hotline}
           </a>
         )}
         {c.assignedAt && <TimeAgo iso={c.assignedAt} />}
       </div>
-      <p className="text-xs text-foreground/80 mt-0.5 leading-snug">{c.label}</p>
+      <p className="text-xs text-slate-700 mt-0.5 leading-snug">{c.label}</p>
       {c.detail && <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{c.detail}</p>}
       {c.asset && (
         <p className="text-[0.65rem] text-muted-foreground/80 mt-0.5">
-          asset: <span className="data-mono text-water/80">{c.asset.code}</span> · {c.asset.name} ·{" "}
+          asset: <span className="data-mono text-water">{c.asset.code}</span> · {c.asset.name} ·{" "}
           {c.asset.kind.toLowerCase().replace(/_/g, " ")} · condition {c.asset.condition}
         </p>
       )}
-    </li>
+    </StaggerItem>
   );
 }
 
@@ -506,19 +510,32 @@ function EscalationMatrix() {
   return (
     <Panel
       title="escalation matrix · routing reference"
+      icon={<ShieldAlert />}
       actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/70">routing-rules v1.2-demo</span>}
     >
-      <dl>
-        {ROUTING_RULES.map((r) => (
-          <div key={r.trigger} className="grid grid-cols-1 sm:grid-cols-[minmax(140px,220px)_1fr] gap-x-4 gap-y-0.5 py-2.5 hairline-b last:border-0">
-            <dt className="text-xs text-foreground/90 leading-snug">{r.trigger}</dt>
-            <dd>
-              <span className="data-mono text-[0.68rem] text-water">{r.route}</span>
-              <span className="block text-[0.65rem] text-muted-foreground leading-snug">{r.note}</span>
-            </dd>
-          </div>
-        ))}
-      </dl>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="hairline-b">
+              <th scope="col" className="micro-label !text-[0.52rem] py-2 pr-4 font-medium">trigger</th>
+              <th scope="col" className="micro-label !text-[0.52rem] py-2 pr-4 font-medium">routes to</th>
+              <th scope="col" className="micro-label !text-[0.52rem] py-2 font-medium hidden md:table-cell">note</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ROUTING_RULES.map((r) => (
+              <tr key={r.trigger} className="hairline-b last:border-0">
+                <td className="py-2.5 pr-4 text-[0.78rem] text-slate-700 leading-snug align-top">{r.trigger}</td>
+                <td className="py-2.5 pr-4 align-top">
+                  <span className="data-mono text-[0.68rem] font-medium text-water">{r.route}</span>
+                  <span className="md:hidden block text-[0.65rem] text-muted-foreground leading-snug mt-0.5">{r.note}</span>
+                </td>
+                <td className="py-2.5 text-[0.65rem] text-muted-foreground leading-snug hidden md:table-cell align-top">{r.note}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       <p className="mt-3 micro-label !text-[0.5rem] text-muted-foreground/60">
         Static reference for how the routing engine assigns primary, support and escalation links. The live chain per event is shown in the chain inspector above.
       </p>

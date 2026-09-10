@@ -1,0 +1,959 @@
+     1→     1→"use client";
+     2→     2→
+     3→     3→import { useMemo, useState } from "react";
+     4→     4→import { useQuery, useMutation, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
+     5→     5→import { apiGet, apiPost, ApiClientError, type EventSummary } from "@/lib/client/api";
+     6→     6→import { navigate } from "@/lib/client/store";
+     7→     7→import {
+     8→     8→  LoadingRows, ErrorNote, Panel, EmptyState, RiskBadge, RiskMeter, TimeAgo,
+     9→     9→  ConfidenceChip, ProviderChip, SourceBadge,
+    10→    10→} from "@/components/app/shared/domain";
+    11→    11→import { Button } from "@/components/ui/button";
+    12→    12→import { Textarea } from "@/components/ui/textarea";
+    13→    13→import { Input } from "@/components/ui/input";
+    14→    14→import { Label } from "@/components/ui/label";
+    15→    15→import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+    16→    16→import { useToast } from "@/hooks/use-toast";
+    17→    17→import { cn } from "@/lib/utils";
+    18→    18→import { Sparkles, GitMerge, Gauge, Search, ChevronRight, Radio } from "lucide-react";
+    19→    19→
+    20→    20→// AI INVESTIGATION - three structured assistance tools (classification,
+    21→    21→// duplicate clustering, risk assessment) with honest provenance and honest
+    22→    22→// fallback reporting. Structured output only; no chain-of-thought is ever
+    23→    23→// requested, returned, or displayed.
+    24→    24→
+    25→    25→// --- API types -----------------------------------------------------------------------
+    26→    26→
+    27→    27→interface ReportRow {
+    28→    28→  id: string; publicRef: string; description: string; category: string; severityReported: string;
+    29→    29→  lat: number; lng: number; addressText: string | null; submittedAt: string; channel: string;
+    30→    30→  status: string; isDuplicate: boolean; urbanEventId: string | null; source: string;
+    31→    31→  classificationProvider: string | null; classificationModel: string | null; classificationConfidence: number | null;
+    32→    32→  classification: { provider: string; modelId: string | null; confidence: number | null } | null;
+    33→    33→}
+    34→    34→
+    35→    35→interface ProviderHealthInfo {
+    36→    36→  provider: string; modelId: string; available: boolean;
+    37→    37→  lastCheckedAt: string | null; lastError: string | null; configuredBy: string;
+    38→    38→}
+    39→    39→
+    40→    40→interface ClassifyResponse {
+    41→    41→  classification: {
+    42→    42→    category: string; severity: string; confidence: number;
+    43→    43→    isDuplicateSuspected: boolean; duplicateReason?: string;
+    44→    44→    factors: string[]; summary: string;
+    45→    45→  };
+    46→    46→  provenance: {
+    47→    47→    provider: string; modelId: string; latencyMs: number;
+    48→    48→    fallbackUsed: boolean; fallbackReason: string | null;
+    49→    49→    providerHealth: ProviderHealthInfo; version: string;
+    50→    50→  };
+    51→    51→  context: {
+    52→    52→    rainfall24hMm: number | null; rainfall72hMm: number | null;
+    53→    53→    nearestStation: { code: string; name: string; distanceM: number } | null;
+    54→    54→    historicalIncidentsNearby: number;
+    55→    55→    nearestAssets: { code: string; kind: string; distanceM: number; condition: number | null }[];
+    56→    56→    nearbyOpenEvents: number;
+    57→    57→  };
+    58→    58→  duplicateSignals: { code: string; distanceM: number; hoursApart: number; recurrence: boolean; reason: string }[];
+    59→    59→}
+    60→    60→
+    61→    61→interface ClusterResponse {
+    62→    62→  clusters: {
+    63→    63→    id: string; centroid: { lat: number; lng: number }; size: number; spatialDiameterM: number;
+    64→    64→    members: {
+    65→    65→      id: string; lat: number; lng: number; publicRef: string; category: string;
+    66→    66→      severityReported: string; description: string; submittedAt: string; urbanEventId: string | null;
+    67→    67→    }[];
+    68→    68→  }[];
+    69→    69→  singletons: number;
+    70→    70→}
+    71→    71→
+    72→    72→interface RiskResponse {
+    73→    73→  event: { id: string; code: string; title: string };
+    74→    74→  risk: {
+    75→    75→    score: number; band: string; modelVersion: string; computedAt: string;
+    76→    76→    factors: { key: string; label: string; value: number; weight: number; contribution: number; raw: string }[];
+    77→    77→  };
+    78→    78→  advisory: {
+    79→    79→    output: {
+    80→    80→      narrative: string;
+    81→    81→      factors?: { key: string; label: string; direction: string; weight: number }[];
+    82→    82→      recommendedInvestigation?: string;
+    83→    83→    };
+    84→    84→    provider: string; modelId: string; fallbackUsed: boolean; error: string | null;
+    85→    85→  };
+    86→    86→  provenance: { riskModelVersion: string; advisoryProviderHealth: ProviderHealthInfo };
+    87→    87→}
+    88→    88→
+    89→    89→type ToolId = "classify" | "cluster" | "risk";
+    90→    90→
+    91→    91→type ClassifyVars = { reportId?: string; reportRef?: string; description?: string; severityReported?: string; lat?: number; lng?: number };
+    92→    92→type ClassifyMutation = UseMutationResult<ClassifyResponse & { _label: string }, Error, ClassifyVars>;
+    93→    93→type ClusterMutation = UseMutationResult<{ data: ClusterResponse; meta: Record<string, unknown>; radius: number }, Error, number>;
+    94→    94→type RiskMutation = UseMutationResult<RiskResponse, Error, string>;
+    95→    95→
+    96→    96→const TOOLS: { id: ToolId; label: string; hint: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    97→    97→  { id: "classify", label: "Classification", hint: "categorise + severity + duplicate suspicion", icon: Sparkles },
+    98→    98→  { id: "cluster", label: "Duplicate clustering", hint: "proximity clusters over the last 72h", icon: GitMerge },
+    99→    99→  { id: "risk", label: "Risk assessment", hint: "factor model + structured AI advisory", icon: Gauge },
+   100→   100→];
+   101→   101→
+   102→   102→const SEVERITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
+   103→   103→const RADII = [100, 150, 200, 300] as const;
+   104→   104→
+   105→   105→export function InvestigateView() {
+   106→   106→  const [tool, setTool] = useState<ToolId>("classify");
+   107→   107→  const { toast } = useToast();
+   108→   108→  const qc = useQueryClient();
+   109→   109→
+   110→   110→  const healthQ = useQuery({
+   111→   111→    queryKey: ["ai-health"],
+   112→   112→    queryFn: () => apiGet<{ ai: ProviderHealthInfo }>("/api/health").then((r) => r.data.ai),
+   113→   113→    refetchInterval: 120_000,
+   114→   114→    staleTime: 60_000,
+   115→   115→  });
+   116→   116→
+   117→   117→  // freshest health wins: compare the run-time probe vs the polled snapshot
+   118→   118→  const [toolHealth, setToolHealth] = useState<ProviderHealthInfo | null>(null);
+   119→   119→  const health = useMemo(() => {
+   120→   120→    if (toolHealth && healthQ.data) {
+   121→   121→      const tRun = toolHealth.lastCheckedAt ? Date.parse(toolHealth.lastCheckedAt) : 0;
+   122→   122→      const tPolled = healthQ.data.lastCheckedAt ? Date.parse(healthQ.data.lastCheckedAt) : 0;
+   123→   123→      return tRun >= tPolled ? toolHealth : healthQ.data;
+   124→   124→    }
+   125→   125→    return toolHealth ?? healthQ.data ?? null;
+   126→   126→  }, [toolHealth, healthQ.data]);
+   127→   127→
+   128→   128→  // --- Tool A: classification (stored report or ad-hoc text) ---
+   129→   129→  const classify = useMutation({
+   130→   130→    mutationFn: (vars: ClassifyVars) =>
+   131→   131→      apiPost<ClassifyResponse>("/api/ai/classify", {
+   132→   132→        reportId: vars.reportId,
+   133→   133→        description: vars.description,
+   134→   134→        severityReported: vars.severityReported,
+   135→   135→        lat: vars.lat,
+   136→   136→        lng: vars.lng,
+   137→   137→      }, "ANALYST").then((r) => ({ ...r.data, _label: vars.reportRef ?? "ad-hoc text" })),
+   138→   138→    onSuccess: (d) => {
+   139→   139→      setToolHealth(d.provenance.providerHealth);
+   140→   140→      qc.invalidateQueries({ queryKey: ["reports"] });
+   141→   141→      toast({
+   142→   142→        title: "Classification complete",
+   143→   143→        description: `${d.classification.category.toLowerCase()} · severity ${d.classification.severity.toLowerCase()} · provider ${d.provenance.provider}${d.provenance.fallbackUsed ? " (fallback)" : ""}.`,
+   144→   144→      });
+   145→   145→    },
+   146→   146→    onError: (e) => toast({ title: "Classification failed", description: (e as ApiClientError).message, variant: "destructive" }),
+   147→   147→  });
+   148→   148→
+   149→   149→  // --- Tool B: duplicate clustering ---
+   150→   150→  const [radius, setRadius] = useState<number>(150);
+   151→   151→  const cluster = useMutation({
+   152→   152→    mutationFn: (rm: number) =>
+   153→   153→      apiPost<ClusterResponse>("/api/ai/cluster", { radiusM: rm }, "ANALYST").then((r) => ({ data: r.data, meta: r.meta ?? {}, radius: rm })),
+   154→   154→    onSuccess: (d) => {
+   155→   155→      toast({
+   156→   156→        title: "Clustering complete",
+   157→   157→        description: `${d.data.clusters.length} clusters, ${d.data.singletons} singletons across ${String(d.meta.evaluated ?? "?")} reports (last 72h).`,
+   158→   158→      });
+   159→   159→    },
+   160→   160→    onError: (e) => toast({ title: "Clustering failed", description: (e as ApiClientError).message, variant: "destructive" }),
+   161→   161→  });
+   162→   162→
+   163→   163→  // --- Tool C: risk assessment ---
+   164→   164→  const risk = useMutation({
+   165→   165→    mutationFn: (eventId: string) => apiPost<RiskResponse>("/api/ai/risk", { eventId }, "ANALYST").then((r) => r.data),
+   166→   166→    onSuccess: (d) => {
+   167→   167→      setToolHealth(d.provenance.advisoryProviderHealth);
+   168→   168→      qc.invalidateQueries({ queryKey: ["events"] });
+   169→   169→      qc.invalidateQueries({ queryKey: ["event"] });
+   170→   170→      qc.invalidateQueries({ queryKey: ["overview"] });
+   171→   171→      toast({
+   172→   172→        title: "Risk assessed",
+   173→   173→        description: `Score ${d.risk.score} (${d.risk.band.toLowerCase()}). Advisory provider: ${d.advisory.provider}${d.advisory.fallbackUsed ? " (fallback)" : ""}.`,
+   174→   174→      });
+   175→   175→    },
+   176→   176→    onError: (e) => toast({ title: "Risk assessment failed", description: (e as ApiClientError).message, variant: "destructive" }),
+   177→   177→  });
+   178→   178→
+   179→   179→  return (
+   180→   180→    <div className="flex flex-1 min-h-0 flex-col">
+   181→   181→      {/* provider health summary strip */}
+   182→   182→      <div className="hairline-b bg-ink-900/30 px-4 sm:px-5 py-2.5">
+   183→   183→        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+   184→   184→          <span className="flex items-center gap-2 shrink-0">
+   185→   185→            <Radio className="size-3.5 text-water" aria-hidden />
+   186→   186→            <span className="micro-label !text-[0.62rem] text-foreground/80">ai investigation</span>
+   187→   187→          </span>
+   188→   188→          {health ? (
+   189→   189→            <>
+   190→   190→              <ProviderChip provider={health.provider} model={health.modelId} />
+   191→   191→              <span className={cn("micro-label !text-[0.52rem] flex items-center gap-1.5", health.available ? "text-verified" : "text-sev-high")}>
+   192→   192→                <span aria-hidden className={cn("size-1.5 rounded-full", health.available ? "bg-verified" : "bg-sev-high")} />
+   193→   193→                {health.available ? "available" : "unavailable"}
+   194→   194→              </span>
+   195→   195→              <span className="micro-label !text-[0.52rem] text-muted-foreground/70 flex items-center gap-1.5">
+   196→   196→                configured by {health.configuredBy.toLowerCase()}
+   197→   197→                {health.lastCheckedAt && <>· probed <TimeAgo iso={health.lastCheckedAt} /></>}
+   198→   198→              </span>
+   199→   199→              {health.lastError && (
+   200→   200→                <span className="text-[0.62rem] text-sev-moderate" role="note" title={health.lastError}>
+   201→   201→                  last error: {health.lastError}
+   202→   202→                </span>
+   203→   203→              )}
+   204→   204→            </>
+   205→   205→          ) : healthQ.isLoading ? (
+   206→   206→            <span className="micro-label !text-[0.52rem] text-muted-foreground/60">probing provider…</span>
+   207→   207→          ) : (
+   208→   208→            <span className="micro-label !text-[0.52rem] text-sev-critical">provider health unavailable</span>
+   209→   209→          )}
+   210→   210→          <span className="micro-label ml-auto !text-[0.5rem] text-muted-foreground/60 hidden sm:inline">
+   211→   211→            structured output only · no chain-of-thought exposed
+   212→   212→          </span>
+   213→   213→        </div>
+   214→   214→      </div>
+   215→   215→
+   216→   216→      {/* tool grid: selector + inputs (left) | results (right) */}
+   217→   217→      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[350px_1fr]">
+   218→   218→        <aside className="lg:hairline-r bg-ink-900/20 flex flex-col min-h-0 border-b lg:border-b-0">
+   219→   219→          {/* tool selector */}
+   220→   220→          <div className="grid grid-cols-3 lg:grid-cols-1 hairline-b shrink-0">
+   221→   221→            {TOOLS.map((t) => {
+   222→   222→              const active = tool === t.id;
+   223→   223→              return (
+   224→   224→                <button
+   225→   225→                  key={t.id}
+   226→   226→                  onClick={() => setTool(t.id)}
+   227→   227→                  aria-pressed={active}
+   228→   228→                  className={cn(
+   229→   229→                    "text-left px-3.5 py-2.5 lg:py-3 transition-colors hairline-r last:border-r-0 lg:hairline-b lg:border-r-0",
+   230→   230→                    active ? "bg-water/8" : "hover:bg-ink-850/60"
+   231→   231→                  )}
+   232→   232→                >
+   233→   233→                  <span className="flex items-center gap-2">
+   234→   234→                    <t.icon className={cn("size-3.5 shrink-0", active ? "text-water" : "text-muted-foreground")} aria-hidden />
+   235→   235→                    <span className={cn("micro-label !text-[0.58rem]", active ? "text-water" : "text-foreground/70")}>{t.label}</span>
+   236→   236→                  </span>
+   237→   237→                  <span className="hidden lg:block mt-0.5 text-[0.62rem] text-muted-foreground/80 leading-snug pl-5.5">{t.hint}</span>
+   238→   238→                </button>
+   239→   239→              );
+   240→   240→            })}
+   241→   241→          </div>
+   242→   242→
+   243→   243→          {/* per-tool input area */}
+   244→   244→          <div className="flex-1 min-h-0 overflow-y-auto">
+   245→   245→            {tool === "classify" && <ClassifyInput classify={classify} />}
+   246→   246→            {tool === "cluster" && <ClusterInput cluster={cluster} radius={radius} setRadius={setRadius} />}
+   247→   247→            {tool === "risk" && <RiskInput risk={risk} />}
+   248→   248→          </div>
+   249→   249→        </aside>
+   250→   250→
+   251→   251→        {/* results column */}
+   252→   252→        <div className="min-h-0 overflow-y-auto p-3 sm:p-4 space-y-3">
+   253→   253→          {tool === "classify" && <ClassifyResults m={classify} />}
+   254→   254→          {tool === "cluster" && <ClusterResults m={cluster} />}
+   255→   255→          {tool === "risk" && <RiskResults m={risk} />}
+   256→   256→        </div>
+   257→   257→      </div>
+   258→   258→    </div>
+   259→   259→  );
+   260→   260→}
+   261→   261→
+   262→   262→// --- Tool A: classification ------------------------------------------------------------
+   263→   263→
+   264→   264→function ClassifyInput({ classify }: { classify: ClassifyMutation }) {
+   265→   265→  const [mode, setMode] = useState<"queue" | "adhoc">("queue");
+   266→   266→  const [description, setDescription] = useState("");
+   267→   267→  const [severity, setSeverity] = useState<string>("MEDIUM");
+   268→   268→  const [lat, setLat] = useState("");
+   269→   269→  const [lng, setLng] = useState("");
+   270→   270→
+   271→   271→  const pending = classify.isPending;
+   272→   272→  const descOk = description.trim().length >= 12;
+   273→   273→  const latNum = Number(lat);
+   274→   274→  const lngNum = Number(lng);
+   275→   275→  const coordsOk = (lat.trim() === "" || Number.isFinite(latNum)) && (lng.trim() === "" || Number.isFinite(lngNum));
+   276→   276→
+   277→   277→  return (
+   278→   278→    <div className="p-3.5 space-y-3">
+   279→   279→      {/* mode toggle */}
+   280→   280→      <div className="flex rounded-sm border border-border/70 overflow-hidden" role="tablist" aria-label="Classification input mode">
+   281→   281→        {(["queue", "adhoc"] as const).map((m) => (
+   282→   282→          <button
+   283→   283→            key={m}
+   284→   284→            role="tab"
+   285→   285→            aria-selected={mode === m}
+   286→   286→            onClick={() => setMode(m)}
+   287→   287→            className={cn(
+   288→   288→              "flex-1 micro-label !text-[0.55rem] py-1.5 transition-colors",
+   289→   289→              mode === m ? "bg-water/12 text-water" : "text-muted-foreground hover:text-foreground"
+   290→   290→            )}
+   291→   291→          >
+   292→   292→            {m === "queue" ? "report queue" : "ad-hoc text"}
+   293→   293→          </button>
+   294→   294→        ))}
+   295→   295→      </div>
+   296→   296→
+   297→   297→      {mode === "queue" ? (
+   298→   298→        <ReportQueue pending={pending} onClassify={(r) => classify.mutate({ reportId: r.id, reportRef: r.publicRef })} />
+   299→   299→      ) : (
+   300→   300→        <div className="space-y-3">
+   301→   301→          <div className="space-y-1.5">
+   302→   302→            <Label htmlFor="adhoc-desc" className="text-xs">Description</Label>
+   303→   303→            <Textarea
+   304→   304→              id="adhoc-desc"
+   305→   305→              rows={4}
+   306→   306→              value={description}
+   307→   307→              onChange={(e) => setDescription(e.target.value)}
+   308→   308→              placeholder="e.g. knee-deep water under the railway bridge, autos stalled, drain overflowing"
+   309→   309→              className="bg-ink-900 border-border text-xs leading-relaxed"
+   310→   310→              maxLength={600}
+   311→   311→            />
+   312→   312→            <p className="text-[0.6rem] text-muted-foreground/70">min 12 characters · no personal identifiers</p>
+   313→   313→          </div>
+   314→   314→          <div className="grid grid-cols-3 gap-2">
+   315→   315→            <div className="space-y-1">
+   316→   316→              <Label className="text-[0.65rem]">Severity</Label>
+   317→   317→              <Select value={severity} onValueChange={setSeverity}>
+   318→   318→                <SelectTrigger className="h-8 bg-ink-900 border-border text-xs" aria-label="Reported severity"><SelectValue /></SelectTrigger>
+   319→   319→                <SelectContent>
+   320→   320→                  {SEVERITIES.map((s) => <SelectItem key={s} value={s} className="text-xs">{s.toLowerCase()}</SelectItem>)}
+   321→   321→                </SelectContent>
+   322→   322→              </Select>
+   323→   323→            </div>
+   324→   324→            <div className="space-y-1">
+   325→   325→              <Label htmlFor="adhoc-lat" className="text-[0.65rem]">Lat (opt)</Label>
+   326→   326→              <Input id="adhoc-lat" inputMode="decimal" value={lat} onChange={(e) => setLat(e.target.value)} placeholder="28.6129" className="h-8 bg-ink-900 border-border text-xs font-mono" />
+   327→   327→            </div>
+   328→   328→            <div className="space-y-1">
+   329→   329→              <Label htmlFor="adhoc-lng" className="text-[0.65rem]">Lng (opt)</Label>
+   330→   330→              <Input id="adhoc-lng" inputMode="decimal" value={lng} onChange={(e) => setLng(e.target.value)} placeholder="77.2295" className="h-8 bg-ink-900 border-border text-xs font-mono" />
+   331→   331→            </div>
+   332→   332→          </div>
+   333→   333→          <Button
+   334→   334→            size="sm"
+   335→   335→            disabled={pending || !descOk || !coordsOk}
+   336→   336→            onClick={() =>
+   337→   337→              classify.mutate({
+   338→   338→                description: description.trim(),
+   339→   339→                severityReported: severity,
+   340→   340→                lat: lat.trim() && Number.isFinite(latNum) ? latNum : undefined,
+   341→   341→                lng: lng.trim() && Number.isFinite(lngNum) ? lngNum : undefined,
+   342→   342→              })
+   343→   343→            }
+   344→   344→            className="w-full bg-water text-ink-950 hover:bg-water/85"
+   345→   345→          >
+   346→   346→            <Sparkles className={cn("size-3.5", pending && "animate-pulse")} aria-hidden />
+   347→   347→            {pending ? "Classifying…" : "Classify text"}
+   348→   348→          </Button>
+   349→   349→          <p className="text-[0.6rem] text-muted-foreground/70 leading-relaxed">
+   350→   350→            Delhi bounds: lat 28.3 to 28.9, lng 76.8 to 77.6. Coordinates outside Delhi are rejected by validation.
+   351→   351→          </p>
+   352→   352→        </div>
+   353→   353→      )}
+   354→   354→
+   355→   355→      {classify.isError && (
+   356→   356→        <p className="micro-label !text-[0.52rem] text-sev-critical/90" role="alert">
+   357→   357→          last run failed: {classify.error.message}
+   358→   358→        </p>
+   359→   359→      )}
+   360→   360→    </div>
+   361→   361→  );
+   362→   362→}
+   363→   363→
+   364→   364→function ReportQueue({ pending, onClassify }: { pending: boolean; onClassify: (r: ReportRow) => void }) {
+   365→   365→  const reportsQ = useQuery({
+   366→   366→    queryKey: ["reports", 50],
+   367→   367→    queryFn: () => apiGet<ReportRow[]>("/api/reports?limit=50").then((r) => r.data),
+   368→   368→    refetchInterval: 60_000,
+   369→   369→    staleTime: 30_000,
+   370→   370→  });
+   371→   371→
+   372→   372→  if (reportsQ.isLoading) return <LoadingRows rows={6} />;
+   373→   373→  if (reportsQ.isError) return <ErrorNote message={(reportsQ.error as Error).message} onRetry={() => reportsQ.refetch()} />;
+   374→   374→
+   375→   375→  const reports = reportsQ.data ?? [];
+   376→   376→  if (reports.length === 0)
+   377→   377→    return <EmptyState title="No reports in the queue" hint="Citizen reports appear here as they arrive." />;
+   378→   378→
+   379→   379→  return (
+   380→   380→    <div>
+   381→   381→      <p className="micro-label !text-[0.52rem] text-muted-foreground/70 mb-2">
+   382→   382→        recent reports · newest first · {reports.length}
+   383→   383→      </p>
+   384→   384→      <ul>
+   385→   385→        {reports.map((r) => (
+   386→   386→          <li key={r.id} className="hairline-b last:border-0 py-2.5 first:pt-0">
+   387→   387→            <div className="flex items-center gap-2 flex-wrap">
+   388→   388→              <span className="data-mono text-[0.65rem] font-semibold text-water/90">{r.publicRef}</span>
+   389→   389→              <span className="micro-label !text-[0.5rem]">{r.channel.toLowerCase()}</span>
+   390→   390→              <span className={cn("micro-label !text-[0.5rem]", sevTone(r.severityReported))}>{r.severityReported.toLowerCase()}</span>
+   391→   391→              {r.isDuplicate && <span className="micro-label !text-[0.5rem] text-sev-moderate/80">merged</span>}
+   392→   392→              <TimeAgo iso={r.submittedAt} />
+   393→   393→            </div>
+   394→   394→            <p className="mt-0.5 text-[0.72rem] text-foreground/85 leading-snug line-clamp-2">{r.description}</p>
+   395→   395→            <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+   396→   396→              <SourceBadge source={r.source} />
+   397→   397→              {r.classification && <ProviderChip provider={r.classification.provider} model={r.classification.modelId} />}
+   398→   398→              <Button
+   399→   399→                size="sm"
+   400→   400→                variant="outline"
+   401→   401→                disabled={pending}
+   402→   402→                onClick={() => onClassify(r)}
+   403→   403→                className="ml-auto h-7 text-[0.65rem] border-water/40 text-water hover:bg-water/10 hover:text-water"
+   404→   404→              >
+   405→   405→                <Sparkles className="size-3" aria-hidden />
+   406→   406→                {r.classification ? "Re-run" : "Classify"}
+   407→   407→              </Button>
+   408→   408→            </div>
+   409→   409→          </li>
+   410→   410→        ))}
+   411→   411→      </ul>
+   412→   412→    </div>
+   413→   413→  );
+   414→   414→}
+   415→   415→
+   416→   416→function ClassifyResults({ m }: { m: ClassifyMutation }) {
+   417→   417→  if (m.isPending) {
+   418→   418→    return (
+   419→   419→      <Panel title="classification · result">
+   420→   420→        <LoadingRows rows={5} />
+   421→   421→        <p className="micro-label !text-[0.52rem] text-muted-foreground/60 mt-2">
+   422→   422→          running provider call for {m.variables?.reportRef ?? "ad-hoc text"}…
+   423→   423→        </p>
+   424→   424→      </Panel>
+   425→   425→    );
+   426→   426→  }
+   427→   427→  if (m.isError) {
+   428→   428→    return (
+   429→   429→      <Panel title="classification · result">
+   430→   430→        <ErrorNote
+   431→   431→          message={(m.error as Error).message}
+   432→   432→          onRetry={m.variables ? () => m.mutate(m.variables!) : undefined}
+   433→   433→        />
+   434→   434→      </Panel>
+   435→   435→    );
+   436→   436→  }
+   437→   437→  if (!m.data) {
+   438→   438→    return (
+   439→   439→      <Panel title="classification · result">
+   440→   440→        <EmptyState
+   441→   441→          icon={<Sparkles className="size-7" />}
+   442→   442→          title="No classification run yet"
+   443→   443→          hint="Pick a report from the queue, or switch to ad-hoc text mode, then run the classifier."
+   444→   444→        />
+   445→   445→      </Panel>
+   446→   446→    );
+   447→   447→  }
+   448→   448→
+   449→   449→  const r = m.data;
+   450→   450→  const cl = r.classification;
+   451→   451→  const prov = r.provenance;
+   452→   452→
+   453→   453→  return (
+   454→   454→    <>
+   455→   455→      <Panel
+   456→   456→        title={
+   457→   457→          <span className="flex items-center gap-2">
+   458→   458→            <Sparkles className="size-3 text-water" aria-hidden />
+   459→   459→            classification · {r._label}
+   460→   460→          </span>
+   461→   461→        }
+   462→   462→        actions={<ProviderChip provider={prov.provider} model={prov.modelId} />}
+   463→   463→      >
+   464→   464→        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+   465→   465→          <Readout label="category" value={cl.category.toLowerCase().replace(/_/g, " ")} />
+   466→   466→          <Readout label="severity" value={cl.severity.toLowerCase()} tone={sevTone(cl.severity)} />
+   467→   467→          <Readout label="confidence" value={<ConfidenceChip confidence={cl.confidence} />} />
+   468→   468→        </div>
+   469→   469→        <p className="text-sm text-foreground/90 leading-relaxed border-l-2 border-water/50 pl-3">{cl.summary}</p>
+   470→   470→        {cl.factors.length > 0 && (
+   471→   471→          <ul className="mt-3 flex flex-wrap gap-1.5">
+   472→   472→            {cl.factors.map((f, i) => (
+   473→   473→              <li key={i} className="rounded-sm border border-border/70 bg-ink-850/50 px-2 py-0.5 text-[0.65rem] text-muted-foreground">{f}</li>
+   474→   474→            ))}
+   475→   475→          </ul>
+   476→   476→        )}
+   477→   477→        <div className="mt-3">
+   478→   478→          {cl.isDuplicateSuspected ? (
+   479→   479→            <span className="inline-flex items-center gap-1.5 rounded-sm border border-sev-moderate/35 bg-sev-moderate/10 px-2 py-0.5 text-[0.65rem] text-sev-moderate">
+   480→   480→              <GitMerge className="size-3" aria-hidden /> duplicate suspected
+   481→   481→              {cl.duplicateReason ? `: ${cl.duplicateReason}` : ""}
+   482→   482→            </span>
+   483→   483→          ) : (
+   484→   484→            <span className="micro-label !text-[0.52rem] text-muted-foreground">no duplicate suspected by model</span>
+   485→   485→          )}
+   486→   486→        </div>
+   487→   487→        <p className="mt-3 micro-label !text-[0.5rem] text-muted-foreground/60">
+   488→   488→          Structured output only. No chain-of-thought exposed.
+   489→   489→        </p>
+   490→   490→      </Panel>
+   491→   491→
+   492→   492→      {/* provenance */}
+   493→   493→      <Panel title="provenance">
+   494→   494→        <div className="space-y-2.5">
+   495→   495→          <FactRow label="provider"><ProviderChip provider={prov.provider} model={prov.modelId} /></FactRow>
+   496→   496→          <FactRow label="model id"><span className="data-mono text-[0.62rem] break-all">{prov.modelId}</span></FactRow>
+   497→   497→          <FactRow label="version"><span className="data-mono text-[0.62rem]">{prov.version}</span></FactRow>
+   498→   498→          <FactRow label="latency"><span className="data-mono text-[0.62rem]">{prov.latencyMs} ms</span></FactRow>
+   499→   499→          <FactRow label="fallback">
+   500→   500→            <span className={cn("micro-label !text-[0.55rem]", prov.fallbackUsed ? "text-sev-moderate" : "text-verified")}>
+   501→   501→              {prov.fallbackUsed ? "used" : "not used"}
+   502→   502→            </span>
+   503→   503→          </FactRow>
+   504→   504→          {prov.fallbackUsed && prov.fallbackReason && (
+   505→   505→            <p className="rounded-sm border border-sev-moderate/30 bg-sev-moderate/8 px-2.5 py-1.5 text-xs text-sev-moderate/90" role="alert">
+   506→   506→              GLM call failed, deterministic fallback used: {prov.fallbackReason}
+   507→   507→            </p>
+   508→   508→          )}
+   509→   509→          <div className="hairline-t pt-2.5 space-y-2">
+   510→   510→            <p className="micro-label !text-[0.5rem] text-muted-foreground/60">provider health at run time</p>
+   511→   511→            <FactRow label="status">
+   512→   512→              <span className={cn("micro-label !text-[0.55rem] flex items-center gap-1.5", prov.providerHealth.available ? "text-verified" : "text-sev-high")}>
+   513→   513→                <span aria-hidden className={cn("size-1.5 rounded-full", prov.providerHealth.available ? "bg-verified" : "bg-sev-high")} />
+   514→   514→                {prov.providerHealth.provider} {prov.providerHealth.available ? "available" : "unavailable"}
+   515→   515→              </span>
+   516→   516→            </FactRow>
+   517→   517→            {prov.providerHealth.lastError && (
+   518→   518→              <p className="text-[0.65rem] text-sev-moderate/90 break-words" title={prov.providerHealth.lastError}>
+   519→   519→                last error: {prov.providerHealth.lastError}
+   520→   520→              </p>
+   521→   521→            )}
+   522→   522→          </div>
+   523→   523→        </div>
+   524→   524→      </Panel>
+   525→   525→
+   526→   526→      {/* context */}
+   527→   527→      <Panel title="evidence context · fed to the model">
+   528→   528→        <dl className="space-y-2 text-xs">
+   529→   529→          <FactRow label="rainfall 24h / 72h">
+   530→   530→            <span className="data-mono text-water">{Math.round(r.context.rainfall24hMm ?? 0)} / {Math.round(r.context.rainfall72hMm ?? 0)} mm</span>
+   531→   531→          </FactRow>
+   532→   532→          {r.context.nearestStation && (
+   533→   533→            <FactRow label="nearest gauge">
+   534→   534→              <span className="data-mono text-[0.62rem]">{r.context.nearestStation.name} · {(r.context.nearestStation.distanceM / 1000).toFixed(1)}km</span>
+   535→   535→            </FactRow>
+   536→   536→          )}
+   537→   537→          <FactRow label="historical incidents"><span className="data-mono text-[0.62rem]">{r.context.historicalIncidentsNearby} within 200m</span></FactRow>
+   538→   538→          <FactRow label="nearby open events"><span className="data-mono text-[0.62rem]">{r.context.nearbyOpenEvents} within 150m / 48h</span></FactRow>
+   539→   539→        </dl>
+   540→   540→        {r.context.nearestAssets.length > 0 && (
+   541→   541→          <div className="mt-3 hairline-t pt-2.5">
+   542→   542→            <p className="micro-label !text-[0.5rem] text-muted-foreground/60 mb-1.5">nearest assets</p>
+   543→   543→            <ul className="space-y-1.5">
+   544→   544→              {r.context.nearestAssets.map((a) => (
+   545→   545→                <li key={a.code} className="flex items-baseline gap-2.5 text-xs">
+   546→   546→                  <span className="data-mono text-[0.62rem] text-muted-foreground w-12 shrink-0">{Math.round(a.distanceM)}m</span>
+   547→   547→                  <span className="data-mono text-[0.62rem] text-water/90">{a.code}</span>
+   548→   548→                  <span className="flex-1 truncate">{a.kind.toLowerCase().replace(/_/g, " ")} · condition {a.condition ?? "n/a"}</span>
+   549→   549→                </li>
+   550→   550→              ))}
+   551→   551→            </ul>
+   552→   552→          </div>
+   553→   553→        )}
+   554→   554→      </Panel>
+   555→   555→
+   556→   556→      {/* duplicate signals */}
+   557→   557→      <Panel title="duplicate signals · engine candidates">
+   558→   558→        {r.duplicateSignals.length === 0 ? (
+   559→   559→          <EmptyState title="No duplicate candidates" hint="No events within 150m active in the last 48h." />
+   560→   560→        ) : (
+   561→   561→          <ul className="space-y-2">
+   562→   562→            {r.duplicateSignals.map((d, i) => (
+   563→   563→              <li key={i} className="flex items-baseline gap-2.5 text-xs flex-wrap">
+   564→   564→                <button onClick={() => navigate("event", d.code)} className="data-mono text-[0.65rem] font-semibold text-water hover:text-foreground transition-colors">
+   565→   565→                  {d.code}
+   566→   566→                </button>
+   567→   567→                <span className="data-mono text-[0.62rem] text-muted-foreground">{Math.round(d.distanceM)}m · {d.hoursApart.toFixed(1)}h apart</span>
+   568→   568→                {d.recurrence && <span className="micro-label !text-[0.5rem] text-sev-high">recurrence</span>}
+   569→   569→                <span className="flex-1 min-w-40 text-muted-foreground">{d.reason}</span>
+   570→   570→              </li>
+   571→   571→            ))}
+   572→   572→          </ul>
+   573→   573→        )}
+   574→   574→      </Panel>
+   575→   575→    </>
+   576→   576→  );
+   577→   577→}
+   578→   578→
+   579→   579→// --- Tool B: duplicate clustering -------------------------------------------------------
+   580→   580→
+   581→   581→function ClusterInput({ cluster, radius, setRadius }: { cluster: ClusterMutation; radius: number; setRadius: (n: number) => void }) {
+   582→   582→  return (
+   583→   583→    <div className="p-3.5 space-y-3">
+   584→   584→      <div className="space-y-1.5">
+   585→   585→        <Label className="text-xs">Cluster radius (m)</Label>
+   586→   586→        <div className="grid grid-cols-4 gap-1" role="group" aria-label="Cluster radius in metres">
+   587→   587→          {RADII.map((rm) => (
+   588→   588→            <button
+   589→   589→              key={rm}
+   590→   590→              onClick={() => setRadius(rm)}
+   591→   591→              aria-pressed={radius === rm}
+   592→   592→              className={cn(
+   593→   593→                "rounded-sm border micro-label !text-[0.58rem] py-1.5 transition-colors data-mono !tracking-normal !normal-case",
+   594→   594→                radius === rm ? "border-water/40 bg-water/12 text-water" : "border-border text-muted-foreground hover:text-foreground"
+   595→   595→              )}
+   596→   596→            >
+   597→   597→              {rm}
+   598→   598→            </button>
+   599→   599→          ))}
+   600→   600→        </div>
+   601→   601→      </div>
+   602→   602→      <Button size="sm" disabled={cluster.isPending} onClick={() => cluster.mutate(radius)} className="w-full bg-water text-ink-950 hover:bg-water/85">
+   603→   603→        <GitMerge className={cn("size-3.5", cluster.isPending && "animate-pulse")} aria-hidden />
+   604→   604→        {cluster.isPending ? "Clustering…" : "Run clustering"}
+   605→   605→      </Button>
+   606→   606→      <p className="text-[0.6rem] text-muted-foreground/70 leading-relaxed">
+   607→   607→        Evaluates all reports from the last 72 hours. Deterministic union-find method with no model call: identical inputs always produce identical clusters.
+   608→   608→      </p>
+   609→   609→      {cluster.isError && (
+   610→   610→        <p className="micro-label !text-[0.52rem] text-sev-critical/90" role="alert">
+   611→   611→          last run failed: {cluster.error.message}
+   612→   612→        </p>
+   613→   613→      )}
+   614→   614→    </div>
+   615→   615→  );
+   616→   616→}
+   617→   617→
+   618→   618→function ClusterResults({ m }: { m: ClusterMutation }) {
+   619→   619→  if (m.isPending) {
+   620→   620→    return (
+   621→   621→      <Panel title="duplicate clustering · result">
+   622→   622→        <LoadingRows rows={5} />
+   623→   623→        <p className="micro-label !text-[0.52rem] text-muted-foreground/60 mt-2">union-find over last-72h reports…</p>
+   624→   624→      </Panel>
+   625→   625→    );
+   626→   626→  }
+   627→   627→  if (m.isError) {
+   628→   628→    return (
+   629→   629→      <Panel title="duplicate clustering · result">
+   630→   630→        <ErrorNote message={(m.error as Error).message} onRetry={() => m.mutate(m.variables ?? 150)} />
+   631→   631→      </Panel>
+   632→   632→    );
+   633→   633→  }
+   634→   634→  if (!m.data) {
+   635→   635→    return (
+   636→   636→      <Panel title="duplicate clustering · result">
+   637→   637→        <EmptyState
+   638→   638→          icon={<GitMerge className="size-7" />}
+   639→   639→          title="No clustering run yet"
+   640→   640→          hint="Pick a radius and run the clustering to group nearby reports from the last 72 hours."
+   641→   641→        />
+   642→   642→      </Panel>
+   643→   643→    );
+   644→   644→  }
+   645→   645→
+   646→   646→  const { data, meta, radius } = m.data;
+   647→   647→
+   648→   648→  return (
+   649→   649→    <Panel
+   650→   650→      title={
+   651→   651→        <span className="flex items-center gap-2">
+   652→   652→          <GitMerge className="size-3 text-water" aria-hidden />
+   653→   653→          duplicate clusters · {data.clusters.length}
+   654→   654→        </span>
+   655→   655→      }
+   656→   656→      actions={
+   657→   657→        <span className="data-mono text-[0.62rem] text-muted-foreground">
+   658→   658→          {data.singletons} singletons · {String(meta.evaluated ?? "?")} evaluated
+   659→   659→        </span>
+   660→   660→      }
+   661→   661→    >
+   662→   662→      <p className="micro-label !text-[0.5rem] text-muted-foreground/70 mb-3">
+   663→   663→        {String(meta.method ?? `union-find proximity clustering, radius ${radius}m`)} · {String(meta.version ?? "cluster-1.1-demo")}
+   664→   664→      </p>
+   665→   665→      {data.clusters.length === 0 ? (
+   666→   666→        <EmptyState title="No multi-report clusters found" hint="All reports in the 72h window are singletons at this radius." />
+   667→   667→      ) : (
+   668→   668→        <div className="space-y-3">
+   669→   669→          {data.clusters.map((c) => (
+   670→   670→            <div key={c.id} className="rounded-sm border border-border/60 bg-ink-850/30">
+   671→   671→              <div className="flex items-center gap-2.5 flex-wrap px-3 py-2 hairline-b">
+   672→   672→                <span className="data-mono text-[0.65rem] font-semibold text-water">{c.id}</span>
+   673→   673→                <span className="data-mono text-[0.62rem] text-muted-foreground">
+   674→   674→                  {c.size} reports · spread {c.spatialDiameterM}m
+   675→   675→                </span>
+   676→   676→                <span className="ml-auto data-mono text-[0.6rem] text-muted-foreground hidden sm:inline" title="cluster centroid">
+   677→   677→                  {c.centroid.lat.toFixed(4)}, {c.centroid.lng.toFixed(4)}
+   678→   678→                </span>
+   679→   679→              </div>
+   680→   680→              <ul>
+   681→   681→                {c.members.map((mem) => (
+   682→   682→                  <li key={mem.id} className="px-3 py-2 hairline-b last:border-0">
+   683→   683→                    <div className="flex items-center gap-2 flex-wrap">
+   684→   684→                      <span className="data-mono text-[0.62rem] text-foreground/90">{mem.publicRef}</span>
+   685→   685→                      <span className={cn("micro-label !text-[0.5rem]", sevTone(mem.severityReported))}>{mem.severityReported.toLowerCase()}</span>
+   686→   686→                      <span className="micro-label !text-[0.5rem] text-muted-foreground/70">{mem.category.toLowerCase().replace(/_/g, " ")}</span>
+   687→   687→                      <TimeAgo iso={mem.submittedAt} />
+   688→   688→                      {mem.urbanEventId && (
+   689→   689→                        <Button
+   690→   690→                          size="sm"
+   691→   691→                          variant="outline"
+   692→   692→                          onClick={() => navigate("event", mem.urbanEventId!)}
+   693→   693→                          className="ml-auto h-6 text-[0.6rem] px-2 border-water/40 text-water hover:bg-water/10 hover:text-water"
+   694→   694→                        >
+   695→   695→                          linked event <ChevronRight className="size-3" aria-hidden />
+   696→   696→                        </Button>
+   697→   697→                      )}
+   698→   698→                    </div>
+   699→   699→                    <p className="mt-0.5 text-[0.68rem] text-muted-foreground leading-snug line-clamp-1" title={mem.description}>{mem.description}</p>
+   700→   700→                  </li>
+   701→   701→                ))}
+   702→   702→              </ul>
+   703→   703→            </div>
+   704→   704→          ))}
+   705→   705→        </div>
+   706→   706→      )}
+   707→   707→    </Panel>
+   708→   708→  );
+   709→   709→}
+   710→   710→
+   711→   711→// --- Tool C: risk assessment -----------------------------------------------------------
+   712→   712→
+   713→   713→function RiskInput({ risk }: { risk: RiskMutation }) {
+   714→   714→  const [selected, setSelected] = useState<string | null>(null);
+   715→   715→  const [search, setSearch] = useState("");
+   716→   716→
+   717→   717→  const eventsQ = useQuery({
+   718→   718→    queryKey: ["events", 100],
+   719→   719→    queryFn: () => apiGet<EventSummary[]>("/api/events?limit=100").then((r) => r.data),
+   720→   720→    staleTime: 30_000,
+   721→   721→  });
+   722→   722→
+   723→   723→  const events = eventsQ.data ?? [];
+   724→   724→  const q = search.trim().toLowerCase();
+   725→   725→  const filtered = q
+   726→   726→    ? events.filter((e) => e.code.toLowerCase().includes(q) || e.title.toLowerCase().includes(q))
+   727→   727→    : events;
+   728→   728→  const selectedEvent = events.find((e) => e.id === selected) ?? null;
+   729→   729→
+   730→   730→  return (
+   731→   731→    <div className="p-3.5 space-y-3">
+   732→   732→      <div className="space-y-1.5">
+   733→   733→        <Label htmlFor="risk-search" className="text-xs">Event</Label>
+   734→   734→        <div className="relative">
+   735→   735→          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" aria-hidden />
+   736→   736→          <Input
+   737→   737→            id="risk-search"
+   738→   738→            value={search}
+   739→   739→            onChange={(e) => setSearch(e.target.value)}
+   740→   740→            placeholder="search code or title · e.g. UE-2026"
+   741→   741→            className="h-8 pl-8 bg-ink-900 border-border text-xs"
+   742→   742→          />
+   743→   743→        </div>
+   744→   744→      </div>
+   745→   745→
+   746→   746→      <div className="max-h-72 overflow-y-auto rounded-sm border border-border/60">
+   747→   747→        {eventsQ.isLoading ? (
+   748→   748→          <LoadingRows rows={5} className="p-2" />
+   749→   749→        ) : eventsQ.isError ? (
+   750→   750→          <div className="p-2"><ErrorNote message={(eventsQ.error as Error).message} onRetry={() => eventsQ.refetch()} /></div>
+   751→   751→        ) : filtered.length === 0 ? (
+   752→   752→          <EmptyState title="No events match" hint="Try a different code or title fragment." />
+   753→   753→        ) : (
+   754→   754→          <ul>
+   755→   755→            {filtered.slice(0, 40).map((e) => {
+   756→   756→              const active = selectedEvent?.id === e.id;
+   757→   757→              return (
+   758→   758→                <li key={e.id}>
+   759→   759→                  <button
+   760→   760→                    onClick={() => setSelected(e.id)}
+   761→   761→                    aria-pressed={active}
+   762→   762→                    className={cn("w-full text-left px-2.5 py-2 transition-colors hover:bg-ink-850/60", active && "bg-water/8")}
+   763→   763→                  >
+   764→   764→                    <span className="flex items-center gap-2 flex-wrap">
+   765→   765→                      <span className={cn("data-mono text-[0.62rem] font-semibold", active ? "text-water" : "text-water/80")}>{e.code}</span>
+   766→   766→                      <RiskBadge band={e.riskBand} score={e.riskScore} />
+   767→   767→                      <span className="micro-label !text-[0.5rem] text-muted-foreground/70">{e.reportCount} rep</span>
+   768→   768→                    </span>
+   769→   769→                    <span className="block mt-0.5 text-[0.68rem] text-muted-foreground leading-snug line-clamp-1">{e.title}</span>
+   770→   770→                  </button>
+   771→   771→                </li>
+   772→   772→              );
+   773→   773→            })}
+   774→   774→          </ul>
+   775→   775→        )}
+   776→   776→      </div>
+   777→   777→
+   778→   778→      {selectedEvent && (
+   779→   779→        <div className="rounded-sm border border-border/60 bg-ink-850/30 px-2.5 py-2">
+   780→   780→          <div className="flex items-center gap-2 flex-wrap">
+   781→   781→            <span className="data-mono text-[0.65rem] font-semibold text-water">{selectedEvent.code}</span>
+   782→   782→            <RiskBadge band={selectedEvent.riskBand} score={selectedEvent.riskScore} />
+   783→   783→            <span className="micro-label !text-[0.5rem] text-muted-foreground">{selectedEvent.reportCount} reports</span>
+   784→   784→          </div>
+   785→   785→          <p className="mt-0.5 text-[0.68rem] text-muted-foreground line-clamp-1">{selectedEvent.title}</p>
+   786→   786→        </div>
+   787→   787→      )}
+   788→   788→
+   789→   789→      <Button
+   790→   790→        size="sm"
+   791→   791→        disabled={!selectedEvent || risk.isPending}
+   792→   792→        onClick={() => selectedEvent && risk.mutate(selectedEvent.id)}
+   793→   793→        className="w-full bg-water text-ink-950 hover:bg-water/85"
+   794→   794→      >
+   795→   795→        <Gauge className={cn("size-3.5", risk.isPending && "animate-pulse")} aria-hidden />
+   796→   796→        {risk.isPending ? "Assessing…" : "Assess risk"}
+   797→   797→      </Button>
+   798→   798→      <p className="text-[0.6rem] text-muted-foreground/70 leading-relaxed">
+   799→   799→        Runs the transparent 7-factor risk engine and requests a structured AI advisory. The assessment is persisted to the event dossier.
+   800→   800→      </p>
+   801→   801→      {risk.isError && (
+   802→   802→        <p className="micro-label !text-[0.52rem] text-sev-critical/90" role="alert">
+   803→   803→          last run failed: {risk.error.message}
+   804→   804→        </p>
+   805→   805→      )}
+   806→   806→    </div>
+   807→   807→  );
+   808→   808→}
+   809→   809→
+   810→   810→function RiskResults({ m }: { m: RiskMutation }) {
+   811→   811→  if (m.isPending) {
+   812→   812→    return (
+   813→   813→      <Panel title="risk assessment · result">
+   814→   814→        <LoadingRows rows={5} />
+   815→   815→        <p className="micro-label !text-[0.52rem] text-muted-foreground/60 mt-2">computing factors + advisory…</p>
+   816→   816→      </Panel>
+   817→   817→    );
+   818→   818→  }
+   819→   819→  if (m.isError) {
+   820→   820→    return (
+   821→   821→      <Panel title="risk assessment · result">
+   822→   822→        <ErrorNote
+   823→   823→          message={(m.error as Error).message}
+   824→   824→          onRetry={m.variables ? () => m.mutate(m.variables!) : undefined}
+   825→   825→        />
+   826→   826→      </Panel>
+   827→   827→    );
+   828→   828→  }
+   829→   829→  if (!m.data) {
+   830→   830→    return (
+   831→   831→      <Panel title="risk assessment · result">
+   832→   832→        <EmptyState
+   833→   833→          icon={<Gauge className="size-7" />}
+   834→   834→          title="No risk assessment run yet"
+   835→   835→          hint="Search for an event, select it, then run the assessment."
+   836→   836→        />
+   837→   837→      </Panel>
+   838→   838→    );
+   839→   839→  }
+   840→   840→
+   841→   841→  const r = m.data;
+   842→   842→  const factors = r.risk.factors ?? [];
+   843→   843→
+   844→   844→  return (
+   845→   845→    <>
+   846→   846→      <Panel
+   847→   847→        title={
+   848→   848→          <span className="flex items-center gap-2">
+   849→   849→            <Gauge className="size-3 text-water" aria-hidden />
+   850→   850→            risk assessment · {r.event.code}
+   851→   851→          </span>
+   852→   852→        }
+   853→   853→        actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/70">{r.risk.modelVersion}</span>}
+   854→   854→      >
+   855→   855→        <div className="flex items-center gap-4 flex-wrap mb-4">
+   856→   856→          <RiskMeter score={r.risk.score} band={r.risk.band} />
+   857→   857→          {r.risk.computedAt && <span className="text-[0.65rem] text-muted-foreground">computed <TimeAgo iso={r.risk.computedAt} /></span>}
+   858→   858→        </div>
+   859→   859→        <div className="space-y-2.5 max-w-2xl">
+   860→   860→          {factors.map((f) => (
+   861→   861→            <div key={f.key} className="flex items-center gap-3">
+   862→   862→              <span className="w-36 sm:w-44 shrink-0 text-xs text-foreground/90 truncate" title={f.label}>{f.label}</span>
+   863→   863→              <div className="flex-1 h-2 rounded-full bg-ink-800 overflow-hidden" role="img" aria-label={`${f.label}: contribution ${f.contribution} of 100`}>
+   864→   864→                <div
+   865→   865→                  className={cn("h-full rounded-full transition-[width] duration-500", f.contribution > 12 ? "bg-sev-high" : f.contribution > 7 ? "bg-sev-moderate" : "bg-water/70")}
+   866→   866→                  style={{ width: `${Math.min(100, (f.contribution / 20) * 100)}%` }}
+   867→   867→                />
+   868→   868→              </div>
+   869→   869→              <span className="data-mono text-[0.65rem] w-10 text-right text-foreground">{f.contribution.toFixed(1)}</span>
+   870→   870→              <span className="data-mono text-[0.6rem] w-20 text-right text-muted-foreground hidden sm:block" title={`raw: ${f.raw}`}>{f.raw}</span>
+   871→   871→            </div>
+   872→   872→          ))}
+   873→   873→        </div>
+   874→   874→        <p className="mt-3 text-[0.68rem] text-muted-foreground">
+   875→   875→          Score = Σ(factor value × weight) × 100. Every factor, weight and contribution is returned by the engine: no black boxes.
+   876→   876→        </p>
+   877→   877→      </Panel>
+   878→   878→
+   879→   879→      <Panel
+   880→   880→        title="ai advisory · structured output"
+   881→   881→        actions={<ProviderChip provider={r.advisory.provider} model={r.advisory.modelId} />}
+   882→   882→      >
+   883→   883→        {r.advisory.fallbackUsed && r.advisory.error && (
+   884→   884→          <p className="mb-3 rounded-sm border border-sev-moderate/30 bg-sev-moderate/8 px-2.5 py-1.5 text-xs text-sev-moderate/90" role="alert">
+   885→   885→            GLM call failed, deterministic fallback used: {r.advisory.error}
+   886→   886→          </p>
+   887→   887→        )}
+   888→   888→        <p className="text-sm text-foreground/90 leading-relaxed border-l-2 border-water/50 pl-3">{r.advisory.output.narrative}</p>
+   889→   889→        {r.advisory.output.factors && r.advisory.output.factors.length > 0 && (
+   890→   890→          <ul className="mt-3 flex flex-wrap gap-1.5">
+   891→   891→            {r.advisory.output.factors.map((f, i) => (
+   892→   892→              <li
+   893→   893→                key={i}
+   894→   894→                title={`${f.key} · weight ${f.weight.toFixed(2)}`}
+   895→   895→                className={cn(
+   896→   896→                  "rounded-sm border px-1.5 py-0.5 text-[0.62rem]",
+   897→   897→                  f.direction === "AGGRAVATES" ? "border-sev-high/30 text-sev-high/90 bg-sev-high/6" : "border-verified/30 text-verified/90 bg-verified/6"
+   898→   898→                )}
+   899→   899→              >
+   900→   900→                {f.direction === "AGGRAVATES" ? "▲" : "▼"} {f.label} · w {f.weight.toFixed(2)}
+   901→   901→              </li>
+   902→   902→            ))}
+   903→   903→          </ul>
+   904→   904→        )}
+   905→   905→        {r.advisory.output.recommendedInvestigation && (
+   906→   906→          <p className="mt-3 text-xs text-water/90">
+   907→   907→            <span className="micro-label !text-[0.55rem] mr-1.5">recommended</span>{" "}
+   908→   908→            {r.advisory.output.recommendedInvestigation}
+   909→   909→          </p>
+   910→   910→        )}
+   911→   911→        <p className="mt-3 micro-label !text-[0.5rem] text-muted-foreground/60">
+   912→   912→          Structured output only. No chain-of-thought exposed.
+   913→   913→        </p>
+   914→   914→      </Panel>
+   915→   915→
+   916→   916→      <Panel title="provenance">
+   917→   917→        <dl className="space-y-2 text-xs">
+   918→   918→          <FactRow label="risk engine"><span className="data-mono text-[0.62rem]">{r.provenance.riskModelVersion}</span></FactRow>
+   919→   919→          <FactRow label="advisory provider"><ProviderChip provider={r.advisory.provider} model={r.advisory.modelId} /></FactRow>
+   920→   920→          <FactRow label="fallback">
+   921→   921→            <span className={cn("micro-label !text-[0.55rem]", r.advisory.fallbackUsed ? "text-sev-moderate" : "text-verified")}>
+   922→   922→              {r.advisory.fallbackUsed ? "used" : "not used"}
+   923→   923→            </span>
+   924→   924→          </FactRow>
+   925→   925→          <FactRow label="event">
+   926→   926→            <button onClick={() => navigate("event", r.event.code)} className="data-mono text-[0.62rem] text-water hover:text-foreground transition-colors">
+   927→   927→              {r.event.code} →
+   928→   928→            </button>
+   929→   929→          </FactRow>
+   930→   930→        </dl>
+   931→   931→      </Panel>
+   932→   932→    </>
+   933→   933→  );
+   934→   934→}
+   935→   935→
+   936→   936→// --- shared small helpers --------------------------------------------------------------
+   937→   937→
+   938→   938→function Readout({ label, value, tone }: { label: string; value: React.ReactNode; tone?: string }) {
+   939→   939→  return (
+   940→   940→    <div className="rounded-sm border border-border/60 bg-ink-850/30 px-3 py-2">
+   941→   941→      <p className="micro-label !text-[0.5rem]">{label}</p>
+   942→   942→      <div className={cn("data-mono text-sm mt-0.5", tone ?? "text-foreground")}>{value}</div>
+   943→   943→    </div>
+   944→   944→  );
+   945→   945→}
+   946→   946→
+   947→   947→function FactRow({ label, children }: { label: string; children: React.ReactNode }) {
+   948→   948→  return (
+   949→   949→    <div className="flex items-center justify-between gap-2">
+   950→   950→      <dt className="micro-label !text-[0.55rem]">{label}</dt>
+   951→   951→      <dd className="flex items-center text-right">{children}</dd>
+   952→   952→    </div>
+   953→   953→  );
+   954→   954→}
+   955→   955→
+   956→   956→function sevTone(s: string): string {
+   957→   957→  return s === "CRITICAL" ? "text-sev-critical" : s === "HIGH" ? "text-sev-high" : s === "MEDIUM" || s === "MODERATE" ? "text-sev-moderate" : "text-muted-foreground";
+   958→   958→}
+   959→   959→

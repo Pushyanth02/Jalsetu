@@ -1,0 +1,805 @@
+     1→     1→"use client";
+     2→     2→
+     3→     3→import { useMemo } from "react";
+     4→     4→import { useQuery } from "@tanstack/react-query";
+     5→     5→import { apiGet, type HotspotResponse } from "@/lib/client/api";
+     6→     6→import { distanceM } from "@/lib/geo";
+     7→     7→import {
+     8→     8→  LoadingRows, ErrorNote, Panel, EmptyState, TimeAgo, SourceBadge,
+     9→     9→} from "@/components/app/shared/domain";
+    10→    10→import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+    11→    11→import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+    12→    12→import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+    13→    13→import { cn } from "@/lib/utils";
+    14→    14→import {
+    15→    15→  FlaskConical, GitMerge, Network, Clock, CheckCircle2, RotateCcw,
+    16→    16→  BookOpen, MapPin, RefreshCw, ArrowRight, Scale, BarChart3,
+    17→    17→} from "lucide-react";
+    18→    18→
+    19→    19→// ANALYTICS - baseline vs proposed comparison on the seeded pilot.
+    20→    20→// Research integrity: every number here is a synthetic demo evaluation
+    21→    21→// against seeded ground truth, labelled as such at all times.
+    22→    22→
+    23→    23→interface Metrics {
+    24→    24→  precision: number;
+    25→    25→  recall: number;
+    26→    26→  f1: number;
+    27→    27→  spatialHitRate: number;
+    28→    28→  auc: number;
+    29→    29→}
+    30→    30→
+    31→    31→interface ByKRow {
+    32→    32→  k: number;
+    33→    33→  f1: number;
+    34→    34→  spatialHitRate: number;
+    35→    35→}
+    36→    36→
+    37→    37→interface DatasetFacts {
+    38→    38→  reports: number;
+    39→    39→  events: number;
+    40→    40→  groundTruthHotspots: number;
+    41→    41→  candidateCells: number;
+    42→    42→  positives: number;
+    43→    43→}
+    44→    44→
+    45→    45→interface AnalyticsData {
+    46→    46→  approach: string;
+    47→    47→  description: string;
+    48→    48→  metrics: Metrics;
+    49→    49→  byK: ByKRow[];
+    50→    50→  assignmentDelay: number;
+    51→    51→  duplicateClusteringAri: number;
+    52→    52→  routingAccuracy: number | null;
+    53→    53→  methodology: string;
+    54→    54→  dataset: DatasetFacts;
+    55→    55→}
+    56→    56→
+    57→    57→interface ProposedData extends AnalyticsData {
+    58→    58→  duplicateClustering: { ari: number; groupsTrue: number; groupsPredicted: number; note: string };
+    59→    59→  responsibilityRouting: {
+    60→    60→    accuracy: number;
+    61→    61→    evaluated: number;
+    62→    62→    mismatches: { eventCode: string; expected: string; assigned: string }[];
+    63→    63→    note?: string;
+    64→    64→  };
+    65→    65→  verifiedResolution: { rate: number; closed: number; verifiedClosures: number };
+    66→    66→  recurrenceAfterClosure: { rate: number; closedWithRecurrenceWatch: number; reopened: number; note: string };
+    67→    67→  comparison: { baseline: Metrics; proposed: Metrics; note: string };
+    68→    68→}
+    69→    69→
+    70→    70→// chart + UI colour constants (locked palette, single teal accent)
+    71→    71→const TEAL = "#45c4b0";
+    72→    72→const SLATE = "#64748b";
+    73→    73→const GRID_STROKE = "rgba(148,180,186,0.12)";
+    74→    74→const TICK = { fill: "#5c7076", fontSize: 9, fontFamily: "var(--font-plex-mono)" };
+    75→    75→const TOOLTIP_STYLE = {
+    76→    76→  background: "#141b20",
+    77→    77→  border: "1px solid rgba(148,180,186,0.18)",
+    78→    78→  borderRadius: 4,
+    79→    79→  fontSize: 11,
+    80→    80→  fontFamily: "var(--font-plex-mono)",
+    81→    81→};
+    82→    82→
+    83→    83→const MATCH_RADIUS_M = 250;
+    84→    84→
+    85→    85→// API strings may carry em/en dashes; the UI voice uses hyphens only.
+    86→    86→const clean = (s: string) => s.replace(/-/g, "-").replace(/-/g, "-");
+    87→    87→
+    88→    88→const FALLBACK_LABEL =
+    89→    89→  "SYNTHETIC DEMO EVALUATION - computed on seeded pilot data with known ground truth. NOT measured real-world performance.";
+    90→    90→
+    91→    91→const METRIC_ROWS: { key: keyof Metrics; label: string; hint: string }[] = [
+    92→    92→  { key: "precision", label: "Precision", hint: "Share of predicted hotspots matched to ground truth within 250m" },
+    93→    93→  { key: "recall", label: "Recall", hint: "Share of ground-truth hotspots matched by a prediction within 250m" },
+    94→    94→  { key: "f1", label: "F1 score", hint: "Harmonic mean of precision and recall at the operating point" },
+    95→    95→  { key: "auc", label: "AUC", hint: "Rank-based area under curve over all candidate cells" },
+    96→    96→  { key: "spatialHitRate", label: "Spatial hit rate", hint: "Ground-truth hotspots with any prediction within 250m" },
+    97→    97→];
+    98→    98→
+    99→    99→export function AnalyticsView() {
+   100→   100→  const baselineQ = useQuery({
+   101→   101→    queryKey: ["analytics", "baseline"],
+   102→   102→    queryFn: () => apiGet<AnalyticsData>("/api/analytics/baseline"),
+   103→   103→    staleTime: 300_000,
+   104→   104→  });
+   105→   105→  const proposedQ = useQuery({
+   106→   106→    queryKey: ["analytics", "proposed"],
+   107→   107→    queryFn: () => apiGet<ProposedData>("/api/analytics/proposed"),
+   108→   108→    staleTime: 300_000,
+   109→   109→  });
+   110→   110→  const hotspotsQ = useQuery({
+   111→   111→    queryKey: ["hotspots"],
+   112→   112→    queryFn: () => apiGet<HotspotResponse>("/api/hotspots").then((r) => r.data),
+   113→   113→    staleTime: 120_000,
+   114→   114→  });
+   115→   115→
+   116→   116→  const baseline = baselineQ.data?.data;
+   117→   117→  const proposed = proposedQ.data?.data;
+   118→   118→  const evaluationLabel = clean(
+   119→   119→    (proposedQ.data?.meta?.evaluationLabel as string | undefined) ?? FALLBACK_LABEL
+   120→   120→  );
+   121→   121→  const snapshotAt = (proposedQ.data?.meta?.generatedAt as string | undefined) ??
+   122→   122→    (proposedQ.dataUpdatedAt ? new Date(proposedQ.dataUpdatedAt).toISOString() : undefined);
+   123→   123→
+   124→   124→  const err = (baselineQ.error ?? proposedQ.error) as Error | null;
+   125→   125→  const loading = baselineQ.isLoading || proposedQ.isLoading;
+   126→   126→
+   127→   127→  const byKRows = useMemo(() => {
+   128→   128→    if (!baseline || !proposed) return [];
+   129→   129→    const propByK = new Map(proposed.byK.map((r) => [r.k, r]));
+   130→   130→    return baseline.byK.map((b) => {
+   131→   131→      const p = propByK.get(b.k);
+   132→   132→      return {
+   133→   133→        k: b.k,
+   134→   134→        label: `k=${b.k}`,
+   135→   135→        baselineF1: b.f1,
+   136→   136→        proposedF1: p?.f1 ?? null,
+   137→   137→        baselineHit: b.spatialHitRate,
+   138→   138→        proposedHit: p?.spatialHitRate ?? null,
+   139→   139→      };
+   140→   140→    });
+   141→   141→  }, [baseline, proposed]);
+   142→   142→
+   143→   143→  const hotspotMatch = useMemo(() => matchHotspots(hotspotsQ.data), [hotspotsQ.data]);
+   144→   144→
+   145→   145→  return (
+   146→   146→    <div className="flex flex-col flex-1 min-h-0">
+   147→   147→      {/* persistent research-integrity banner */}
+   148→   148→      <div className="px-4 sm:px-6 pt-3">
+   149→   149→        <div
+   150→   150→          role="note"
+   151→   151→          className="rounded-md border border-sev-moderate/40 bg-sev-moderate/8 px-4 py-2.5 flex items-start gap-3"
+   152→   152→        >
+   153→   153→          <FlaskConical className="size-4 text-sev-moderate shrink-0 mt-0.5" aria-hidden />
+   154→   154→          <div className="min-w-0">
+   155→   155→            <p className="micro-label !text-[0.62rem] !text-sev-moderate">research integrity notice</p>
+   156→   156→            <p className="text-xs text-foreground/85 leading-relaxed mt-0.5">{evaluationLabel}</p>
+   157→   157→          </div>
+   158→   158→          {proposed && (
+   159→   159→            <span className="ml-auto hidden sm:inline-flex shrink-0">
+   160→   160→              <SourceBadge source="SYNTHETIC_DEMO" />
+   161→   161→            </span>
+   162→   162→          )}
+   163→   163→        </div>
+   164→   164→      </div>
+   165→   165→
+   166→   166→      {/* header strip */}
+   167→   167→      <div className="hairline-b bg-ink-900/30 px-4 sm:px-6 py-3 mt-3">
+   168→   168→        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+   169→   169→          <Scale className="size-3.5 text-water" aria-hidden />
+   170→   170→          <h1 className="font-display text-base font-bold tracking-tight">Baseline vs proposed</h1>
+   171→   171→          <p className="text-xs text-muted-foreground">
+   172→   172→            evidence-integrated ranking against complaint frequency alone
+   173→   173→          </p>
+   174→   174→          <button
+   175→   175→            onClick={() => {
+   176→   176→              baselineQ.refetch();
+   177→   177→              proposedQ.refetch();
+   178→   178→            }}
+   179→   179→            className="ml-auto micro-label !text-[0.58rem] text-water hover:text-foreground transition-colors inline-flex items-center gap-1.5"
+   180→   180→          >
+   181→   181→            <RefreshCw className={cn("size-3", (baselineQ.isFetching || proposedQ.isFetching) && "animate-spin")} aria-hidden />
+   182→   182→            refetch
+   183→   183→          </button>
+   184→   184→        </div>
+   185→   185→        {proposed && (
+   186→   186→          <div className="mt-1.5 flex items-center gap-3 flex-wrap">
+   187→   187→            {snapshotAt && (
+   188→   188→              <span className="data-mono text-[0.65rem] text-muted-foreground">
+   189→   189→                snapshot <TimeAgo iso={snapshotAt} />
+   190→   190→              </span>
+   191→   191→            )}
+   192→   192→            <span className="data-mono text-[0.65rem] text-muted-foreground">
+   193→   193→              {proposed.dataset.reports} reports · {proposed.dataset.events} events · {proposed.dataset.groundTruthHotspots} GT hotspots · {proposed.dataset.candidateCells.toLocaleString("en-IN")} cells
+   194→   194→            </span>
+   195→   195→          </div>
+   196→   196→        )}
+   197→   197→      </div>
+   198→   198→
+   199→   199→      {loading ? (
+   200→   200→        <div className="p-4 sm:px-6"><LoadingRows rows={8} /></div>
+   201→   201→      ) : err ? (
+   202→   202→        <div className="p-4 sm:px-6 max-w-lg">
+   203→   203→          <ErrorNote message={err.message} onRetry={() => { baselineQ.refetch(); proposedQ.refetch(); }} />
+   204→   204→        </div>
+   205→   205→      ) : !baseline || !proposed ? (
+   206→   206→        <div className="flex-1 grid place-items-center">
+   207→   207→          <EmptyState title="Evaluation data unavailable" hint="Both analytics endpoints are required for this view." />
+   208→   208→        </div>
+   209→   209→      ) : (
+   210→   210→        <Tabs defaultValue="comparison" className="flex-1 min-h-0 flex-col gap-0">
+   211→   211→          <div className="px-4 sm:px-6 pt-3">
+   212→   212→            <TabsList className="bg-ink-900/60 border border-border/60 w-full justify-start overflow-x-auto rounded-md h-9">
+   213→   213→              <TabsTrigger value="comparison" className="text-xs data-[state=active]:bg-water/12 data-[state=active]:text-water">Comparison</TabsTrigger>
+   214→   214→              <TabsTrigger value="byk" className="text-xs data-[state=active]:bg-water/12 data-[state=active]:text-water">Detection by K</TabsTrigger>
+   215→   215→              <TabsTrigger value="operational" className="text-xs data-[state=active]:bg-water/12 data-[state=active]:text-water">Operational</TabsTrigger>
+   216→   216→              <TabsTrigger value="methodology" className="text-xs data-[state=active]:bg-water/12 data-[state=active]:text-water">Methodology</TabsTrigger>
+   217→   217→              <TabsTrigger value="truth" className="text-xs data-[state=active]:bg-water/12 data-[state=active]:text-water">Predictions vs truth</TabsTrigger>
+   218→   218→            </TabsList>
+   219→   219→          </div>
+   220→   220→
+   221→   221→          <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-3 pb-8">
+   222→   222→            {/* SECTION A - headline comparison */}
+   223→   223→            <TabsContent value="comparison" className="space-y-3">
+   224→   224→              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+   225→   225→                <ApproachCard
+   226→   226→                  tone="slate"
+   227→   227→                  label="baseline"
+   228→   228→                  name={clean(baseline.description.split(":")[0])}
+   229→   229→                  body={clean(baseline.description.slice(baseline.description.indexOf(":") + 1).trim())}
+   230→   230→                />
+   231→   231→                <ApproachCard
+   232→   232→                  tone="teal"
+   233→   233→                  label="proposed"
+   234→   234→                  name={clean(proposed.description.split(":")[0])}
+   235→   235→                  body={clean(proposed.description.slice(proposed.description.indexOf(":") + 1).trim())}
+   236→   236→                />
+   237→   237→              </div>
+   238→   238→
+   239→   239→              <Panel title="headline comparison · hotspot detection quality" dense>
+   240→   240→                <Table>
+   241→   241→                  <TableHeader>
+   242→   242→                    <TableRow className="hover:bg-transparent">
+   243→   243→                      <TableHead className="micro-label !text-[0.55rem] h-8">metric</TableHead>
+   244→   244→                      <TableHead className="micro-label !text-[0.55rem] h-8 text-right">baseline</TableHead>
+   245→   245→                      <TableHead className="micro-label !text-[0.55rem] h-8 text-right">proposed</TableHead>
+   246→   246→                      <TableHead className="micro-label !text-[0.55rem] h-8 text-right">delta</TableHead>
+   247→   247→                    </TableRow>
+   248→   248→                  </TableHeader>
+   249→   249→                  <TableBody>
+   250→   250→                    {METRIC_ROWS.map((row) => {
+   251→   251→                      const b = baseline.metrics[row.key];
+   252→   252→                      const p = proposed.metrics[row.key];
+   253→   253→                      const delta = p - b;
+   254→   254→                      return (
+   255→   255→                        <TableRow key={row.key} className="hover:bg-ink-850/40">
+   256→   256→                          <TableCell className="py-2">
+   257→   257→                            <span className="text-xs text-foreground/90" title={row.hint}>{row.label}</span>
+   258→   258→                            <span className="block micro-label !text-[0.5rem] text-muted-foreground/60 !tracking-[0.08em] mt-0.5 normal-case">{row.hint}</span>
+   259→   259→                          </TableCell>
+   260→   260→                          <TableCell className="py-2 text-right data-mono text-[0.72rem] text-slate-300">{fmt(b)}</TableCell>
+   261→   261→                          <TableCell className="py-2 text-right data-mono text-[0.72rem] text-water font-semibold">{fmt(p)}</TableCell>
+   262→   262→                          <TableCell className={cn("py-2 text-right data-mono text-[0.72rem]", delta > 0.0005 ? "text-water" : delta < -0.0005 ? "text-sev-high" : "text-muted-foreground")}>
+   263→   263→                            {delta > 0.0005 ? "+" : ""}{delta.toFixed(3)}
+   264→   264→                          </TableCell>
+   265→   265→                        </TableRow>
+   266→   266→                      );
+   267→   267→                    })}
+   268→   268→                  </TableBody>
+   269→   269→                </Table>
+   270→   270→              </Panel>
+   271→   271→
+   272→   272→              <Panel title="what this means" bodyClassName="space-y-2">
+   273→   273→                {whatThisMeans(baseline, proposed).map((para, i) => (
+   274→   274→                  <p key={i} className="text-xs leading-relaxed text-foreground/85">{clean(para)}</p>
+   275→   275→                ))}
+   276→   276→                <p className="micro-label !text-[0.55rem] text-muted-foreground/60 !tracking-[0.08em] normal-case pt-1">
+   277→   277→                  {clean(proposed.comparison.note)}
+   278→   278→                </p>
+   279→   279→              </Panel>
+   280→   280→            </TabsContent>
+   281→   281→
+   282→   282→            {/* SECTION B - detection quality by K */}
+   283→   283→            <TabsContent value="byk" className="space-y-3">
+   284→   284→              <Panel
+   285→   285→                title={
+   286→   286→                  <span className="flex items-center gap-2">
+   287→   287→                    <BarChart3 className="size-3 text-water" aria-hidden />
+   288→   288→                    detection quality by K
+   289→   289→                  </span>
+   290→   290→                }
+   291→   291→                actions={<LegendSwatches />}
+   292→   292→                bodyClassName="space-y-4 pt-4"
+   293→   293→              >
+   294→   294→                <div>
+   295→   295→                  <p className="micro-label !text-[0.55rem] text-muted-foreground mb-2">hotspot-level F1 at top-k</p>
+   296→   296→                  <div className="h-44">
+   297→   297→                    <ResponsiveContainer width="100%" height="100%">
+   298→   298→                      <BarChart data={byKRows} margin={{ top: 4, right: 8, left: 0, bottom: 0 }} barGap={3}>
+   299→   299→                        <CartesianGrid stroke={GRID_STROKE} strokeDasharray="3 3" vertical={false} />
+   300→   300→                        <XAxis dataKey="label" tick={TICK} axisLine={{ stroke: GRID_STROKE }} tickLine={false} />
+   301→   301→                        <YAxis domain={[0, 1]} ticks={[0, 0.5, 1]} width={28} tick={TICK} axisLine={false} tickLine={false} />
+   302→   302→                        <Tooltip
+   303→   303→                          contentStyle={TOOLTIP_STYLE}
+   304→   304→                          labelStyle={{ color: "#93a6ac" }}
+   305→   305→                          cursor={{ fill: "rgba(148,180,186,0.06)" }}
+   306→   306→                          formatter={(v: number) => v.toFixed(3)}
+   307→   307→                        />
+   308→   308→                        <Bar dataKey="baselineF1" name="baseline F1" fill={SLATE} radius={[1, 1, 0, 0]} barSize={14} />
+   309→   309→                        <Bar dataKey="proposedF1" name="proposed F1" fill={TEAL} radius={[1, 1, 0, 0]} barSize={14} />
+   310→   310→                      </BarChart>
+   311→   311→                    </ResponsiveContainer>
+   312→   312→                  </div>
+   313→   313→                </div>
+   314→   314→                <div className="hairline-t pt-3">
+   315→   315→                  <p className="micro-label !text-[0.55rem] text-muted-foreground mb-2">spatial hit rate at top-k</p>
+   316→   316→                  <div className="h-40">
+   317→   317→                    <ResponsiveContainer width="100%" height="100%">
+   318→   318→                      <BarChart data={byKRows} margin={{ top: 4, right: 8, left: 0, bottom: 0 }} barGap={3}>
+   319→   319→                        <CartesianGrid stroke={GRID_STROKE} strokeDasharray="3 3" vertical={false} />
+   320→   320→                        <XAxis dataKey="label" tick={TICK} axisLine={{ stroke: GRID_STROKE }} tickLine={false} />
+   321→   321→                        <YAxis domain={[0, 1]} ticks={[0, 0.5, 1]} width={28} tick={TICK} axisLine={false} tickLine={false} />
+   322→   322→                        <Tooltip
+   323→   323→                          contentStyle={TOOLTIP_STYLE}
+   324→   324→                          labelStyle={{ color: "#93a6ac" }}
+   325→   325→                          cursor={{ fill: "rgba(148,180,186,0.06)" }}
+   326→   326→                          formatter={(v: number) => v.toFixed(3)}
+   327→   327→                        />
+   328→   328→                        <Bar dataKey="baselineHit" name="baseline hit rate" fill={SLATE} radius={[1, 1, 0, 0]} barSize={14} />
+   329→   329→                        <Bar dataKey="proposedHit" name="proposed hit rate" fill={TEAL} radius={[1, 1, 0, 0]} barSize={14} />
+   330→   330→                      </BarChart>
+   331→   331→                    </ResponsiveContainer>
+   332→   332→                  </div>
+   333→   333→                </div>
+   334→   334→                <p className="micro-label !text-[0.55rem] text-muted-foreground/70 !tracking-[0.08em] normal-case leading-relaxed">
+   335→   335→                  Prediction lists are non-maximum-suppressed at 400m (one prediction per physical location, applied
+   336→   336→                  equally to both approaches) and matched to ground truth symmetrically within 250m.
+   337→   337→                </p>
+   338→   338→              </Panel>
+   339→   339→            </TabsContent>
+   340→   340→
+   341→   341→            {/* SECTION C - operational metrics (proposed pipeline) */}
+   342→   342→            <TabsContent value="operational" className="space-y-3">
+   343→   343→              <div className="rounded-sm border border-border/60 bg-ink-900/40 px-3.5 py-2">
+   344→   344→                <p className="text-[0.7rem] leading-relaxed text-muted-foreground">
+   345→   345→                  Operational metrics below are measured on the seeded pilot lifecycle of the proposed pipeline.
+   346→   346→                  The complaint-frequency baseline has no routing or verification loop to evaluate
+   347→   347→                  (its routing accuracy is null), so those panels show proposed-pipeline values only.
+   348→   348→                </p>
+   349→   349→              </div>
+   350→   350→
+   351→   351→              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+   352→   352→                {/* duplicate clustering */}
+   353→   353→                <Panel
+   354→   354→                  title={
+   355→   355→                    <span className="flex items-center gap-2">
+   356→   356→                      <GitMerge className="size-3 text-water" aria-hidden />
+   357→   357→                      duplicate clustering · ingestion
+   358→   358→                    </span>
+   359→   359→                  }
+   360→   360→                  bodyClassName="space-y-3"
+   361→   361→                >
+   362→   362→                  <div className="flex items-baseline gap-2">
+   363→   363→                    <span className="data-mono text-2xl font-semibold text-foreground">{proposed.duplicateClustering.ari.toFixed(3)}</span>
+   364→   364→                    <span className="micro-label !text-[0.55rem] text-muted-foreground">adjusted Rand index (ARI)</span>
+   365→   365→                  </div>
+   366→   366→                  <div
+   367→   367→                    className="h-1.5 rounded-full bg-ink-800 overflow-hidden"
+   368→   368→                    role="img"
+   369→   369→                    aria-label={`ARI ${proposed.duplicateClustering.ari.toFixed(3)} of 1.0`}
+   370→   370→                  >
+   371→   371→                    <div className="h-full rounded-full bg-water" style={{ width: `${Math.min(100, proposed.duplicateClustering.ari * 100)}%` }} />
+   372→   372→                  </div>
+   373→   373→                  <div className="grid grid-cols-3 gap-2">
+   374→   374→                    <MiniStat label="true groups" value={proposed.duplicateClustering.groupsTrue} />
+   375→   375→                    <MiniStat label="predicted groups" value={proposed.duplicateClustering.groupsPredicted} />
+   376→   376→                    <MiniStat label="baseline ARI" value={baseline.duplicateClusteringAri.toFixed(3)} />
+   377→   377→                  </div>
+   378→   378→                  <p className="text-[0.7rem] leading-relaxed text-muted-foreground">{clean(proposed.duplicateClustering.note)}</p>
+   379→   379→                </Panel>
+   380→   380→
+   381→   381→                {/* responsibility routing */}
+   382→   382→                <Panel
+   383→   383→                  title={
+   384→   384→                    <span className="flex items-center gap-2">
+   385→   385→                      <Network className="size-3 text-water" aria-hidden />
+   386→   386→                      responsibility routing · proposed
+   387→   387→                    </span>
+   388→   388→                  }
+   389→   389→                  bodyClassName="space-y-3"
+   390→   390→                >
+   391→   391→                  <div className="flex items-baseline gap-2">
+   392→   392→                    <span className="data-mono text-2xl font-semibold text-foreground">
+   393→   393→                      {(proposed.responsibilityRouting.accuracy * 100).toFixed(1)}%
+   394→   394→                    </span>
+   395→   395→                    <span className="micro-label !text-[0.55rem] text-muted-foreground">
+   396→   396→                      routing accuracy · {proposed.responsibilityRouting.evaluated} events evaluated
+   397→   397→                    </span>
+   398→   398→                  </div>
+   399→   399→                  {proposed.responsibilityRouting.mismatches.length > 0 ? (
+   400→   400→                    <div className="rounded-sm border border-border/60">
+   401→   401→                      <Table>
+   402→   402→                        <TableHeader>
+   403→   403→                          <TableRow className="hover:bg-transparent">
+   404→   404→                            <TableHead className="micro-label !text-[0.5rem] h-7">event</TableHead>
+   405→   405→                            <TableHead className="micro-label !text-[0.5rem] h-7">expected</TableHead>
+   406→   406→                            <TableHead className="micro-label !text-[0.5rem] h-7">assigned</TableHead>
+   407→   407→                          </TableRow>
+   408→   408→                        </TableHeader>
+   409→   409→                        <TableBody>
+   410→   410→                          {proposed.responsibilityRouting.mismatches.map((m) => (
+   411→   411→                            <TableRow key={m.eventCode} className="hover:bg-ink-850/40">
+   412→   412→                              <TableCell className="py-1.5 data-mono text-[0.68rem] text-foreground/90">{m.eventCode}</TableCell>
+   413→   413→                              <TableCell className="py-1.5 data-mono text-[0.68rem] text-verified">{m.expected}</TableCell>
+   414→   414→                              <TableCell className="py-1.5 data-mono text-[0.68rem] text-sev-moderate">
+   415→   415→                                {m.assigned} <span className="text-muted-foreground/70" aria-hidden>(mismatch)</span>
+   416→   416→                              </TableCell>
+   417→   417→                            </TableRow>
+   418→   418→                          ))}
+   419→   419→                        </TableBody>
+   420→   420→                      </Table>
+   421→   421→                    </div>
+   422→   422→                  ) : (
+   423→   423→                    <p className="text-xs text-muted-foreground">No routing mismatches in the evaluated set.</p>
+   424→   424→                  )}
+   425→   425→                  <p className="text-[0.7rem] leading-relaxed text-muted-foreground">
+   426→   426→                    Expected agencies are synthetic ground-truth labels assigned by the seed dataset, not adjudicated
+   427→   427→                    field decisions. Ambiguous multi-agency sites can legitimately disagree with a single-owner rule.
+   428→   428→                  </p>
+   429→   429→                </Panel>
+   430→   430→
+   431→   431→                {/* assignment delay */}
+   432→   432→                <Panel
+   433→   433→                  title={
+   434→   434→                    <span className="flex items-center gap-2">
+   435→   435→                      <Clock className="size-3 text-water" aria-hidden />
+   436→   436→                      assignment delay · counterfactual queue simulation
+   437→   437→                    </span>
+   438→   438→                  }
+   439→   439→                  bodyClassName="space-y-3"
+   440→   440→                >
+   441→   441→                  <DelayRow label="baseline" value={baseline.assignmentDelay} max={Math.max(baseline.assignmentDelay, proposed.assignmentDelay)} barClass="bg-slate-400" />
+   442→   442→                  <DelayRow label="proposed" value={proposed.assignmentDelay} max={Math.max(baseline.assignmentDelay, proposed.assignmentDelay)} barClass="bg-water" />
+   443→   443→                  <p className="text-[0.7rem] leading-relaxed text-muted-foreground">
+   444→   444→                    Median hours from detection to assignment in a counterfactual queue simulation at 2 events/hour
+   445→   445→                    dispatch capacity. Simulated values, not measured field latencies; the proposed pipeline trades
+   446→   446→                    queue delay for richer evidence before routing.
+   447→   447→                  </p>
+   448→   448→                </Panel>
+   449→   449→
+   450→   450→                {/* intervention verification */}
+   451→   451→                <Panel
+   452→   452→                  title={
+   453→   453→                    <span className="flex items-center gap-2">
+   454→   454→                      <CheckCircle2 className="size-3 text-water" aria-hidden />
+   455→   455→                      intervention verification · proposed
+   456→   456→                    </span>
+   457→   457→                  }
+   458→   458→                  bodyClassName="space-y-3"
+   459→   459→                >
+   460→   460→                  <div className="grid grid-cols-2 gap-3">
+   461→   461→                    <div>
+   462→   462→                      <div className="flex items-baseline gap-2">
+   463→   463→                        <span className="data-mono text-xl font-semibold text-verified">
+   464→   464→                          {(proposed.verifiedResolution.rate * 100).toFixed(0)}%
+   465→   465→                        </span>
+   466→   466→                      </div>
+   467→   467→                      <p className="micro-label !text-[0.55rem] text-muted-foreground mt-0.5">verified-resolution rate</p>
+   468→   468→                      <p className="data-mono text-[0.65rem] text-muted-foreground mt-1">
+   469→   469→                        {proposed.verifiedResolution.verifiedClosures} verified of {proposed.verifiedResolution.closed} closed
+   470→   470→                      </p>
+   471→   471→                    </div>
+   472→   472→                    <div>
+   473→   473→                      <div className="flex items-baseline gap-2">
+   474→   474→                        <span className="data-mono text-xl font-semibold text-sev-moderate">
+   475→   475→                          {(proposed.recurrenceAfterClosure.rate * 100).toFixed(0)}%
+   476→   476→                        </span>
+   477→   477→                      </div>
+   478→   478→                      <p className="micro-label !text-[0.55rem] text-muted-foreground mt-0.5 flex items-center gap-1">
+   479→   479→                        <RotateCcw className="size-2.5" aria-hidden /> recurrence after closure
+   480→   480→                      </p>
+   481→   481→                      <p className="data-mono text-[0.65rem] text-muted-foreground mt-1">
+   482→   482→                        {proposed.recurrenceAfterClosure.reopened} reopened of {proposed.recurrenceAfterClosure.closedWithRecurrenceWatch} watched
+   483→   483→                      </p>
+   484→   484→                    </div>
+   485→   485→                  </div>
+   486→   486→                  <div className="hairline-t pt-2.5">
+   487→   487→                    <p className="text-[0.7rem] leading-relaxed text-muted-foreground">{clean(proposed.recurrenceAfterClosure.note)}</p>
+   488→   488→                  </div>
+   489→   489→                </Panel>
+   490→   490→              </div>
+   491→   491→            </TabsContent>
+   492→   492→
+   493→   493→            {/* SECTION D - methodology */}
+   494→   494→            <TabsContent value="methodology" className="space-y-3">
+   495→   495→              <Panel
+   496→   496→                title={
+   497→   497→                  <span className="flex items-center gap-2">
+   498→   498→                    <BookOpen className="size-3 text-water" aria-hidden />
+   499→   499→                    methodology
+   500→   500→                  </span>
+   501→   501→                }
+   502→   502→                bodyClassName="space-y-2.5"
+   503→   503→              >
+   504→   504→                {clean(baseline.methodology)
+   505→   505→                  .split(/(?<=\.)\s+/)
+   506→   506→                  .filter((p) => p.trim().length > 0)
+   507→   507→                  .map((para, i) => (
+   508→   508→                    <p key={i} className="text-xs leading-relaxed text-foreground/85">{para.trim()}</p>
+   509→   509→                  ))}
+   510→   510→              </Panel>
+   511→   511→
+   512→   512→              <Panel title="evaluation dataset" dense>
+   513→   513→                <div className="flex flex-wrap divide-x divide-border/60">
+   514→   514→                  <DatasetStat label="citizen reports" value={baseline.dataset.reports.toLocaleString("en-IN")} />
+   515→   515→                  <DatasetStat label="events" value={baseline.dataset.events.toLocaleString("en-IN")} />
+   516→   516→                  <DatasetStat label="GT hotspots" value={baseline.dataset.groundTruthHotspots.toLocaleString("en-IN")} />
+   517→   517→                  <DatasetStat label="candidate cells" value={baseline.dataset.candidateCells.toLocaleString("en-IN")} />
+   518→   518→                  <DatasetStat label="positive cells" value={baseline.dataset.positives.toLocaleString("en-IN")} />
+   519→   519→                </div>
+   520→   520→              </Panel>
+   521→   521→
+   522→   522→              <Panel title="research traceability" bodyClassName="space-y-3">
+   523→   523→                <div>
+   524→   524→                  <p className="micro-label !text-[0.55rem] text-water mb-1">research question</p>
+   525→   525→                  <p className="text-sm leading-relaxed text-foreground/90 font-display">
+   526→   526→                    Can heterogeneous spatial-temporal evidence produce better hotspot identification, responsibility
+   527→   527→                    routing and intervention verification than complaint frequency alone?
+   528→   528→                  </p>
+   529→   529→                </div>
+   530→   530→                <div className="space-y-1.5">
+   531→   531→                  <TraceRow
+   532→   532→                    label="hotspot identification"
+   533→   533→                    value={`headline precision / recall / F1 / AUC / spatial hit rate plus the by-K curves (proposed F1 ${proposed.metrics.f1.toFixed(2)} vs baseline ${baseline.metrics.f1.toFixed(2)})`}
+   534→   534→                  />
+   535→   535→                  <TraceRow
+   536→   536→                    label="responsibility routing"
+   537→   537→                    value={`routing accuracy ${(proposed.responsibilityRouting.accuracy * 100).toFixed(0)}% over ${proposed.responsibilityRouting.evaluated} evaluated events with mismatch audit`}
+   538→   538→                  />
+   539→   539→                  <TraceRow
+   540→   540→                    label="intervention verification"
+   541→   541→                    value={`verified-resolution rate ${(proposed.verifiedResolution.rate * 100).toFixed(0)}% and recurrence-after-closure rate ${(proposed.recurrenceAfterClosure.rate * 100).toFixed(0)}%`}
+   542→   542→                  />
+   543→   543→                </div>
+   544→   544→              </Panel>
+   545→   545→            </TabsContent>
+   546→   546→
+   547→   547→            {/* SECTION E - predictions vs ground truth */}
+   548→   548→            <TabsContent value="truth" className="space-y-3">
+   549→   549→              <Panel
+   550→   550→                title={
+   551→   551→                  <span className="flex items-center gap-2">
+   552→   552→                    <MapPin className="size-3 text-water" aria-hidden />
+   553→   553→                    computed hotspots vs ground truth
+   554→   554→                  </span>
+   555→   555→                }
+   556→   556→                actions={
+   557→   557→                  <span className="micro-label !text-[0.55rem] text-muted-foreground">
+   558→   558→                    {hotspotMatch.covered}/{hotspotMatch.groundTruth.length} GT sites covered · match {MATCH_RADIUS_M}m
+   559→   559→                  </span>
+   560→   560→                }
+   561→   561→                bodyClassName="space-y-3"
+   562→   562→              >
+   563→   563→                {hotspotsQ.isLoading ? (
+   564→   564→                  <LoadingRows rows={5} />
+   565→   565→                ) : hotspotsQ.isError ? (
+   566→   566→                  <ErrorNote message={(hotspotsQ.error as Error).message} onRetry={() => hotspotsQ.refetch()} />
+   567→   567→                ) : hotspotMatch.computed.length === 0 && hotspotMatch.groundTruth.length === 0 ? (
+   568→   568→                  <EmptyState title="No hotspot data" hint="Computed hotspots and ground truth come from /api/hotspots." />
+   569→   569→                ) : (
+   570→   570→                  <>
+   571→   571→                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+   572→   572→                      {/* computed */}
+   573→   573→                      <div>
+   574→   574→                        <p className="micro-label !text-[0.55rem] text-muted-foreground mb-2 flex items-center gap-2">
+   575→   575→                          <span className="size-2 rounded-[1px] bg-water" aria-hidden /> computed · engine risk grid (NMS 400m)
+   576→   576→                        </p>
+   577→   577→                        <div className="rounded-sm border border-border/60 divide-y divide-border/60">
+   578→   578→                          {hotspotMatch.computed.map((c) => (
+   579→   579→                            <div key={c.code} className="px-3 py-2">
+   580→   580→                              <div className="flex items-baseline justify-between gap-2">
+   581→   581→                                <p className="text-xs text-foreground/90 truncate" title={c.name}>{c.name}</p>
+   582→   582→                                <span className="data-mono text-[0.68rem] text-water shrink-0">{c.score}</span>
+   583→   583→                              </div>
+   584→   584→                              <div className="mt-1 flex items-center gap-2.5">
+   585→   585→                                <div className="h-1 w-20 rounded-full bg-ink-800 overflow-hidden shrink-0" role="img" aria-label={`score ${c.score} of 100`}>
+   586→   586→                                  <div className="h-full rounded-full bg-water" style={{ width: `${Math.min(100, c.score)}%` }} />
+   587→   587→                                </div>
+   588→   588→                                <span className="data-mono text-[0.6rem] text-muted-foreground">{c.eventCount} events</span>
+   589→   589→                                {c.nearestD != null ? (
+   590→   590→                                  <span className={cn("micro-label !text-[0.5rem] !tracking-[0.08em]", c.nearestD <= MATCH_RADIUS_M ? "text-verified" : "text-muted-foreground/70")}>
+   591→   591→                                    {c.nearestD <= MATCH_RADIUS_M ? `match ${c.nearest?.code} · ${Math.round(c.nearestD)}m` : `nearest GT ${Math.round(c.nearestD)}m`}
+   592→   592→                                  </span>
+   593→   593→                                ) : (
+   594→   594→                                  <span className="micro-label !text-[0.5rem] text-muted-foreground/70">no GT</span>
+   595→   595→                                )}
+   596→   596→                              </div>
+   597→   597→                            </div>
+   598→   598→                          ))}
+   599→   599→                        </div>
+   600→   600→                      </div>
+   601→   601→
+   602→   602→                      {/* ground truth */}
+   603→   603→                      <div>
+   604→   604→                        <p className="micro-label !text-[0.55rem] text-muted-foreground mb-2 flex items-center gap-2">
+   605→   605→                          <span className="size-2 rounded-[1px] bg-sev-moderate" aria-hidden /> ground truth · seeded known sites
+   606→   606→                        </p>
+   607→   607→                        <div className="rounded-sm border border-border/60 divide-y divide-border/60">
+   608→   608→                          {hotspotMatch.groundTruth.map((g) => (
+   609→   609→                            <div key={g.code} className="px-3 py-2">
+   610→   610→                              <div className="flex items-baseline justify-between gap-2">
+   611→   611→                                <p className="text-xs text-foreground/90 truncate" title={g.name}>{g.name}</p>
+   612→   612→                                <span className="data-mono text-[0.62rem] text-muted-foreground shrink-0">{g.code}</span>
+   613→   613→                              </div>
+   614→   614→                              <div className="mt-1 flex items-center gap-2.5 flex-wrap">
+   615→   615→                                <span className="data-mono text-[0.6rem] text-muted-foreground">radius {Math.round(g.radiusM)}m</span>
+   616→   616→                                {g.nearestD != null ? (
+   617→   617→                                  <span className={cn("micro-label !text-[0.5rem] !tracking-[0.08em]", g.nearestD <= MATCH_RADIUS_M ? "text-verified" : "text-sev-moderate")}>
+   618→   618→                                    {g.nearestD <= MATCH_RADIUS_M
+   619→   619→                                      ? `covered · nearest prediction ${Math.round(g.nearestD)}m`
+   620→   620→                                      : `not covered · nearest ${Math.round(g.nearestD)}m`}
+   621→   621→                                  </span>
+   622→   622→                                ) : (
+   623→   623→                                  <span className="micro-label !text-[0.5rem] text-sev-moderate">not covered · no predictions</span>
+   624→   624→                                )}
+   625→   625→                              </div>
+   626→   626→                            </div>
+   627→   627→                          ))}
+   628→   628→                        </div>
+   629→   629→                      </div>
+   630→   630→                    </div>
+   631→   631→                    <p className="micro-label !text-[0.55rem] text-muted-foreground/70 !tracking-[0.08em] normal-case leading-relaxed">
+   632→   632→                      Distances computed client-side with the haversine helper; a computed hotspot counts as covering a
+   633→   633→                      ground-truth site when within {MATCH_RADIUS_M}m. For the spatial map open Map Explorer and enable
+   634→   634→                      the ground-truth layer. Computed source: {clean(hotspotMatch.computed[0]?.dataLabel ?? "MODEL_OUTPUT")}.
+   635→   635→                    </p>
+   636→   636→                  </>
+   637→   637→                )}
+   638→   638→              </Panel>
+   639→   639→            </TabsContent>
+   640→   640→          </div>
+   641→   641→        </Tabs>
+   642→   642→      )}
+   643→   643→    </div>
+   644→   644→  );
+   645→   645→}
+   646→   646→
+   647→   647→// --- local primitives ---------------------------------------------------------
+   648→   648→
+   649→   649→function fmt(v: number) {
+   650→   650→  return v.toFixed(3);
+   651→   651→}
+   652→   652→
+   653→   653→function ApproachCard({ tone, label, name, body }: { tone: "slate" | "teal"; label: string; name: string; body: string }) {
+   654→   654→  return (
+   655→   655→    <div
+   656→   656→      className={cn(
+   657→   657→        "rounded-md border px-3.5 py-3",
+   658→   658→        tone === "teal" ? "border-water/30 bg-water/6" : "border-border/60 bg-ink-900/40"
+   659→   659→      )}
+   660→   660→    >
+   661→   661→      <p className={cn("micro-label !text-[0.55rem]", tone === "teal" ? "text-water" : "text-muted-foreground")}>{label}</p>
+   662→   662→      <p className="text-xs font-semibold text-foreground mt-1">{name}</p>
+   663→   663→      <p className="text-[0.72rem] leading-relaxed text-muted-foreground mt-1">{body}</p>
+   664→   664→    </div>
+   665→   665→  );
+   666→   666→}
+   667→   667→
+   668→   668→function LegendSwatches() {
+   669→   669→  return (
+   670→   670→    <span className="flex items-center gap-4">
+   671→   671→      <span className="flex items-center gap-1.5 micro-label !text-[0.52rem] text-muted-foreground">
+   672→   672→        <span className="size-2 rounded-[1px]" style={{ background: SLATE }} aria-hidden /> baseline
+   673→   673→      </span>
+   674→   674→      <span className="flex items-center gap-1.5 micro-label !text-[0.52rem] text-muted-foreground">
+   675→   675→        <span className="size-2 rounded-[1px]" style={{ background: TEAL }} aria-hidden /> proposed
+   676→   676→      </span>
+   677→   677→    </span>
+   678→   678→  );
+   679→   679→}
+   680→   680→
+   681→   681→function MiniStat({ label, value }: { label: string; value: number | string }) {
+   682→   682→  return (
+   683→   683→    <div className="rounded-sm border border-border/60 bg-ink-900/40 px-2 py-1.5">
+   684→   684→      <p className="micro-label !text-[0.5rem] text-muted-foreground !tracking-[0.08em]">{label}</p>
+   685→   685→      <p className="data-mono text-[0.72rem] text-foreground mt-0.5">{value}</p>
+   686→   686→    </div>
+   687→   687→  );
+   688→   688→}
+   689→   689→
+   690→   690→function DelayRow({ label, value, max, barClass }: { label: string; value: number; max: number; barClass: string }) {
+   691→   691→  const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
+   692→   692→  return (
+   693→   693→    <div>
+   694→   694→      <div className="flex items-baseline justify-between mb-1">
+   695→   695→        <span className="micro-label !text-[0.55rem] text-muted-foreground">{label}</span>
+   696→   696→        <span className="data-mono text-[0.72rem] text-foreground">{value.toFixed(1)} h</span>
+   697→   697→      </div>
+   698→   698→      <div className="h-1.5 rounded-full bg-ink-800 overflow-hidden" role="img" aria-label={`${label} median ${value} hours`}>
+   699→   699→        <div className={cn("h-full rounded-full", barClass)} style={{ width: `${pct}%` }} />
+   700→   700→      </div>
+   701→   701→    </div>
+   702→   702→  );
+   703→   703→}
+   704→   704→
+   705→   705→function TraceRow({ label, value }: { label: string; value: string }) {
+   706→   706→  return (
+   707→   707→    <div className="flex items-start gap-2.5 rounded-sm border border-border/60 bg-ink-900/40 px-3 py-2">
+   708→   708→      <span className="micro-label !text-[0.52rem] text-water !tracking-[0.08em] w-40 shrink-0 pt-0.5">{label}</span>
+   709→   709→      <ArrowRight className="size-3 text-muted-foreground/60 shrink-0 mt-0.5" aria-hidden />
+   710→   710→      <span className="text-[0.72rem] leading-relaxed text-foreground/85">{value}</span>
+   711→   711→    </div>
+   712→   712→  );
+   713→   713→}
+   714→   714→
+   715→   715→function DatasetStat({ label, value }: { label: string; value: string }) {
+   716→   716→  return (
+   717→   717→    <div className="px-4 py-2.5 flex-1 min-w-fit">
+   718→   718→      <p className="micro-label !text-[0.52rem] text-muted-foreground !tracking-[0.08em]">{label}</p>
+   719→   719→      <p className="data-mono text-sm text-foreground mt-0.5">{value}</p>
+   720→   720→    </div>
+   721→   721→  );
+   722→   722→}
+   723→   723→
+   724→   724→function whatThisMeans(b: AnalyticsData, p: ProposedData): string[] {
+   725→   725→  const f1Delta = p.metrics.f1 - b.metrics.f1;
+   726→   726→  const bestProposedK = p.byK.reduce((best, r) => (r.f1 > best.f1 ? r : best), p.byK[0]);
+   727→   727→  const k12 = b.byK.find((r) => r.k === 12);
+   728→   728→  const p12 = p.byK.find((r) => r.k === 12);
+   729→   729→  const parts: string[] = [];
+   730→   730→
+   731→   731→  parts.push(
+   732→   732→    `On this seeded pilot (${p.dataset.reports} reports, ${p.dataset.events} events, ${p.dataset.groundTruthHotspots} known hotspots across ${p.dataset.candidateCells.toLocaleString("en-IN")} candidate cells), the evidence-integrated ranking reached F1 ${p.metrics.f1.toFixed(2)} versus ${b.metrics.f1.toFixed(2)} for complaint frequency alone, and matched ${Math.round(p.metrics.spatialHitRate * 100)}% of ground-truth sites within 250m versus ${Math.round(b.metrics.spatialHitRate * 100)}% for the baseline. Both approaches were scored on identical candidates and labels, so the gap is attributable to the scoring function, not the data.`
+   733→   733→  );
+   734→   734→
+   735→   735→  parts.push(
+   736→   736→    `The AUC margin is small (${p.metrics.auc.toFixed(3)} vs ${b.metrics.auc.toFixed(3)}) because both rankers separate the ${p.dataset.positives} positive cells from the bulk; the improvement concentrates at the operating point. By K, the proposed ranking is strongest at k=${bestProposedK.k} (F1 ${bestProposedK.f1.toFixed(2)})${k12 && p12 ? `, and at k=12 both approaches return F1 ${k12.f1.toFixed(2)} as prediction lists thin out under 400m non-maximum suppression` : ""}.`
+   737→   737→  );
+   738→   738→
+   739→   739→  if (f1Delta >= 0.15) {
+   740→   740→    parts.push(
+   741→   741→      `These are synthetic results computed against seeded ground truth with known labels. They show that the evaluation harness can discriminate the two scoring functions on pilot data, not that the proposed approach would hold the same margins (${f1Delta.toFixed(2)} F1 here) on real city data.`
+   742→   742→    );
+   743→   743→  } else {
+   744→   744→    parts.push(
+   745→   745→      `These are synthetic results computed against seeded ground truth with known labels and should not be read as real-world effect sizes.`
+   746→   746→    );
+   747→   747→  }
+   748→   748→
+   749→   749→  return parts;
+   750→   750→}
+   751→   751→
+   752→   752→interface ComputedWithMatch {
+   753→   753→  code: string;
+   754→   754→  name: string;
+   755→   755→  lat: number;
+   756→   756→  lng: number;
+   757→   757→  score: number;
+   758→   758→  method: string;
+   759→   759→  eventCount: number;
+   760→   760→  topEventCode?: string;
+   761→   761→  dataLabel: string;
+   762→   762→  nearestD: number | null;
+   763→   763→  nearest?: { code: string; name: string };
+   764→   764→}
+   765→   765→
+   766→   766→interface GroundTruthWithMatch {
+   767→   767→  code: string;
+   768→   768→  name: string;
+   769→   769→  lat: number;
+   770→   770→  lng: number;
+   771→   771→  radiusM: number;
+   772→   772→  dataLabel: string;
+   773→   773→  nearestD: number | null;
+   774→   774→}
+   775→   775→
+   776→   776→function matchHotspots(data?: HotspotResponse): {
+   777→   777→  computed: ComputedWithMatch[];
+   778→   778→  groundTruth: GroundTruthWithMatch[];
+   779→   779→  covered: number;
+   780→   780→} {
+   781→   781→  if (!data) return { computed: [], groundTruth: [], covered: 0 };
+   782→   782→  const computed: ComputedWithMatch[] = data.computed.map((c) => {
+   783→   783→    let nearestD: number | null = null;
+   784→   784→    let nearest: { code: string; name: string } | undefined;
+   785→   785→    for (const g of data.groundTruth) {
+   786→   786→      const d = distanceM({ lat: c.lat, lng: c.lng }, { lat: g.lat, lng: g.lng });
+   787→   787→      if (nearestD == null || d < nearestD) {
+   788→   788→        nearestD = d;
+   789→   789→        nearest = { code: g.code, name: g.name };
+   790→   790→      }
+   791→   791→    }
+   792→   792→    return { ...c, nearestD, nearest };
+   793→   793→  });
+   794→   794→  const groundTruth: GroundTruthWithMatch[] = data.groundTruth.map((g) => {
+   795→   795→    let nearestD: number | null = null;
+   796→   796→    for (const c of data.computed) {
+   797→   797→      const d = distanceM({ lat: c.lat, lng: c.lng }, { lat: g.lat, lng: g.lng });
+   798→   798→      if (nearestD == null || d < nearestD) nearestD = d;
+   799→   799→    }
+   800→   800→    return { ...g, nearestD };
+   801→   801→  });
+   802→   802→  const covered = groundTruth.filter((g) => g.nearestD != null && g.nearestD <= MATCH_RADIUS_M).length;
+   803→   803→  return { computed, groundTruth, covered };
+   804→   804→}
+   805→   805→

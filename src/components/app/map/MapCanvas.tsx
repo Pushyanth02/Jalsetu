@@ -42,9 +42,9 @@ export const BASEMAP_STYLE: StyleSpecification = {
 
 function severityFill(sev: number, status: string): string {
   if (status === "VERIFIED" || status === "CLOSED") return "#5c7076";
-  if (sev >= 4) return "#e54848";
-  if (sev === 3) return "#e8823c";
-  if (sev === 2) return "#d9a62e";
+  if (sev >= 4) return "#dc2626";
+  if (sev === 3) return "#ea580c";
+  if (sev === 2) return "#d97706";
   return "#64748b";
 }
 
@@ -302,8 +302,8 @@ export function MapCanvas({ events, hotspots, jurisdictions, assets, weather, cl
     const el = document.createElement("div");
     el.className = "station-marker";
     const scale = Math.min(2.2, 0.7 + station.totalMm / 120);
-    el.innerHTML = `<div style="width:${28 * scale}px;height:${28 * scale}px;border-radius:999px;background:radial-gradient(circle, rgba(69,196,176,0.5) 0%, rgba(69,196,176,0.18) 55%, transparent 70%);display:grid;place-items:center;position:relative">
-      <span style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-family:var(--font-plex-mono),monospace;font-size:9px;color:#9db8bd;white-space:nowrap" class="st-label">${Math.round(station.totalMm)}mm</span>
+    el.innerHTML = `<div style="width:${28 * scale}px;height:${28 * scale}px;border-radius:999px;background:radial-gradient(circle, rgba(59,130,246,0.55) 0%, rgba(59,130,246,0.2) 55%, transparent 70%);display:grid;place-items:center;position:relative">
+      <span style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-family:var(--font-plex-mono),monospace;font-size:9px;color:#93a6c9;white-space:nowrap" class="st-label">${Math.round(station.totalMm)}mm</span>
     </div>`;
     el.title = `${station.name} - ${station.totalMm}mm in window (synthetic)`;
     const marker = new Marker({ element: el, anchor: "center" }).setLngLat([station.lng, station.lat]).addTo(map);
@@ -396,7 +396,7 @@ function addStaticLayers(map: MlMap) {
     type: "fill",
     source: "jurisdictions",
     paint: {
-      "fill-color": ["match", ["get", "kind"], "WARD", "#45c4b0", "CORRIDOR", "#7fb8c9", "#5c8d84"],
+      "fill-color": ["match", ["get", "kind"], "WARD", "#3b82f6", "CORRIDOR", "#60a5fa", "#2563eb"],
       "fill-opacity": 0.05,
     },
   });
@@ -405,7 +405,7 @@ function addStaticLayers(map: MlMap) {
     type: "line",
     source: "jurisdictions",
     paint: {
-      "line-color": ["match", ["get", "kind"], "WARD", "#45c4b0", "CORRIDOR", "#7fb8c9", "#5c8d84"],
+      "line-color": ["match", ["get", "kind"], "WARD", "#3b82f6", "CORRIDOR", "#60a5fa", "#2563eb"],
       "line-width": 1.2,
       "line-opacity": 0.55,
       "line-dasharray": [3, 2],
@@ -429,11 +429,11 @@ function addStaticLayers(map: MlMap) {
         ["linear"],
         ["heatmap-density"],
         0, "rgba(0,0,0,0)",
-        0.2, "#1d4a52",
-        0.4, "#2b7a74",
-        0.6, "#45c4b0",
-        0.8, "#d9a62e",
-        1, "#e54848",
+        0.2, "#1e3a8a",
+        0.4, "#1d4ed8",
+        0.6, "#3b82f6",
+        0.8, "#f59e0b",
+        1, "#dc2626",
       ],
     },
   });
@@ -443,7 +443,7 @@ function addStaticLayers(map: MlMap) {
     source: "hotspots",
     paint: {
       "circle-radius": ["interpolate", ["linear"], ["get", "score"], 30, 4, 60, 7, 100, 11],
-      "circle-color": "#e8823c",
+      "circle-color": "#ea580c",
       "circle-stroke-color": "#0a0f11",
       "circle-stroke-width": 1,
       "circle-opacity": 0.9,
@@ -459,7 +459,7 @@ function addStaticLayers(map: MlMap) {
     paint: {
       "circle-radius": 16,
       "circle-color": "transparent",
-      "circle-stroke-color": "#d9a62e",
+      "circle-stroke-color": "#d97706",
       "circle-stroke-width": 1.2,
       "circle-stroke-opacity": 0.7,
     },
@@ -470,7 +470,7 @@ function addStaticLayers(map: MlMap) {
     source: "groundtruth",
     paint: {
       "circle-radius": 3,
-      "circle-color": "#d9a62e",
+      "circle-color": "#d97706",
     },
   });
 

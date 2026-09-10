@@ -152,3 +152,129 @@ Work Log:
 
 Stage Summary:
 - 57/57 tests pass, 0 console errors, 0 page errors, no mobile overflow, lint + tsc clean, watermark-free dark basemap. Demo journey verified end-to-end (report -> GLM classify -> duplicate merge -> risk -> routing -> dossier).
+
+---
+Task ID: 15-d
+Agent: general-purpose (restyle)
+Task: Restyle AnalyticsView + HealthView to light JalSetu design system with OriginKit motion
+
+Work Log:
+- Read worklog, motion kit (Reveal/Stagger/StaggerItem/CountUp/SpotlightCard/PulseDot/AnimatedProgress/HoverLift/Shine), restyled domain.tsx (Panel icon prop, tinted pill badges), globals.css light tokens, CommandCenterView for reference patterns (KpiCard, white tooltip style, panel/rounded-xl conventions).
+- AnalyticsView.tsx retheme (functionality untouched: same queries, clean(), honest labels, 5-tab structure, whatThisMeans/matchHotspots logic):
+  - Chart palette: TEAL #45c4b0 -> BLUE #2563eb (proposed series), baseline bars #94a3b8, grid/axis #e2e8f0, ticks #94a3b8, tooltip -> white bg + #e2e8f0 border + 8px radius + soft shadow, labelStyle #64748b; bars radius [4,4,0,0], barSize 16, animationDuration 700; legend swatches 10px squares.
+  - Integrity banner: rounded-xl amber-50/amber-200/amber-800 with AlertTriangle, Reveal entrance; renders meta.evaluationLabel via clean() (unchanged).
+  - Tab A: approach cards -> white panel rounded-xl cards (proposed border-water/30 + Layers icon in size-10 bg-blue-50 text-water tinted square, baseline slate square) with F1/AUC/hit-rate CountUp decimals=3; HoverLift + SpotlightCard; comparison table header bg-ink-850/60, CountUp values, delta arrows TrendingUp/Down/Minus emerald-600/orange-600/slate-400.
+  - Tab B: both BarCharts restyled; Panel icon prop.
+  - Tab C: ARI/routing/delay/verified values in CountUp; ARI + delay bars + E-tab score bars -> AnimatedProgress; mismatch table rounded-xl; MiniStat/TraceRow rounded-xl tiles; text-slate-300/400 -> slate-500/600 fixes.
+  - Tabs D/E: Panel icons (BookOpen/Database/Scale/MapPin); E lists wrapped in Stagger/StaggerItem rows inside rounded-xl cards.
+  - All tabs: Reveal wrappers staggered 0/0.05/0.1; TabsList -> light ink-850/70 segmented control with white active trigger; header strip -> bg-white + title-lg + blue research-evaluation pill + rounded-lg refetch button.
+- HealthView.tsx retheme (queries, ping fetch logic, clean(), SEVERITY sort untouched):
+  - Overall strip -> 4 white rounded-xl stat cards (HoverLift): Database events (CountUp), API latency (CountUp ms, amber when slow), Data health OK/EMPTY (ShieldCheck emerald/amber), AI provider available+PulseDot/fallback (BrainCircuit); plus "system details" Panel (Activity icon, ProviderChip, lastModelRun, EMPTY_DATABASE amber card w/ reseed instructions).
+  - Source health table: rows animated with <Stagger> + motion.tr variants (semantic tr kept, propagates through Table; respects reduced-motion); header bg-ink-850/60; status badges rounded-full tinted pills: OK emerald-50, STALE amber-50, EMPTY red-50.
+  - Provider block: BrainCircuit icon, available pill with PulseDot, lastError -> amber-50 AlertTriangle card; runs summary segments on white tile with CountUp.
+  - Run log: ScrollArea kept; header bg-ink-850/60; RunStatusBadge rounded-full (succeeded emerald / failed red / running blue / default slate).
+  - Confidence chart: cells below flag #f59e0b amber, above #3b82f6 blue; white tooltip; 10px legend swatches.
+  - Endpoint checks: per-row PulseDot emerald on ok / red on fail / gray pulse pending; Stagger entrance; refresh-checks rounded-lg button (logic unchanged, re-pings verified).
+  - All 6 sections Reveal staggered 0.05 steps; header -> bg-white + telemetry pill + refresh-all rounded-lg button.
+- QA (isolated agent-browser session 15d-ana):
+  - #/analytics: banner + evaluation label rendered; all 5 tabs clicked through; tab A table w/ 5 metric rows + delta arrows; tab B 16 bars, hover tooltip = white bg (rgb(255,255,255)) showing k=3 0.444/0.667; tab C ARI/routing/mismatch/counterfactual/verified-recurrence all present + 3 AnimatedProgress; tab D methodology/dataset/traceability; tab E 10 computed rows w/ score bars + 5/6 GT covered.
+  - #/health: 4 stat cards, system details, source table 8 rows, provider block, run log 25 rows, confidence chart (blue + amber bars), endpoint checks 6/6 ok (807-1200ms); refresh-checks re-ran all pings ok.
+  - 0 page errors + 0 console errors on both views (only HMR/Fast-Refresh logs from parallel agents' edits).
+  - Mobile 375x800: scrollWidth = 375 on both views (no overflow).
+  - VLM screenshot review: tab A pass (light bg, white cards, amber banner, blue icon square, delta columns), tab E pass (two lists, blue bars, coverage badges), health top pass (4 stat cards w/ tinted squares), health lower pass (green run pills, blue/amber confidence bars, pulsing endpoint dots), mobile pass.
+  - npx tsc --noEmit: 0 errors in both files (remaining errors only in sandbox examples/skills/bun-tests, pre-existing; one transient syntax error in EventDetailView.tsx from a parallel agent's in-flight edit blocked GET / for ~2 min, resolved by that agent on its own).
+  - npx eslint on both files: exit 0, clean.
+  - Dev server restarted once when it died (single instance, GET / 200).
+
+Stage Summary:
+- Files changed: src/components/app/views/analytics/AnalyticsView.tsx, src/components/app/views/health/HealthView.tsx, worklog.md (this entry). No query/logic/label changes; exports and "use client" kept.
+- Motion added: Reveal entrances (banner, every tab section, every health section), Stagger/StaggerItem (tab E lists, source table motion.tr rows, endpoint rows), CountUp (metrics, ARI, routing, delays, rates, stat cards, runs summary), AnimatedProgress (ARI, delay, hotspot score bars), HoverLift+SpotlightCard (approach cards, health stat cards), PulseDot (provider/endpoint ok).
+- Charts: single blue accent #2563eb/#3b82f6 + slate-400 baseline + amber flags, white tooltips, light gridlines #e2e8f0 - readable on white.
+- Notes for next agents: motion.tr + variants propagates from <Stagger> through shadcn Table (semantic tbody/tr preserved, no hydration risk); CountUp clamps at 0 so never use it for negative deltas; shadcn TabsTrigger already provides light active state (bg-background white + shadow-sm) so only data-[state=active]:text-water tint needed.
+
+---
+Task ID: 15-b
+Agent: general-purpose (view restyler)
+Task: ReportView + VerificationView restyle to JalSetu light design system with OriginKit motion
+
+Work Log:
+- Read worklog, globals.css light tokens, motion kit (Reveal/Stagger/StaggerItem/CountUp/PulseDot/AnimatedProgress/Shine/HoverLift), domain.tsx (Panel icon prop, pill badges, RISK_META), CommandCenterView for established light patterns.
+- ReportView.tsx retheme (all state, validation, mutations, toasts, CITIZEN role, honest labels, publicRef copy, consent/privacy notes untouched):
+  - Page header -> bg-white hairline-b + font-display bold title with FileCheck icon in size-9 bg-blue-50 tinted square; panels use new icon prop (Search "Track a Report", Flag "File a New Report", Title Case).
+  - Step wizard: size-8 numbered circles - active bg-water text-white font-semibold, completed bg-blue-50 text-water with Check, upcoming bg-ink-850 text-slate-400; connectors bg-water/40 when done; step labels sans font-medium (current slate-900/done slate-600/upcoming slate-400); step buttons rounded-lg with bg-blue-50 current chip.
+  - Step content wrapped in AnimatePresence mode="wait" + motion.div key={step} fade+slide 12px (exit -8px, 0.24s, useReducedMotion -> opacity-only).
+  - Category/severity radio cards: shared OptionCard = HoverLift + label rounded-xl border bg-white shadow-xs, selected border-water bg-blue-50, unselected hover:bg-ink-850/60; radio groups wrapped in Stagger/StaggerItem grid.
+  - Primary CTAs (Continue/Submit report + result "Open event dossier"): rounded-lg bg-water text-white hover:bg-water-dim + group relative overflow-hidden + <Shine/> sweep. Ghost/outline: rounded-lg border-border text-slate-600 hover:bg-ink-850.
+  - Map block rounded-xl border shadow-sm; dark gradient overlay replaced with white/90 backdrop-blur caption strip (readable on dark ops map). All inputs/selects/textarea rounded-lg.
+  - Photo preview: rounded-xl white card + ring-1 ring-slate-200/60 shadow-sm, inner img rounded-lg; "uploaded" pill rounded-full blue tinted.
+  - Result panel celebratory-but-restrained: publicRef in rounded-xl bg-blue-50 border-blue-200 card with text-2xl font-bold mono + PulseDot emerald on submitted label + copy button (white/blue outline); pipeline outcome rounded-full tinted chip (blue/amber/orange); classification + risk cards white rounded-xl with CountUp confidence % and AnimatedProgress risk bar (RISK_META fill); Reveal delays 0/0.08/0.14/0.2/0.26 across result sections; tracking lookup result card rounded-xl bg-slate-50/70 with rounded-full status pills.
+- VerificationView.tsx retheme (queries, mutations, FIELD_TEAM/AGENCY demo roles, 409 handling, honest labels untouched):
+  - Header bg-white hairline-b + ClipboardCheck tinted square + PulseDot emerald next to "seeded demo + live events"; shown-count uses CountUp.
+  - Board: grid-cols-1 xl:grid-cols-5 (stacks on mobile), column Panel headers keep status dots (slate-400/blue-500/water/verified/sev-high) + CountUp counts; card lists wrapped in Stagger/StaggerItem.
+  - BoardCard: HoverLift + rounded-xl border bg-white shadow-xs card, hover:border-water/50, ChevronRight arrow (group-hover text-water), StatusBadge/RiskBadge pills.
+  - Dialog: DialogContent rounded-xl; summary facts grid rounded-xl border-slate-200 bg-slate-50/70; sections Reveal staggered 0/0.06/0.12/0.18; StageStepper completed circles bg-verified with white Check, current border-water; timeline dots bg-water-dim/bg-verified; stage form Selects/Inputs rounded-lg; reopen button rounded-lg red tinted; Record stage = primary water button + Shine; photo preview rounded-xl white ring card; empty state = tinted icon square.
+- Light-leftover fixes: text-slate-300/-400 text -> slate-500/600 (kept slate-400 only for faintest hints per CommandCenterView convention), text-ink-950 on water -> text-white, sky-300 dot -> blue-500, all rounded-sm -> rounded-xl (cards)/rounded-full (pills)/rounded-lg (controls), sev-moderate/90 -> solid amber-600.
+- QA (isolated agent-browser session 15b-rep):
+  - #/report walkthrough: jurisdiction select filled coords (Model Town 28.7025/77.195) -> step 2 radio cards (9 labels) picked HIGH + 12+ char description -> step 3 consent -> review (8 rows) -> submit: RESULT rendered via live GLM (CR-KYM2N, pipeline ATTACHED_DUPLICATE into UE-2026-0002 144m, classification GLM glm-4-plus waterlogging/high/90% conf, risk 53 MODERATE + PWD/MCD/DCP routing, urban event card). Tracking lookup CR-KYM2N -> status pill merged, live submission badge, linked event + risk badge + Open dossier.
+  - #/verify: 5 columns 16/2/1/1/1 (21 cards). Dialog on UE-2026-0012: facts grid + stepper + timeline; recorded ASSIGNED stage (depth 22cm + notes) -> form advanced to "dispatched · next", timeline entry visible; intentional out-of-order VERIFIED submit -> inline 409 "Stage ACTION_RECORDED must be recorded before VERIFIED" (dialog stayed open).
+  - 0 page errors + 0 console errors on every load; mobile 375x800 scrollWidth 375 on both views (no overflow); VLM defect checks on report/result/board/dialog/409/mobile screenshots: NO DEFECTS.
+  - npx tsc --noEmit: 0 errors in both files (remaining = sandbox examples/skills/bun-tests, pre-existing). npx eslint on both files: clean.
+  - Dev server restarted several times: external kills between tool invocations + a parallel agent's transient parse error in EventDetailView.tsx (blocked GET / ~2 min, self-resolved). Stale browser refs caused one mis-click mid-409-test; redone with fresh snapshots.
+  - Demo data side effects: CR-KYM2N attached to UE-2026-0002; ASSIGNED verification stage recorded on UE-2026-0012.
+
+Stage Summary:
+- Files changed: src/components/app/views/report/ReportView.tsx, src/components/app/views/verification/VerificationView.tsx, worklog.md (this entry). No logic/query/validation/label changes; all exports + "use client" kept.
+- Motion added: AnimatePresence mode="wait" step transitions (reduced-motion safe), Reveal entrances (tracking result, wizard panels, all result sections, all dialog sections), Stagger/StaggerItem (radio card grids, board card lists), CountUp (column counts, shown-count, classification confidence), AnimatedProgress (result risk bar), PulseDot (result submitted, verify live-events strip), HoverLift (radio cards, board cards), Shine (Continue/Submit/Record stage CTAs).
+- Design: single blue-600 accent, white rounded-xl cards, rounded-full tinted pills, icon-in-tinted-square headers, numbered step wizard, light map caption strip, white tooltip-style dialog sections.
+- Notes for next agents: OptionCard helper in ReportView wraps HoverLift around labels for radio cards (Radix RadioGroup renders Stagger div fine as child); Panel bodyClassName "p-2 flex flex-col gap-2" overrides dense p-0 via twMerge; agent-browser refs go stale after Radix select interactions - always re-snapshot before clicking; keep an eye on dev-server external kills when QA-ing long flows.
+
+---
+Task ID: 15-a
+Agent: general-purpose (view restyler, finished via lead verification after transport timeout)
+Task: Restyle MapExplorerView + EventDetailView to the new JalSetu light design
+
+Work Log:
+- Re-themed both views to light theme: white rounded-xl cards, blue accent, pill badges via updated domain.tsx, fixed light-on-dark text leftovers and recharts dark tooltip hexes, fixed rounded corners on interactive elements.
+- MapExplorerView (13 motion usages): filter panels restyled as light cards, map container definite-height fix preserved, event list rows with staggered entrances.
+- EventDetailView (56 motion usages): Reveal on tabs/sections, AnimatedProgress for risk factor bars and meters, CountUp on metrics, PulseDot live indicators, restyled header action buttons (bg-water text-white), report/evidence/audit cards as white rounded-xl panels.
+- Functionality preserved: all queries, mutations, reassess action, verification workflow, audit history, navigation.
+
+Stage Summary:
+- Files changed: src/components/app/views/mapview/MapExplorerView.tsx, src/components/app/views/event/EventDetailView.tsx.
+- Lead verified in browser after agent transport timeout: map renders tiles+markers+legend, event dossier (UE-2026-0001) renders all tabs, 0 page/console errors, VLM review 9/10.
+
+---
+Task ID: 15-c
+Agent: general-purpose (view restyler, finished via lead verification after transport timeout)
+Task: Restyle InvestigateView + ResponsibilityView to the new JalSetu light design
+
+Work Log:
+- InvestigateView (31 motion usages): provider health strip restyled, 3 tool selector cards with active blue states, report queue rows with stagger, result panels with Reveal entrance, CountUp confidence readouts, AnimatedProgress factor bars, AGGRAVATES/MITIGATES pills (red-50/emerald-50), blue-check evidence checklist rows matching reference design.
+- ResponsibilityView (14 motion usages): register rows stagger, agency filter pill chips (active bg-blue-50 text-water), AnimatedProgress workload bars, chain inspector vertical stepper restyled light, escalation matrix as white rounded-xl table.
+- Fixed light-on-dark text leftovers, recharts dark hexes, corner radii. Honest labels preserved (provider chips, fallback notes, no-CoT micro-labels, synthetic badges).
+
+Stage Summary:
+- Files changed: src/components/app/views/investigate/InvestigateView.tsx, src/components/app/views/responsibility/ResponsibilityView.tsx.
+- Lead verified in browser: classification re-run works with live GLM (90% confidence result panel + provenance rendered), clustering and risk tools functional, register filters work, 0 page/console errors.
+
+---
+Task ID: 15-lead
+Agent: lead (main session)
+Task: JalSetu redesign - replicate reference image UI/UX across the whole app with OriginKit-style animations
+
+Work Log:
+- Analyzed uploaded reference design with VLM (two passes): dark charcoal sidebar + light content, blue #2563eb accent, KPI stat cards with tinted icon squares, dark ops map with floating layers panel + legend + Live Data demo badge, right rail (recent reports + operational alerts), Inter font, white cards 12px radius.
+- Researched OriginKit (originkit.com, vellum-ai/originkit - free animated component library, framer-motion based; site unreachable from sandbox, implemented its patterns from knowledge).
+- Generated 3 AI images: public/img/weather-delhi.png (sidebar weather card), ito-underpass.png + street-flood.png (report thumbnails, labelled illustrative).
+- Foundation rewrite: globals.css (light token set keeping ALL existing token/util names so every view inherits the theme: ink-900=white card, water=blue-600, sev ramp amber-600/orange-600/red-600, verified=emerald-600, radius 12px, .panel white+shadow, .shimmer skeleton keyframes, light popups/scrollbars, map markers updated); layout.tsx (Inter + IBM Plex Mono, JalSetu metadata, light themeColor); public/img/jalsetu-mark.svg logo.
+- Created src/components/motion/kit.tsx - OriginKit-style kit (Reveal, Stagger/StaggerItem, CountUp, SpotlightCard, PulseDot, AnimatedProgress, Shine, HoverLift), all prefers-reduced-motion aware.
+- domain.tsx rewrite: pill badges with tinted backgrounds, Panel with icon prop + semibold headers, RiskMeter animated, LoadingRows shimmer, ErrorNote red-50 card.
+- Shell rewrite: NavRail (JalSetu brand lockup, grouped nav with layoutId active indicator, weather widget with rainfall mm + derived condition + real date, mobile bottom nav with raised report FAB); TopBar (functional global search with dropdown event results + "/" hotkey, pilot-window time filter wired to store, alert bell with count, location chip, admin avatar, honesty chips); AppRoot (framer-motion view transitions, light footer with brand).
+- CommandCenterView full rewrite per reference: 4 KPI cards (tinted icon squares, CountUp, real computed 24h-vs-prior-24h deltas from event data), map card (definite height fix - percentage heights need definite parents, min-h collapsed map to 0px), floating LayersPanel with functional layer toggles, DemoModeBadge with PulseDot, RecentReportsPanel with illustrative thumbnails + honest footer note, OperationalAlertsPanel, agency response, event queue grid, restyled rainfall strip (blue).
+- MapCanvas: severity/heatmap/jurisdiction/gauge colors switched teal->blue palette; MapLegend + MapSelectionCard restyled light; fixed hydration mismatch (time in avatar title).
+- Delegated 4 parallel restyle agents (15-a..15-d): all 8 remaining views restyled + motion added; 15-b (report wizard GLM walkthrough + verify dialog 409 test) and 15-d (analytics tabs + health pings) self-verified; 15-a/15-c completed file work despite Task transport timeouts, lead verified their output in browser.
+- Fixed OOM-killed dev server: 4GB cgroup with browser-session pileup killed next-server; cleaned zombie chrome daemons, restarted via (setsid npx next dev ...) subshell-detach pattern - stable across commands.
+- Final QA: all 9 views 0 page errors, 0 console errors, 0 lint errors, tsc clean, mobile 375px no overflow on 5 views, VLM reviews 9-10/10 across views, wizard demo journey passed via live GLM (CR-KYM2N), chevron icon visibility fix.
+
+Stage Summary:
+- Complete visual redesign replicating the reference image: JalSetu branding, dark sidebar + light content, blue accent, KPI cards, animated components, dark ops map. All functionality, APIs, honest labelling and research integrity preserved. 57/57 tests unaffected (backend untouched).

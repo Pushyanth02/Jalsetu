@@ -15,7 +15,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useToast } from "@/hooks/use-toast";
 import { navigate } from "@/lib/client/store";
 import { cn } from "@/lib/utils";
-import { Camera, ClipboardList, RefreshCw, RotateCcw, Search, X } from "lucide-react";
+import { CountUp, HoverLift, PulseDot, Reveal, Shine, Stagger, StaggerItem } from "@/components/motion/kit";
+import { Camera, Check, ChevronRight, ClipboardCheck, RefreshCw, RotateCcw, Search, X } from "lucide-react";
 
 // FIELD VERIFICATION - workflow board. Events grouped by verification stage
 // column; a dialog per event records the next stage (field team role) or
@@ -24,12 +25,12 @@ import { Camera, ClipboardList, RefreshCw, RotateCcw, Search, X } from "lucide-r
 
 const VERIF_STAGES = ["ASSIGNED", "DISPATCHED", "OBSERVED", "EVIDENCE_UPLOADED", "ACTION_RECORDED", "VERIFIED", "CLOSED"] as const;
 
-const COLUMNS: { key: string; title: string; hint: string; statuses: string[] }[] = [
-  { key: "unassigned", title: "unassigned", hint: "detected or triaged, not yet assigned to an agency", statuses: ["DETECTED", "TRIAGED"] },
-  { key: "assigned", title: "assigned", hint: "responsibility assigned, dispatch pending", statuses: ["ASSIGNED"] },
-  { key: "infield", title: "in field", hint: "dispatched, observation or action underway", statuses: ["IN_PROGRESS"] },
-  { key: "verified", title: "verified / closed", hint: "field-verified with evidence, or closed", statuses: ["VERIFIED", "CLOSED"] },
-  { key: "reopened", title: "reopened", hint: "recurrence after closure, back in the queue", statuses: ["REOPENED"] },
+const COLUMNS: { key: string; title: string; hint: string; dot: string; statuses: string[] }[] = [
+  { key: "unassigned", title: "unassigned", hint: "detected or triaged, not yet assigned to an agency", dot: "bg-slate-400", statuses: ["DETECTED", "TRIAGED"] },
+  { key: "assigned", title: "assigned", hint: "responsibility assigned, dispatch pending", dot: "bg-blue-500", statuses: ["ASSIGNED"] },
+  { key: "infield", title: "in field", hint: "dispatched, observation or action underway", dot: "bg-water", statuses: ["IN_PROGRESS"] },
+  { key: "verified", title: "verified / closed", hint: "field-verified with evidence, or closed", dot: "bg-verified", statuses: ["VERIFIED", "CLOSED"] },
+  { key: "reopened", title: "reopened", hint: "recurrence after closure, back in the queue", dot: "bg-sev-high", statuses: ["REOPENED"] },
 ];
 
 const RISK_FILTERS = ["ALL", "LOW", "MODERATE", "HIGH", "CRITICAL"] as const;
@@ -127,21 +128,23 @@ export function VerificationView() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* header: title + filters */}
-      <div className="hairline-b bg-ink-900/30 px-4 sm:px-6 py-3.5">
+      <div className="hairline-b bg-white px-4 sm:px-6 py-3.5">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5">
           <div className="min-w-0 flex-1">
-            <h1 className="text-base sm:text-lg font-medium flex items-center gap-2">
-              <ClipboardList className="size-4 text-water" aria-hidden />
+            <h1 className="flex items-center gap-2.5 font-display text-lg font-bold tracking-tight text-slate-900 leading-tight">
+              <span className="grid size-9 place-items-center rounded-lg bg-blue-50 text-water shrink-0" aria-hidden>
+                <ClipboardCheck className="size-4.5" />
+              </span>
               Field Verification
             </h1>
-            <p className="mt-0.5 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-muted-foreground sm:pl-[2.875rem]">
               Workflow board. Stages advance in order: assigned, dispatched, observed, evidence, action, verified, closed.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" aria-hidden />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-slate-400 pointer-events-none" aria-hidden />
               <label htmlFor="verify-search" className="sr-only">
                 Search events
               </label>
@@ -150,7 +153,7 @@ export function VerificationView() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="code, title, area, agency"
-                className="h-8 pl-8 w-44 sm:w-56 bg-ink-900 border-border text-xs"
+                className="h-8 pl-8 w-44 sm:w-56 rounded-lg bg-ink-900 border-border text-xs"
                 maxLength={60}
               />
             </div>
@@ -158,7 +161,7 @@ export function VerificationView() {
               Filter by risk band
             </Label>
             <Select value={riskFilter} onValueChange={setRiskFilter}>
-              <SelectTrigger id="verify-risk" className="h-8 w-32 bg-ink-900 border-border text-xs" aria-label="Risk band filter">
+              <SelectTrigger id="verify-risk" className="h-8 w-32 rounded-lg bg-ink-900 border-border text-xs" aria-label="Risk band filter">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -172,7 +175,7 @@ export function VerificationView() {
             <Button
               variant="outline"
               size="sm"
-              className="h-8 border-border"
+              className="h-8 rounded-lg border-border text-slate-600 hover:bg-ink-850"
               disabled={eventsQ.isFetching}
               onClick={() => eventsQ.refetch()}
               aria-label="Refresh events"
@@ -184,16 +187,16 @@ export function VerificationView() {
 
         <div className="mt-2 flex items-center gap-2 flex-wrap">
           <SourceBadge source="SYNTHETIC_DEMO" />
-          <span className="micro-label !text-[0.5rem] text-muted-foreground/60" title="The board mixes seeded demo events with live submissions">
-            seeded demo + live events
+          <span className="inline-flex items-center gap-1.5 micro-label !text-[0.5rem] text-muted-foreground/80" title="The board mixes seeded demo events with live submissions">
+            <PulseDot color="bg-emerald-500" size={6} /> seeded demo + live events
           </span>
-          <span className="data-mono text-[0.62rem] text-muted-foreground ml-auto" aria-live="polite">
-            {filtered.length} shown / {all.length} loaded
+          <span className="data-mono text-[0.62rem] text-slate-500 ml-auto" aria-live="polite">
+            <CountUp value={filtered.length} /> shown / {all.length} loaded
           </span>
         </div>
       </div>
 
-      {/* board */}
+      {/* board: 5 columns, stacked on mobile */}
       <div className="flex-1 min-h-0 overflow-y-auto xl:overflow-hidden p-3">
         {eventsQ.isLoading ? (
           <LoadingRows rows={6} />
@@ -204,37 +207,35 @@ export function VerificationView() {
         ) : all.length === 0 ? (
           <EmptyStateBoard />
         ) : (
-          <div className="flex flex-col xl:flex-row gap-3 xl:h-full min-h-0">
+          <div className="grid grid-cols-1 xl:grid-cols-5 gap-3 xl:h-full min-h-0 items-start xl:items-stretch">
             {COLUMNS.map((col) => {
               const items = byStatus.get(col.key) ?? [];
               return (
                 <Panel
                   key={col.key}
                   title={
-                    <span className="flex items-center gap-1.5" title={col.hint}>
-                      <span
-                        className={cn(
-                          "size-1.5 rounded-full",
-                          col.key === "unassigned" ? "bg-slate-400" : col.key === "assigned" ? "bg-sky-300" : col.key === "infield" ? "bg-water" : col.key === "verified" ? "bg-verified" : "bg-sev-high"
-                        )}
-                        aria-hidden
-                      />
+                    <span className="flex items-center gap-2" title={col.hint}>
+                      <span className={cn("size-2 rounded-full", col.dot)} aria-hidden />
                       {col.title}
-                      <span className="data-mono ml-1 !text-[0.62rem] !tracking-normal !normal-case text-muted-foreground">{items.length}</span>
+                      <span className="data-mono text-[0.68rem] text-slate-400">
+                        <CountUp value={items.length} />
+                      </span>
                     </span>
                   }
                   dense
-                  className="w-full xl:flex-1 xl:min-w-[200px] min-h-0 overflow-hidden"
-                  bodyClassName="overflow-y-auto max-h-[46vh] xl:max-h-none xl:flex-1"
+                  className="overflow-hidden"
+                  bodyClassName="p-2 flex flex-col gap-2 overflow-y-auto max-h-[46vh] xl:max-h-none xl:flex-1"
                 >
                   {items.length === 0 ? (
-                    <p className="px-3 py-6 text-center text-[0.65rem] text-muted-foreground/60">{col.key === "unassigned" ? "nothing waiting for assignment" : "no events"}</p>
+                    <p className="px-3 py-6 text-center text-[0.65rem] text-slate-400">{col.key === "unassigned" ? "nothing waiting for assignment" : "no events"}</p>
                   ) : (
-                    <ul>
+                    <Stagger className="flex flex-col gap-2">
                       {items.map((e) => (
-                        <BoardCard key={e.id} event={e} onOpen={() => setOpenId(e.id)} />
+                        <StaggerItem key={e.id}>
+                          <BoardCard event={e} onOpen={() => setOpenId(e.id)} />
+                        </StaggerItem>
                       ))}
-                    </ul>
+                    </Stagger>
                   )}
                 </Panel>
               );
@@ -252,9 +253,11 @@ function EmptyStateBoard() {
   return (
     <div className="h-full grid place-items-center">
       <div className="text-center py-10">
-        <ClipboardList className="size-8 text-muted-foreground/50 mx-auto" aria-hidden />
-        <p className="mt-2 text-sm text-muted-foreground">No events to verify</p>
-        <p className="mt-1 text-xs text-muted-foreground/70 max-w-sm mx-auto">
+        <span className="grid size-12 place-items-center rounded-xl bg-blue-50 text-water mx-auto" aria-hidden>
+          <ClipboardCheck className="size-6" />
+        </span>
+        <p className="mt-3 text-sm font-medium text-slate-600">No events to verify</p>
+        <p className="mt-1 text-xs text-slate-500 max-w-sm mx-auto">
           Events appear here once the ingest pipeline creates them from citizen reports.
         </p>
       </div>
@@ -264,10 +267,10 @@ function EmptyStateBoard() {
 
 function BoardCard({ event, onOpen }: { event: EventSummary; onOpen: () => void }) {
   return (
-    <li className="hairline-b last:border-0">
+    <HoverLift>
       <button
         onClick={onOpen}
-        className="w-full text-left px-3 py-2.5 hover:bg-ink-850/50 transition-colors group focus:bg-ink-850/70"
+        className="w-full text-left rounded-xl border border-border/80 bg-white px-3 py-2.5 shadow-xs transition-colors hover:border-water/50 group"
         aria-label={`${event.code}: ${event.title}. Risk ${event.riskBand.toLowerCase()}, ${event.reportCount} reports.`}
       >
         <div className="flex items-center gap-2 flex-wrap">
@@ -281,15 +284,15 @@ function BoardCard({ event, onOpen }: { event: EventSummary; onOpen: () => void 
           )}
           <TimeAgo iso={event.lastActivityAt} />
         </div>
-        <p className="mt-1 text-[0.8rem] text-foreground/90 leading-snug line-clamp-1">{event.title}</p>
+        <p className="mt-1 text-[0.8rem] text-slate-700 leading-snug line-clamp-1">{event.title}</p>
         <div className="mt-1.5 flex items-center gap-3 flex-wrap">
           <SeverityTicks severity={event.severity} />
-          <span className="data-mono text-[0.62rem] text-muted-foreground">{event.reportCount} rep</span>
-          <span className="data-mono text-[0.62rem] text-muted-foreground">{event.agencyCode ?? "unassigned"}</span>
-          <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity micro-label !text-[0.5rem] text-water">open →</span>
+          <span className="data-mono text-[0.62rem] text-slate-500">{event.reportCount} rep</span>
+          <span className="data-mono text-[0.62rem] text-slate-500">{event.agencyCode ?? "unassigned"}</span>
+          <ChevronRight className="ml-auto size-3.5 text-slate-400 group-hover:text-water transition-colors" aria-hidden />
         </div>
       </button>
-    </li>
+    </HoverLift>
   );
 }
 
@@ -409,7 +412,7 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
 
   return (
     <Dialog open={!!eventId} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-2xl rounded-md p-0 gap-0 overflow-hidden">
+      <DialogContent className="sm:max-w-2xl rounded-xl p-0 gap-0 overflow-hidden">
         <div className="max-h-[85dvh] overflow-y-auto">
           <DialogHeader className="p-4 pb-0 pr-10">
             <DialogTitle className="data-mono !text-sm font-semibold text-water flex items-center gap-2 flex-wrap">
@@ -436,226 +439,234 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
             ) : ev ? (
               <>
                 {/* summary */}
-                <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-xs rounded-sm border border-border/70 bg-ink-850/30 p-3">
-                  <Fact label="severity" value={<SeverityTicks severity={ev.severity} />} />
-                  <Fact label="reports" value={<span className="data-mono">{ev.reportCount} ({ev.recurrenceCount} recurrences)</span>} />
-                  <Fact label="agency" value={<span className="data-mono">{ev.agencyCode ?? "unassigned"}</span>} />
-                  <Fact label="location" value={<span className="data-mono !text-[0.68rem]">{ev.lat.toFixed(4)}, {ev.lng.toFixed(4)}</span>} />
-                  <Fact label="first reported" value={<TimeAgo iso={ev.firstReportedAt} />} />
-                  <Fact label="last activity" value={<TimeAgo iso={ev.lastActivityAt} />} />
-                  <Fact label="rainfall 24/72h" value={<span className="data-mono">{Math.round(ev.rainfall24hMm ?? 0)} / {Math.round(ev.rainfall72hMm ?? 0)} mm</span>} />
-                  <Fact label="classification" value={ev.classificationProvider ? <span className="micro-label !text-[0.55rem]">{ev.classificationProvider.toLowerCase()}</span> : <span className="text-muted-foreground">n/a</span>} />
-                  <Fact label="risk assessed" value={ev.riskAssessedAt ? <TimeAgo iso={ev.riskAssessedAt} /> : <span className="text-muted-foreground">pending</span>} />
-                </dl>
-                <p className="text-xs text-muted-foreground -mt-2">{ev.locationText}</p>
+                <Reveal>
+                  <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50/70 p-3.5">
+                    <Fact label="severity" value={<SeverityTicks severity={ev.severity} />} />
+                    <Fact label="reports" value={<span className="data-mono">{ev.reportCount} ({ev.recurrenceCount} recurrences)</span>} />
+                    <Fact label="agency" value={<span className="data-mono">{ev.agencyCode ?? "unassigned"}</span>} />
+                    <Fact label="location" value={<span className="data-mono !text-[0.68rem]">{ev.lat.toFixed(4)}, {ev.lng.toFixed(4)}</span>} />
+                    <Fact label="first reported" value={<TimeAgo iso={ev.firstReportedAt} />} />
+                    <Fact label="last activity" value={<TimeAgo iso={ev.lastActivityAt} />} />
+                    <Fact label="rainfall 24/72h" value={<span className="data-mono">{Math.round(ev.rainfall24hMm ?? 0)} / {Math.round(ev.rainfall72hMm ?? 0)} mm</span>} />
+                    <Fact label="classification" value={ev.classificationProvider ? <span className="micro-label !text-[0.55rem]">{ev.classificationProvider.toLowerCase()}</span> : <span className="text-slate-500">n/a</span>} />
+                    <Fact label="risk assessed" value={ev.riskAssessedAt ? <TimeAgo iso={ev.riskAssessedAt} /> : <span className="text-slate-500">pending</span>} />
+                  </dl>
+                </Reveal>
+                <p className="text-xs text-slate-500 -mt-2">{ev.locationText}</p>
 
                 {/* stepper */}
-                <div className="pt-3 hairline-t">
-                  <p className="micro-label mb-2">verification progress</p>
-                  <StageStepper stages={[...reached]} />
-                </div>
+                <Reveal delay={0.06}>
+                  <div className="pt-3 hairline-t">
+                    <p className="micro-label mb-2.5">verification progress</p>
+                    <StageStepper stages={[...reached]} />
+                  </div>
+                </Reveal>
 
                 {/* timeline */}
-                <div className="pt-3 hairline-t">
-                  <p className="micro-label mb-2">recorded stages</p>
-                  {ev.verifications.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">No stages recorded yet. The first entry is typically dispatched once a team is on the way.</p>
-                  ) : (
-                    <ol>
-                      {ev.verifications.map((v, i) => (
-                        <li key={v.id} className="relative pl-4 pb-2.5 last:pb-0">
-                          <span
-                            className={cn("absolute left-0 top-1.5 size-2 rounded-full", v.stage === "VERIFIED" || v.stage === "CLOSED" ? "bg-verified" : "bg-water/80")}
-                            aria-hidden
-                          />
-                          {i < ev.verifications.length - 1 && <span className="absolute left-[3.5px] top-3.5 bottom-0 w-px bg-border" aria-hidden />}
-                          <div className="flex items-baseline gap-2 flex-wrap">
-                            <span className="micro-label !text-[0.52rem]">{v.stage.toLowerCase().replace(/_/g, " ")}</span>
-                            <span className="text-[0.62rem] text-muted-foreground">
-                              {v.verifiedBy.toLowerCase()} · {fmtDateTime(v.verifiedAt)}
-                            </span>
-                          </div>
-                          {v.notes && <p className="mt-0.5 text-xs text-foreground/80">{v.notes}</p>}
-                          {(v.waterDepthCm != null || v.observedSeverity) && (
-                            <p className="mt-0.5 data-mono text-[0.62rem] text-muted-foreground">
-                              {v.waterDepthCm != null && <>depth {v.waterDepthCm}cm </>}
-                              {v.observedSeverity && <>· observed {v.observedSeverity.toLowerCase()}</>}
-                            </p>
-                          )}
-                        </li>
-                      ))}
-                    </ol>
-                  )}
-                </div>
+                <Reveal delay={0.12}>
+                  <div className="pt-3 hairline-t">
+                    <p className="micro-label mb-2.5">recorded stages</p>
+                    {ev.verifications.length === 0 ? (
+                      <p className="text-xs text-slate-500">No stages recorded yet. The first entry is typically dispatched once a team is on the way.</p>
+                    ) : (
+                      <ol>
+                        {ev.verifications.map((v, i) => (
+                          <li key={v.id} className="relative pl-4 pb-2.5 last:pb-0">
+                            <span
+                              className={cn("absolute left-0 top-1.5 size-2 rounded-full", v.stage === "VERIFIED" || v.stage === "CLOSED" ? "bg-verified" : "bg-water-dim")}
+                              aria-hidden
+                            />
+                            {i < ev.verifications.length - 1 && <span className="absolute left-[3.5px] top-3.5 bottom-0 w-px bg-border" aria-hidden />}
+                            <div className="flex items-baseline gap-2 flex-wrap">
+                              <span className="micro-label !text-[0.52rem]">{v.stage.toLowerCase().replace(/_/g, " ")}</span>
+                              <span className="text-[0.62rem] text-slate-500">
+                                {v.verifiedBy.toLowerCase()} · {fmtDateTime(v.verifiedAt)}
+                              </span>
+                            </div>
+                            {v.notes && <p className="mt-0.5 text-xs text-slate-600">{v.notes}</p>}
+                            {(v.waterDepthCm != null || v.observedSeverity) && (
+                              <p className="mt-0.5 data-mono text-[0.62rem] text-slate-500">
+                                {v.waterDepthCm != null && <>depth {v.waterDepthCm}cm </>}
+                                {v.observedSeverity && <>· observed {v.observedSeverity.toLowerCase()}</>}
+                              </p>
+                            )}
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                  </div>
+                </Reveal>
 
                 {/* action area */}
-                <div className="pt-3 hairline-t">
-                  {ev.status === "CLOSED" ? (
-                    <div className="space-y-2">
-                      <p className="micro-label">reopen event · agency role</p>
-                      <p className="text-xs text-muted-foreground">
-                        Closed {ev.closedAt ? timeAgo(ev.closedAt) : ""}. New citizen reports at this location auto-reopen it via recurrence; agencies can reopen manually with a reason.
-                      </p>
-                      <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-end">
-                        <div className="flex-1 space-y-1">
-                          <Label htmlFor="reopen-reason" className="text-[0.65rem] sr-only">
-                            Reopen reason
+                <Reveal delay={0.18}>
+                  <div className="pt-3 hairline-t">
+                    {ev.status === "CLOSED" ? (
+                      <div className="space-y-2">
+                        <p className="micro-label">reopen event · agency role</p>
+                        <p className="text-xs text-slate-500">
+                          Closed {ev.closedAt ? timeAgo(ev.closedAt) : ""}. New citizen reports at this location auto-reopen it via recurrence; agencies can reopen manually with a reason.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-end">
+                          <div className="flex-1 space-y-1">
+                            <Label htmlFor="reopen-reason" className="text-[0.65rem] sr-only">
+                              Reopen reason
+                            </Label>
+                            <Textarea
+                              id="reopen-reason"
+                              value={reopenReason}
+                              onChange={(e) => setReopenReason(e.target.value)}
+                              placeholder="manual reopen reason, e.g. re-flooding reported via hotline"
+                              rows={2}
+                              className="rounded-lg bg-ink-900 border-border text-xs"
+                              maxLength={400}
+                            />
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-lg border-red-200 bg-red-50 text-sev-critical hover:bg-red-100 hover:text-sev-critical h-9 shrink-0"
+                            disabled={reopenReason.trim().length < 4 || reopen.isPending}
+                            onClick={() => reopen.mutate(reopenReason.trim())}
+                          >
+                            <RotateCcw className="size-3.5" aria-hidden />
+                            {reopen.isPending ? "Reopening…" : "Reopen"}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5">
+                        <p className="micro-label">record verification stage · field team role</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                          <div className="space-y-1">
+                            <Label className="text-[0.65rem]">Stage</Label>
+                            <Select value={stage} onValueChange={setStage}>
+                              <SelectTrigger className="h-8 rounded-lg bg-ink-900 border-border text-xs" aria-label="Verification stage">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {VERIF_STAGES.map((s) => (
+                                  <SelectItem key={s} value={s} className="text-xs">
+                                    {s.toLowerCase().replace(/_/g, " ")}
+                                    {reached.has(s) ? " · recorded" : s === nextStage ? " · next" : ""}
+                                    {s === "CLOSED" ? " (closes event)" : ""}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-[0.65rem]">Observed severity</Label>
+                            <Select value={observedSeverity} onValueChange={setObservedSeverity}>
+                              <SelectTrigger className="h-8 rounded-lg bg-ink-900 border-border text-xs" aria-label="Observed severity">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {["LOW", "MEDIUM", "HIGH", "CRITICAL"].map((s) => (
+                                  <SelectItem key={s} value={s} className="text-xs">
+                                    {s.toLowerCase()}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor="vf-depth" className="text-[0.65rem]">
+                              Water depth (cm)
+                            </Label>
+                            <Input
+                              id="vf-depth"
+                              inputMode="numeric"
+                              value={depth}
+                              onChange={(e) => setDepth(e.target.value.replace(/\D/g, ""))}
+                              placeholder="e.g. 35"
+                              className="h-8 rounded-lg bg-ink-900 border-border data-mono text-xs"
+                              maxLength={3}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label htmlFor="vf-notes" className="text-[0.65rem]">
+                            Field notes (optional)
                           </Label>
                           <Textarea
-                            id="reopen-reason"
-                            value={reopenReason}
-                            onChange={(e) => setReopenReason(e.target.value)}
-                            placeholder="manual reopen reason, e.g. re-flooding reported via hotline"
+                            id="vf-notes"
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
                             rows={2}
-                            className="bg-ink-900 border-border text-xs"
-                            maxLength={400}
+                            placeholder="what the team observed on site"
+                            className="rounded-lg bg-ink-900 border-border text-xs"
+                            maxLength={600}
                           />
                         </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-sev-high/40 text-sev-high hover:bg-sev-high/10 h-9 shrink-0"
-                          disabled={reopenReason.trim().length < 4 || reopen.isPending}
-                          onClick={() => reopen.mutate(reopenReason.trim())}
-                        >
-                          <RotateCcw className="size-3.5" aria-hidden />
-                          {reopen.isPending ? "Reopening…" : "Reopen"}
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2.5">
-                      <p className="micro-label">record verification stage · field team role</p>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                        <div className="space-y-1">
-                          <Label className="text-[0.65rem]">Stage</Label>
-                          <Select value={stage} onValueChange={setStage}>
-                            <SelectTrigger className="h-8 bg-ink-900 border-border text-xs" aria-label="Verification stage">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {VERIF_STAGES.map((s) => (
-                                <SelectItem key={s} value={s} className="text-xs">
-                                  {s.toLowerCase().replace(/_/g, " ")}
-                                  {reached.has(s) ? " · recorded" : s === nextStage ? " · next" : ""}
-                                  {s === "CLOSED" ? " (closes event)" : ""}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-[0.65rem]">Observed severity</Label>
-                          <Select value={observedSeverity} onValueChange={setObservedSeverity}>
-                            <SelectTrigger className="h-8 bg-ink-900 border-border text-xs" aria-label="Observed severity">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {["LOW", "MEDIUM", "HIGH", "CRITICAL"].map((s) => (
-                                <SelectItem key={s} value={s} className="text-xs">
-                                  {s.toLowerCase()}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-1">
-                          <Label htmlFor="vf-depth" className="text-[0.65rem]">
-                            Water depth (cm)
-                          </Label>
-                          <Input
-                            id="vf-depth"
-                            inputMode="numeric"
-                            value={depth}
-                            onChange={(e) => setDepth(e.target.value.replace(/\D/g, ""))}
-                            placeholder="e.g. 35"
-                            className="h-8 bg-ink-900 border-border data-mono text-xs"
-                            maxLength={3}
+
+                        <div>
+                          <input
+                            ref={fileRef}
+                            type="file"
+                            accept="image/*"
+                            className="sr-only"
+                            id="vf-photo"
+                            onChange={(e) => e.target.files?.[0] && onPhotoFile(e.target.files[0])}
                           />
-                        </div>
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label htmlFor="vf-notes" className="text-[0.65rem]">
-                          Field notes (optional)
-                        </Label>
-                        <Textarea
-                          id="vf-notes"
-                          value={notes}
-                          onChange={(e) => setNotes(e.target.value)}
-                          rows={2}
-                          placeholder="what the team observed on site"
-                          className="bg-ink-900 border-border text-xs"
-                          maxLength={600}
-                        />
-                      </div>
-
-                      <div>
-                        <input
-                          ref={fileRef}
-                          type="file"
-                          accept="image/*"
-                          className="sr-only"
-                          id="vf-photo"
-                          onChange={(e) => e.target.files?.[0] && onPhotoFile(e.target.files[0])}
-                        />
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="border-border h-8"
-                            disabled={photoBusy || verify.isPending}
-                            onClick={() => fileRef.current?.click()}
-                          >
-                            <Camera className="size-3.5" aria-hidden /> {photoBusy ? "Processing…" : photo ? "Replace photo" : "Attach photo"}
-                          </Button>
-                          {photo && (
-                            <Button type="button" variant="ghost" size="sm" className="h-7 text-[0.65rem] text-muted-foreground" onClick={() => setPhoto(null)}>
-                              <X className="size-3" aria-hidden /> Remove
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="rounded-lg border-border text-slate-600 hover:bg-ink-850 h-8"
+                              disabled={photoBusy || verify.isPending}
+                              onClick={() => fileRef.current?.click()}
+                            >
+                              <Camera className="size-3.5" aria-hidden /> {photoBusy ? "Processing…" : photo ? "Replace photo" : "Attach photo"}
                             </Button>
+                            {photo && (
+                              <Button type="button" variant="ghost" size="sm" className="h-7 text-[0.65rem] text-slate-500" onClick={() => setPhoto(null)}>
+                                <X className="size-3" aria-hidden /> Remove
+                              </Button>
+                            )}
+                            <span className="text-[0.62rem] text-slate-500">Optional. Downscaled to at most 1024px jpeg.</span>
+                          </div>
+                          {photoErr && (
+                            <p className="mt-1.5 text-[0.62rem] text-sev-high" role="alert">
+                              {photoErr}
+                            </p>
                           )}
-                          <span className="text-[0.62rem] text-muted-foreground">Optional. Downscaled to at most 1024px jpeg.</span>
+                          {photo && (
+                            <figure className="mt-2 flex items-center gap-3 rounded-xl border border-border/70 bg-white p-2.5 shadow-xs ring-1 ring-slate-200/60 max-w-xs">
+                              <div className="relative rounded-lg overflow-hidden border border-border/60 size-16 shrink-0 bg-slate-100">
+                                <img src={photo.dataUrl} alt="Field photo preview" className="size-full object-cover" />
+                              </div>
+                              <figcaption className="min-w-0 text-[0.62rem] text-slate-500">
+                                <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 text-verified px-2 py-0.5 micro-label !text-[0.52rem]">uploaded</span>
+                                <span className="block mt-1 truncate">{photo.name}</span>
+                              </figcaption>
+                            </figure>
+                          )}
                         </div>
-                        {photoErr && (
-                          <p className="mt-1.5 text-[0.62rem] text-sev-high" role="alert">
-                            {photoErr}
+
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                          <p className="text-[0.62rem] text-slate-500">
+                            Next expected: <span className="text-water">{(nextStage ?? "CLOSED").toLowerCase().replace(/_/g, " ")}</span>. Stages are validated in order by the server.
                           </p>
-                        )}
-                        {photo && (
-                          <figure className="mt-2 flex items-center gap-3 rounded-sm border border-border/70 bg-ink-850/30 p-2 max-w-xs">
-                            <div className="relative rounded-sm overflow-hidden border border-border/60 size-16 shrink-0 bg-ink-850">
-                              { }
-                              <img src={photo.dataUrl} alt="Field photo preview" className="size-full object-cover" />
-                            </div>
-                            <figcaption className="min-w-0 text-[0.62rem] text-muted-foreground">
-                              <span className="inline-flex rounded-sm border border-verified/30 bg-verified/8 text-verified px-1.5 py-0.5 micro-label !text-[0.52rem]">uploaded</span>
-                              <span className="block mt-1 truncate">{photo.name}</span>
-                            </figcaption>
-                          </figure>
-                        )}
+                          <Button size="sm" className="group relative overflow-hidden rounded-lg bg-water text-white hover:bg-water-dim h-8" disabled={verify.isPending} onClick={submitStage}>
+                            {verify.isPending ? "Recording…" : "Record stage"}
+                            <Shine />
+                          </Button>
+                        </div>
                       </div>
+                    )}
 
-                      <div className="flex items-center justify-between gap-3 flex-wrap">
-                        <p className="text-[0.62rem] text-muted-foreground">
-                          Next expected: <span className="text-water">{(nextStage ?? "CLOSED").toLowerCase().replace(/_/g, " ")}</span>. Stages are validated in order by the server.
-                        </p>
-                        <Button size="sm" className="bg-water text-ink-950 hover:bg-water/85 h-8" disabled={verify.isPending} onClick={submitStage}>
-                          {verify.isPending ? "Recording…" : "Record stage"}
-                        </Button>
-                      </div>
+                    {formError && <ErrorNote className="mt-3" message={formError} />}
+
+                    <div className="mt-4 pt-3 hairline-t flex items-center justify-between gap-2">
+                      <span className="micro-label !text-[0.5rem] text-muted-foreground/70">mutations post as FIELD_TEAM / AGENCY demo roles</span>
+                      <Button variant="outline" size="sm" className="rounded-lg border-border text-slate-600 hover:bg-ink-850 h-7 text-[0.65rem]" onClick={() => ev && navigate("event", ev.code)}>
+                        Full dossier
+                      </Button>
                     </div>
-                  )}
-
-                  {formError && <ErrorNote className="mt-3" message={formError} />}
-
-                  <div className="mt-4 pt-3 hairline-t flex items-center justify-between gap-2">
-                    <span className="micro-label !text-[0.5rem] text-muted-foreground/60">mutations post as FIELD_TEAM / AGENCY demo roles</span>
-                    <Button variant="outline" size="sm" className="border-border h-7 text-[0.65rem]" onClick={() => ev && navigate("event", ev.code)}>
-                      Full dossier
-                    </Button>
                   </div>
-                </div>
+                </Reveal>
               </>
             ) : null}
           </div>
@@ -669,7 +680,7 @@ function Fact({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5 min-w-0">
       <dt className="micro-label !text-[0.5rem]">{label}</dt>
-      <dd className="flex items-center min-w-0 text-foreground/90">{value}</dd>
+      <dd className="flex items-center min-w-0 text-slate-700">{value}</dd>
     </div>
   );
 }
@@ -689,9 +700,9 @@ function StageStepper({ stages }: { stages: string[] }) {
                 className={cn("size-4 rounded-full border-2 grid place-items-center transition-colors", done ? "bg-verified border-verified" : current ? "border-water" : "border-border")}
                 aria-hidden
               >
-                {done && <span className="size-1.5 rounded-full bg-ink-950" />}
+                {done && <Check className="size-2.5 text-white" aria-hidden />}
               </span>
-              <span className={cn("micro-label !text-[0.44rem] text-center leading-tight", done ? "text-verified/90" : current ? "text-water" : "text-muted-foreground/60")}>
+              <span className={cn("micro-label !text-[0.44rem] text-center leading-tight", done ? "text-verified" : current ? "text-water" : "text-slate-400")}>
                 {s.toLowerCase().replace(/_/g, " ")}
               </span>
             </div>

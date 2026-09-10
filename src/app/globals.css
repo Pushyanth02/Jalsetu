@@ -4,15 +4,16 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ============================================================
-   DELHI URBAN EVENT INTELLIGENCE — design tokens
-   Dark ops-console, single water-teal accent, evidence-first.
-   One theme: dark (control-room convention, page theme lock).
+   JALSETU — design tokens (light command-center theme)
+   Replicates the reference design: dark charcoal sidebar,
+   light content surface (#f6f8fb), white cards, blue accent,
+   soft shadows, 12px card radius. Map stays dark (ops canvas).
    ============================================================ */
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -43,12 +44,12 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 4px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  /* domain colors: severity ramp + status + water accent */
+  /* domain colors: severity ramp + status + water accent (light-surface variants) */
   --color-sev-low: var(--sev-low);
   --color-sev-moderate: var(--sev-moderate);
   --color-sev-high: var(--sev-high);
@@ -61,68 +62,74 @@
   --color-ink-800: var(--ink-800);
   --color-hairline: var(--hairline);
   --color-verified: var(--verified);
+
+  /* dark sidebar surfaces (charcoal navy, always dark regardless of theme) */
+  --color-sb-900: var(--sb-900);
+  --color-sb-850: var(--sb-850);
+  --color-sb-800: var(--sb-800);
+  --color-sb-750: var(--sb-750);
 }
 
 :root {
-  --radius: 0.375rem; /* sharp, operational — not rounded SaaS */
+  --radius: 0.75rem; /* 12px cards per reference design */
 
-  /* base ink (cool near-black, slight teal cast; never #000) */
-  --ink-950: oklch(0.145 0.012 200);
-  --ink-900: oklch(0.18 0.013 200);
-  --ink-850: oklch(0.215 0.014 200);
-  --ink-800: oklch(0.25 0.015 200);
+  /* page + surfaces: light, cool, calm */
+  --ink-950: #f6f8fb;   /* app background */
+  --ink-900: #ffffff;   /* card / panel surface */
+  --ink-850: #f1f5f9;   /* hover / subtle fill */
+  --ink-800: #e2e8f0;   /* track / divider fill */
 
-  --hairline: oklch(0.32 0.015 200 / 0.55);
+  --hairline: #e2e8f0;
 
-  /* water accent: calm monsoon teal (single accent, locked) */
-  --water: oklch(0.76 0.105 183);
-  --water-dim: oklch(0.62 0.08 185);
+  /* water accent: command blue (single accent, locked) */
+  --water: #2563eb;     /* blue-600: text + fills */
+  --water-dim: #3b82f6; /* blue-500: icons, bars */
 
-  /* severity ramp */
-  --sev-low: oklch(0.62 0.02 220);
-  --sev-moderate: oklch(0.74 0.12 80);
-  --sev-high: oklch(0.68 0.16 45);
-  --sev-critical: oklch(0.62 0.19 25);
-  --verified: oklch(0.72 0.12 165);
+  /* severity ramp: readable on light surfaces */
+  --sev-low: #64748b;       /* slate-500 */
+  --sev-moderate: #d97706;  /* amber-600 */
+  --sev-high: #ea580c;      /* orange-600 */
+  --sev-critical: #dc2626;  /* red-600 */
+  --verified: #059669;      /* emerald-600 */
 
-  /* shadcn semantic mapping */
+  /* dark sidebar: charcoal navy per reference */
+  --sb-900: #111527;
+  --sb-850: #181e33;
+  --sb-800: #212942;
+  --sb-750: #2b3450;
+
+  /* shadcn semantic mapping (light) */
   --background: var(--ink-950);
-  --foreground: oklch(0.93 0.005 200);
-  --card: var(--ink-900);
-  --card-foreground: oklch(0.93 0.005 200);
-  --popover: var(--ink-850);
-  --popover-foreground: oklch(0.93 0.005 200);
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
   --primary: var(--water);
-  --primary-foreground: oklch(0.16 0.02 200);
+  --primary-foreground: #ffffff;
   --secondary: var(--ink-850);
-  --secondary-foreground: oklch(0.88 0.005 200);
-  --muted: var(--ink-900);
-  --muted-foreground: oklch(0.66 0.01 200);
+  --secondary-foreground: #334155;
+  --muted: var(--ink-850);
+  --muted-foreground: #64748b;
   --accent: var(--ink-850);
-  --accent-foreground: oklch(0.93 0.005 200);
+  --accent-foreground: #0f172a;
   --destructive: var(--sev-critical);
-  --border: var(--hairline);
-  --input: oklch(0.3 0.015 200);
+  --border: #e2e8f0;
+  --input: #cbd5e1;
   --ring: var(--water);
-  --chart-1: var(--water);
-  --chart-2: var(--sev-moderate);
-  --chart-3: var(--sev-high);
-  --chart-4: var(--sev-critical);
-  --chart-5: oklch(0.66 0.01 200);
-  --sidebar: var(--ink-900);
-  --sidebar-foreground: oklch(0.88 0.005 200);
+  --chart-1: #2563eb;
+  --chart-2: #d97706;
+  --chart-3: #ea580c;
+  --chart-4: #dc2626;
+  --chart-5: #64748b;
+  --sidebar: var(--sb-900);
+  --sidebar-foreground: #e2e8f0;
   --sidebar-primary: var(--water);
-  --sidebar-primary-foreground: oklch(0.16 0.02 200);
-  --sidebar-accent: var(--ink-850);
-  --sidebar-accent-foreground: oklch(0.93 0.005 200);
-  --sidebar-border: var(--hairline);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--sb-800);
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #232b47;
   --sidebar-ring: var(--water);
-}
-
-/* The application is dark-locked: the .dark class is always applied. */
-.dark {
-  --background: var(--ink-950);
-  --foreground: oklch(0.93 0.005 200);
 }
 
 @layer base {
@@ -130,14 +137,14 @@
     @apply border-border outline-ring/50;
   }
   html {
-    color-scheme: dark;
+    color-scheme: light;
   }
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "tnum" 1; /* tabular numerals for ops data */
   }
   ::selection {
-    background: oklch(0.76 0.105 183 / 0.3);
+    background: rgba(37, 99, 235, 0.18);
   }
   :focus-visible {
     @apply outline-2 outline-offset-1 outline-ring;
@@ -155,16 +162,17 @@
     display: none;
   }
   .font-display {
-    font-family: var(--font-space-grotesk), var(--font-plex-sans), sans-serif;
+    font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.02em;
   }
-  /* micro label: mono, uppercase, tracked — the instrument voice */
+  /* micro label: mono, uppercase, tracked - the instrument voice */
   .micro-label {
     font-family: var(--font-plex-mono), monospace;
     font-size: 0.625rem;
     line-height: 1.4;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: oklch(0.6 0.012 200);
+    color: #64748b;
   }
   .data-mono {
     font-family: var(--font-plex-mono), monospace;
@@ -176,58 +184,89 @@
   .hairline-t {
     border-top: 1px solid var(--hairline);
   }
+  .hairline-r {
+    border-right: 1px solid var(--hairline);
+  }
+  .hairline-l {
+    border-left: 1px solid var(--hairline);
+  }
   .panel {
-    background: oklch(0.18 0.013 200);
+    background: #ffffff;
     border: 1px solid var(--hairline);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.04);
+  }
+  .card-hover {
+    transition: box-shadow 200ms ease, transform 200ms ease;
+  }
+  .card-hover:hover {
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.05);
+  }
+  /* OriginKit-style shimmer skeleton */
+  .shimmer {
+    background: linear-gradient(100deg, #eef2f7 40%, #f8fafc 50%, #eef2f7 60%);
+    background-size: 200% 100%;
+    animation: shimmer-slide 1.4s infinite linear;
   }
 }
 
-/* --- scrollbars: thin, instrument-like ------------------------------------- */
+@keyframes shimmer-slide {
+  0% { background-position: 150% 0; }
+  100% { background-position: -50% 0; }
+}
+
+/* --- scrollbars: thin, light ------------------------------------------------ */
 * {
   scrollbar-width: thin;
-  scrollbar-color: oklch(0.35 0.015 200) transparent;
+  scrollbar-color: #cbd5e1 transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: oklch(0.32 0.015 200);
+  background: #cbd5e1;
   border-radius: 4px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.42 0.015 200);
+  background: #94a3b8;
 }
 
-/* --- map marker primitives (HTML markers over MapLibre) --------------------- */
+/* --- map marker + popup primitives (HTML markers over MapLibre) -------------
+   Popups render as light cards over the dark ops basemap, matching the
+   reference design (white tooltip with dark text on dark map). */
 
 .maplibregl-popup-content {
-  background: oklch(0.18 0.013 200) !important;
-  color: oklch(0.93 0.005 200) !important;
-  border: 1px solid var(--hairline) !important;
-  border-radius: 6px !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
   padding: 0 !important;
-  box-shadow: 0 8px 24px oklch(0.05 0.01 200 / 0.6) !important;
+  box-shadow: 0 10px 32px rgba(15, 23, 42, 0.22) !important;
 }
 .maplibregl-popup-tip {
-  border-top-color: oklch(0.18 0.013 200) !important;
-  border-bottom-color: oklch(0.18 0.013 200) !important;
+  border-top-color: #ffffff !important;
+  border-bottom-color: #ffffff !important;
 }
 .maplibregl-ctrl-attrib {
-  background: oklch(0.145 0.012 200 / 0.8) !important;
-  color: oklch(0.6 0.012 200) !important;
+  background: rgba(17, 21, 39, 0.75) !important;
+  color: #94a3b8 !important;
   font-size: 10px !important;
 }
 .maplibregl-ctrl-attrib a {
-  color: oklch(0.66 0.012 200) !important;
+  color: #a5b4cf !important;
 }
 .maplibregl-ctrl-group {
-  background: oklch(0.18 0.013 200) !important;
-  border: 1px solid var(--hairline) !important;
-  border-radius: 4px !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12) !important;
 }
 .maplibregl-ctrl-group button {
-  filter: invert(0.85);
+  width: 28px !important;
+  height: 28px !important;
+}
+.maplibregl-ctrl-group button span {
+  filter: none !important;
 }
 
 .event-marker {
@@ -237,8 +276,8 @@
   width: 22px;
   height: 22px;
   border-radius: 999px;
-  border: 1.5px solid oklch(0.13 0.012 200 / 0.9);
-  box-shadow: 0 0 0 1.5px oklch(0.93 0.005 200 / 0.18), 0 2px 8px oklch(0.08 0.01 200 / 0.55);
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1.5px rgba(15, 23, 42, 0.35), 0 2px 8px rgba(8, 12, 28, 0.55);
   transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
   background-clip: padding-box;
 }
@@ -249,20 +288,20 @@
 }
 .event-marker.is-selected {
   transform: scale(1.35);
-  box-shadow: 0 0 0 2.5px var(--water), 0 2px 10px oklch(0.08 0.01 200 / 0.6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.9), 0 2px 10px rgba(8, 12, 28, 0.6);
 }
 .cluster-marker {
   cursor: pointer;
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: oklch(0.24 0.03 200 / 0.92);
-  border: 1px solid oklch(0.45 0.06 190 / 0.8);
-  color: oklch(0.93 0.005 200);
+  background: rgba(33, 41, 66, 0.92);
+  border: 1px solid rgba(96, 122, 194, 0.75);
+  color: #f1f5f9;
   font-family: var(--font-plex-mono), monospace;
   font-size: 11px;
   font-variant-numeric: tabular-nums;
-  box-shadow: 0 2px 10px oklch(0.08 0.01 200 / 0.5);
+  box-shadow: 0 2px 10px rgba(8, 12, 28, 0.5);
   transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .cluster-marker:hover,
