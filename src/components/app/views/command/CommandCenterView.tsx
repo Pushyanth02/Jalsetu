@@ -12,6 +12,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { CountUp, SpotlightCard, Stagger, StaggerItem, Reveal, PulseDot, HoverLift } from "@/components/motion/kit";
 import { useState } from "react";
 import { assetPath } from "@/lib/client/assets";
+import { PALETTE } from "@/lib/palette";
 
 // COMMAND CENTER - replicates the reference design: KPI stat cards, live
 // operations map with floating layers panel, recent reports + operational
@@ -656,19 +657,19 @@ function RainfallStrip({ weatherQ, nearest }: { weatherQ: { data?: WeatherRespon
               <AreaChart data={series} margin={{ top: 4, right: 8, left: 8, bottom: 0 }}>
                 <defs>
                   <linearGradient id="rainFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#2dd4bf" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#2dd4bf" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor={PALETTE.aqua} stopOpacity={0.35} />
+                    <stop offset="100%" stopColor={PALETTE.aqua} stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="label" tick={false} axisLine={false} tickLine={false} />
-                <YAxis width={28} tick={{ fill: "#7a88b8", fontSize: 9, fontFamily: "var(--font-plex-mono)" }} axisLine={false} tickLine={false} />
+                <YAxis width={28} tick={{ fill: PALETTE.textDim, fontSize: 9, fontFamily: "var(--font-plex-mono)" }} axisLine={false} tickLine={false} />
                 <Tooltip
-                  contentStyle={{ background: "#0c142b", border: "1px solid #24406b", borderRadius: 8, fontSize: 11, fontFamily: "var(--font-plex-mono)", color: "#e9eeff", boxShadow: "0 8px 24px -8px rgba(0,0,0,0.9)" }}
-                  labelStyle={{ color: "#8794c2" }}
-                  itemStyle={{ color: "#2dd4bf" }}
+                  contentStyle={{ background: PALETTE.popover, border: `1px solid ${PALETTE.input}`, borderRadius: 8, fontSize: 11, fontFamily: "var(--font-plex-mono)", color: PALETTE.foreground, boxShadow: "0 8px 24px -8px rgba(0,0,0,0.9)" }}
+                  labelStyle={{ color: PALETTE.textMuted }}
+                  itemStyle={{ color: PALETTE.aqua }}
                   formatter={(v: number) => [`${v} mm`, "avg 3h rain"]}
                 />
-                <Area type="monotone" dataKey="mm" stroke="#2dd4bf" strokeWidth={1.8} fill="url(#rainFill)" animationDuration={900} />
+                <Area type="monotone" dataKey="mm" stroke={PALETTE.aqua} strokeWidth={1.8} fill="url(#rainFill)" animationDuration={900} />
               </AreaChart>
             </ResponsiveContainer>
           </div>

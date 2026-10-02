@@ -836,7 +836,7 @@ function StepIssue(p: {
             ? descLen < 12
               ? `At least 12 characters needed (${descLen} so far).`
               : "Description too long (max 600 characters)."
-            : "12 to 600 characters. The AI classifier reads this text, so concrete details help."}
+            : "12 to 600 characters. The classifier reads this text, so concrete details help."}
         </p>
       </div>
     </div>
@@ -1069,7 +1069,7 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
               {outcome.classification.summary}
             </p>
             {outcome.classification.fallbackUsed && (
-              <p className="mt-1.5 text-[0.62rem] text-sev-moderate">Deterministic fallback was used for this classification (AI provider unavailable).</p>
+              <p className="mt-1.5 text-[0.62rem] text-sev-moderate">Deterministic fallback was used for this classification (remote model unavailable).</p>
             )}
           </div>
 

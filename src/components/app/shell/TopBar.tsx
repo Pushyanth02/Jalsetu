@@ -99,7 +99,7 @@ export function TopBar() {
           {ai && (
             <span
               className="hidden xl:inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 micro-label !text-[0.58rem] text-amber-400 whitespace-nowrap"
-              title={ai.available ? `AI provider: ${ai.modelId} (${ai.configuredBy})` : "AI provider unavailable — deterministic fallback active"}
+              title={ai.available ? `Classifier: ${ai.modelId} (${ai.configuredBy})` : "Remote model unavailable — deterministic fallback active"}
             >
               <PulseDot size={6} color={ai.available ? "bg-emerald-500" : "bg-amber-500"} />
               <span className="hidden 2xl:inline">{ai.provider === "GLM" ? "GLM online" : ai.provider === "MOCK" ? "deterministic" : ai.provider.toLowerCase()}</span>

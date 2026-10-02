@@ -23,7 +23,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "command", label: "Command Center", shortLabel: "Command", icon: LayoutDashboard, group: "ops" },
   { id: "map", label: "Waterlogging Map", shortLabel: "Map", icon: MapIcon, group: "ops" },
   { id: "event", label: "Urban Events", shortLabel: "Events", icon: FileSearch, group: "ops" },
-  { id: "investigate", label: "AI Investigation", shortLabel: "Investigate", icon: Activity, group: "flow" },
+  { id: "investigate", label: "Investigation Tools", shortLabel: "Investigate", icon: Activity, group: "flow" },
   { id: "responsibility", label: "Responsibility", shortLabel: "Links", icon: Network, group: "flow" },
   { id: "verify", label: "Field Verification", shortLabel: "Verify", icon: ClipboardCheck, group: "flow" },
   { id: "report", label: "Citizen Report", shortLabel: "Report", icon: Flag, group: "flow" },

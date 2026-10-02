@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { cn } from "@/lib/utils";
+import { PALETTE } from "@/lib/palette";
 import {
   FlaskConical, GitMerge, Network, Clock, CheckCircle2, RotateCcw,
   BookOpen, MapPin, RefreshCw, ArrowRight, Scale, BarChart3, Database,
@@ -70,26 +71,26 @@ interface ProposedData extends AnalyticsData {
 }
 
 // chart + UI colour constants (locked Monsoon ink palette: aqua signal on indigo)
-const BLUE = "#2dd4bf";      // proposed / primary series (aqua)
-const SLATE_BAR = "#46568a"; // baseline series (muted indigo)
-const GRID_STROKE = "#1a2440";
-const TICK = { fill: "#7a88b8", fontSize: 9, fontFamily: "var(--font-plex-mono)" };
+const BLUE = PALETTE.aqua;          // proposed / primary series
+const SLATE_BAR = PALETTE.textFaint; // baseline series (muted indigo)
+const GRID_STROKE = PALETTE.hairline;
+const TICK = { fill: PALETTE.textDim, fontSize: 9, fontFamily: "var(--font-plex-mono)" };
 const TOOLTIP_STYLE = {
-  background: "#0c142b",
-  border: "1px solid #24406b",
+  background: PALETTE.popover,
+  border: `1px solid ${PALETTE.input}`,
   borderRadius: 8,
   fontSize: 11,
   fontFamily: "var(--font-plex-mono)",
-  color: "#e9eeff",
+  color: PALETTE.foreground,
   boxShadow: "0 8px 24px -8px rgba(0,0,0,0.9)",
 };
-const LABEL_STYLE = { color: "#8794c2" };
-const CURSOR_FILL = { fill: "rgba(45, 212, 191, 0.06)" };
+const LABEL_STYLE = { color: PALETTE.textMuted };
+const CURSOR_FILL = { fill: `${PALETTE.aqua}0f` };
 
 const MATCH_RADIUS_M = 250;
 
 // API strings may carry em/en dashes; the UI voice uses hyphens only.
-const clean = (s: string) => s.replace(/-/g, "-").replace(/-/g, "-");
+const clean = (s: string) => s.replace(/[\u2010-\u2015\u2212]/g, "-");
 
 const FALLBACK_LABEL =
   "SYNTHETIC DEMO EVALUATION - computed on seeded pilot data with known ground truth. NOT measured real-world performance.";

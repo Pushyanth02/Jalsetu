@@ -4,11 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   Droplets, Radar, FileSearch, Network, ClipboardCheck, Flag, BarChart3,
-  Activity, ArrowRight, MapPin, ShieldCheck, Sparkles, Github, Menu, X,
+  Activity, ArrowRight, MapPin, ShieldCheck, Tags, FileText, Menu, X,
   Layers, CloudRain, Building2, Clock3, CheckCircle2, AlertTriangle,
 } from "lucide-react";
 import { useState } from "react";
 import { navigate, type ViewId } from "@/lib/client/store";
+import { assetPath, assetSrcSet } from "@/lib/client/assets";
 import { apiGet, type OverviewResponse, type HotspotResponse } from "@/lib/client/api";
 import { Reveal, Stagger, StaggerItem, CountUp, SpotlightCard, PulseDot, AnimatedProgress } from "@/components/motion/kit";
 import { cn } from "@/lib/utils";
@@ -24,7 +25,7 @@ import { cn } from "@/lib/utils";
 
 const PIPELINE = [
   { icon: Flag, step: "01", title: "Citizens report", body: "Location, depth, description and a photo in under a minute. No account, no app install." },
-  { icon: Sparkles, step: "02", title: "AI classifies", body: "Category, severity and confidence, always with the provider and model version shown." },
+  { icon: Tags, step: "02", title: "Rules classify", body: "A deterministic classifier assigns category, severity and confidence — provider and model version always shown." },
   { icon: Layers, step: "03", title: "Events merge", body: "Near-duplicate reports cluster by time and space into a single urban event." },
   { icon: CloudRain, step: "04", title: "Evidence fuses", body: "Rainfall, drains, pumps, jurisdiction and recurrence history enrich each event." },
   { icon: Radar, step: "05", title: "Risk is scored", body: "A transparent 7-factor rule model returns 0-100 with the contribution of every factor." },
@@ -32,11 +33,35 @@ const PIPELINE = [
   { icon: ClipboardCheck, step: "07", title: "Field verifies", body: "Crews close the loop with photos and depth readings. Recurrence reopens the event." },
 ] as const;
 
+const GALLERY = [
+  {
+    title: "Overflowing storm drain",
+    caption: "Drain overflow · classified DRAIN_OVERFLOW",
+    webp: "/img/drain-overflow.webp",
+    png: "/img/drain-overflow.png",
+    alt: "Storm drain overflowing onto a street during heavy rain (synthetic demo image)",
+  },
+  {
+    title: "Waterlogged street",
+    caption: "Standing water · classified WATERLOGGING",
+    webp: "/img/street-flood.webp",
+    png: "/img/street-flood.png",
+    alt: "Street covered with standing rain water (synthetic demo image)",
+  },
+  {
+    title: "Flooded underpass",
+    caption: "Underpass ponding · classified WATERLOGGING",
+    webp: "/img/ito-underpass.webp",
+    png: "/img/ito-underpass.png",
+    alt: "Road underpass flooded with standing water (synthetic demo image)",
+  },
+] as const;
+
 const VIEWS: { id: ViewId; label: string; body: string; icon: typeof Droplets; group: string }[] = [
   { id: "command", label: "Command Center", body: "Live KPIs, ops map, rainfall context and the event queue on one screen.", icon: Droplets, group: "Operations" },
   { id: "map", label: "Waterlogging Map", body: "Every event on a keyless map. Filter by risk, status, category and time.", icon: MapPin, group: "Operations" },
   { id: "event", label: "Event Dossier", body: "The full evidence chain for one event, from first report to field closure.", icon: FileSearch, group: "Operations" },
-  { id: "investigate", label: "AI Investigation", body: "Classification, duplicate clustering and risk advisory with full provenance.", icon: Activity, group: "Evidence flow" },
+  { id: "investigate", label: "Investigation Tools", body: "Classification, duplicate clustering and risk advisory with full provenance.", icon: Activity, group: "Evidence flow" },
   { id: "responsibility", label: "Responsibility", body: "Which agency owns which asset, and the routing chain that decided it.", icon: Network, group: "Evidence flow" },
   { id: "verify", label: "Field Verification", body: "Close the loop from routed action to verified ground truth.", icon: ClipboardCheck, group: "Evidence flow" },
   { id: "report", label: "Citizen Report", body: "A five-step guided report with a tracking reference you can follow.", icon: Flag, group: "Evidence flow" },
@@ -63,7 +88,7 @@ export function LandingView() {
             className="flex items-center gap-2.5 rounded-lg text-left"
             aria-label="JalSetu home"
           >
-            <img src="/img/jalsetu-mark.svg" alt="" width={32} height={32} className="size-8 shrink-0 rounded-[9px]" />
+            <img src={assetPath("/img/jalsetu-mark.svg")} alt="" width={32} height={32} className="size-8 shrink-0 rounded-[9px]" />
             <span className="min-w-0">
               <span className="block font-display text-[0.98rem] font-bold leading-none tracking-tight text-foreground">JalSetu</span>
               <span className="mt-0.5 hidden text-[0.6rem] leading-tight text-muted-foreground xs:block">Delhi Waterlogging Intelligence</span>
@@ -319,6 +344,55 @@ export function LandingView() {
             </Stagger>
           </div>
         ))}
+      </section>
+
+      {/* ---------------- field evidence gallery ---------------- */}
+      <section className="content-wrap px-4 py-16 sm:px-6 sm:py-24">
+        <Reveal>
+          <p className="micro-label !text-aqua-dim">Field evidence</p>
+          <h2 className="mt-3 max-w-2xl font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.4rem]">
+            What the classifier actually sees.
+          </h2>
+          <p className="mt-4 max-w-xl text-[0.95rem] leading-relaxed text-slate-600">
+            Report photos arrive as evidence and are sorted into the same
+            categories the console uses. These are illustrative synthetic
+            images from the demo dataset — no real citizens or streets.
+          </p>
+        </Reveal>
+
+        <Stagger className="mt-10 grid gap-4 sm:grid-cols-3">
+          {GALLERY.map((g) => (
+            <StaggerItem key={g.webp}>
+              <figure className="group panel h-full overflow-hidden rounded-2xl">
+                <div className="relative aspect-16/9 overflow-hidden bg-ink-850">
+                  <picture>
+                    <source srcSet={assetSrcSet(`${g.webp} 560w`)} type="image/webp" sizes="(min-width: 640px) 33vw, 100vw" />
+                    <img
+                      src={assetPath(g.png)}
+                      alt={g.alt}
+                      width={560}
+                      height={320}
+                      loading="lazy"
+                      decoding="async"
+                      className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                  </picture>
+                  <div className="absolute inset-0 bg-linear-to-t from-ink-950/75 via-ink-950/10 to-transparent" aria-hidden />
+                  <span className="micro-label absolute bottom-2.5 left-3 !text-[0.5rem] text-aqua-dim">
+                    synthetic · demo
+                  </span>
+                </div>
+                <figcaption className="px-4 py-3">
+                  <span className="block text-[0.86rem] font-semibold text-foreground">{g.title}</span>
+                  <span className="mt-0.5 block text-[0.72rem] text-slate-500">{g.caption}</span>
+                </figcaption>
+              </figure>
+            </StaggerItem>
+          ))}
+        </Stagger>
       </section>
 
       {/* ---------------- evidence ---------------- */}
@@ -617,7 +691,7 @@ function LandingFooter({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
     {
       title: "Evidence flow",
       links: [
-        { label: "AI Investigation", view: "investigate" as ViewId },
+        { label: "Investigation Tools", view: "investigate" as ViewId },
         { label: "Responsibility", view: "responsibility" as ViewId },
         { label: "Field Verification", view: "verify" as ViewId },
         { label: "Citizen Report", view: "report" as ViewId },
@@ -637,7 +711,7 @@ function LandingFooter({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       <div className="content-wrap grid gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.4fr_repeat(3,1fr)]">
         <div>
           <div className="flex items-center gap-2.5">
-            <img src="/img/jalsetu-mark.svg" alt="" width={30} height={30} className="size-[30px] rounded-lg" />
+            <img src={assetPath("/img/jalsetu-mark.svg")} alt="" width={30} height={30} className="size-[30px] rounded-lg" />
             <span className="font-display text-[0.95rem] font-bold text-foreground">JalSetu</span>
           </div>
           <p className="mt-3 max-w-xs text-[0.82rem] leading-relaxed text-slate-600">
@@ -676,12 +750,12 @@ function LandingFooter({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
           <span className="text-slate-400">Delhi, India</span>
           <span className="hidden xs:inline">Datasets licensed CC-BY-4.0</span>
           <a
-            href="/llms.txt"
+            href={assetPath("/llms.txt")}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 rounded px-1 py-1 transition-colors hover:text-aqua"
           >
-            <Github className="size-3" aria-hidden />
+            <FileText className="size-3" aria-hidden />
             For AI assistants
           </a>
           <span className="ml-auto data-mono hidden lg:inline">No backend · no API keys · no tracking</span>

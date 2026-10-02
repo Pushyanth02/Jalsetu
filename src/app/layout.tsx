@@ -28,7 +28,7 @@ const plexMono = IBM_Plex_Mono({
 
 const TITLE = "JalSetu · Delhi Waterlogging Intelligence";
 const DESCRIPTION =
-  "Interactive research prototype for Delhi monsoon flooding: report waterlogging, watch AI fuse citizen reports, rainfall, drains and infrastructure into risk-scored events, and track field verification to closure. Bounded Delhi pilot with clearly labelled synthetic demo data.";
+  "Interactive research prototype for Delhi monsoon flooding: report waterlogging, watch deterministic rules fuse citizen reports, rainfall, drains and infrastructure into risk-scored events, and track field verification to closure. Bounded Delhi pilot with clearly labelled synthetic demo data.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

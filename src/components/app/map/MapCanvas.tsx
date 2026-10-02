@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import type { EventSummary, HotspotResponse, JurisdictionResponse, AssetResponse, WeatherResponse } from "@/lib/client/api";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { severityFill, eventPopupHTML, bindPopupDelegation, latLngCircle } from "./map-utils";
+import { PALETTE } from "@/lib/palette";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 // Keyless MapLibre GL fallback engine: raster dark basemap (Esri, no API key),
@@ -37,7 +38,7 @@ export const BASEMAP_STYLE: StyleSpecification = {
     },
   },
   layers: [
-    { id: "background", type: "background", paint: { "background-color": "#05080f" } },
+    { id: "background", type: "background", paint: { "background-color": PALETTE.canvas } },
     { id: "basemap", type: "raster", source: "esri-dark-base", paint: { "raster-opacity": 0.9, "raster-brightness-max": 0.72 } },
     { id: "basemap-labels", type: "raster", source: "esri-dark-labels", paint: { "raster-opacity": 0.85 } },
   ],
@@ -369,8 +370,8 @@ export function MapCanvas({ events, hotspots, jurisdictions, assets, weather, cl
     const el = document.createElement("div");
     el.className = "station-marker";
     const scale = Math.min(2.2, 0.7 + station.totalMm / 120);
-    el.innerHTML = `<div style="width:${28 * scale}px;height:${28 * scale}px;border-radius:999px;background:radial-gradient(circle, rgba(59,130,246,0.55) 0%, rgba(59,130,246,0.2) 55%, transparent 70%);display:grid;place-items:center;position:relative">
-      <span style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-family:var(--font-plex-mono),monospace;font-size:9px;color:#93a6c9;white-space:nowrap" class="st-label">${Math.round(station.totalMm)}mm</span>
+    el.innerHTML = `<div style="width:${28 * scale}px;height:${28 * scale}px;border-radius:999px;background:radial-gradient(circle, ${PALETTE.aqua}8c 0%, ${PALETTE.aqua}33 55%, transparent 70%);display:grid;place-items:center;position:relative">
+      <span style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-family:var(--font-plex-mono),monospace;font-size:9px;color:${PALETTE.textMuted};white-space:nowrap" class="st-label">${Math.round(station.totalMm)}mm</span>
     </div>`;
     el.title = `${station.name} - ${station.totalMm}mm in window (synthetic)`;
     const marker = new Marker({ element: el, anchor: "center" }).setLngLat([station.lng, station.lat]).addTo(map);
@@ -471,7 +472,7 @@ function addStaticLayers(map: MlMap) {
     type: "fill",
     source: "jurisdictions",
     paint: {
-      "fill-color": ["match", ["get", "kind"], "WARD", "#17a892", "CORRIDOR", "#6fe6d6", "#2dd4bf"],
+      "fill-color": ["match", ["get", "kind"], "WARD", PALETTE.aquaMid, "CORRIDOR", PALETTE.aquaDim, PALETTE.aqua],
       "fill-opacity": 0.05,
     },
   });
@@ -480,7 +481,7 @@ function addStaticLayers(map: MlMap) {
     type: "line",
     source: "jurisdictions",
     paint: {
-      "line-color": ["match", ["get", "kind"], "WARD", "#17a892", "CORRIDOR", "#6fe6d6", "#2dd4bf"],
+      "line-color": ["match", ["get", "kind"], "WARD", PALETTE.aquaMid, "CORRIDOR", PALETTE.aquaDim, PALETTE.aqua],
       "line-width": 1.2,
       "line-opacity": 0.55,
       "line-dasharray": [3, 2],
@@ -504,11 +505,11 @@ function addStaticLayers(map: MlMap) {
         ["linear"],
         ["heatmap-density"],
         0, "rgba(0,0,0,0)",
-        0.2, "#0a6e63",
-        0.4, "#17a892",
-        0.6, "#2dd4bf",
-        0.8, "#f5a524",
-        1, "#ff4d6a",
+        0.2, PALETTE.aquaDeep,
+        0.4, PALETTE.aquaMid,
+        0.6, PALETTE.aqua,
+        0.8, PALETTE.sevModerate,
+        1, PALETTE.sevCritical,
       ],
     },
   });
@@ -518,8 +519,8 @@ function addStaticLayers(map: MlMap) {
     source: "hotspots",
     paint: {
       "circle-radius": ["interpolate", ["linear"], ["get", "score"], 30, 4, 60, 7, 100, 11],
-      "circle-color": "#fb8f3c",
-      "circle-stroke-color": "#05080f",
+      "circle-color": PALETTE.sevHigh,
+      "circle-stroke-color": PALETTE.canvas,
       "circle-stroke-width": 1,
       "circle-opacity": 0.9,
     },
@@ -534,7 +535,7 @@ function addStaticLayers(map: MlMap) {
     paint: {
       "circle-radius": 16,
       "circle-color": "transparent",
-      "circle-stroke-color": "#f5a524",
+      "circle-stroke-color": PALETTE.sevModerate,
       "circle-stroke-width": 1.2,
       "circle-stroke-opacity": 0.7,
     },
@@ -545,7 +546,7 @@ function addStaticLayers(map: MlMap) {
     source: "groundtruth",
     paint: {
       "circle-radius": 3,
-      "circle-color": "#f5a524",
+      "circle-color": PALETTE.sevModerate,
     },
   });
 
@@ -556,7 +557,7 @@ function addStaticLayers(map: MlMap) {
     type: "line",
     source: "drains",
     paint: {
-      "line-color": ["case", ["==", ["get", "kind"], "ROAD_SEGMENT"], "#5b6893", "#2dd4bf"],
+      "line-color": ["case", ["==", ["get", "kind"], "ROAD_SEGMENT"], PALETTE.textFaint, PALETTE.aqua],
       "line-width": ["case", ["==", ["get", "kind"], "ROAD_SEGMENT"], 1.4, 2.2],
       "line-opacity": 0.75,
     },
@@ -569,8 +570,8 @@ function addStaticLayers(map: MlMap) {
     filter: ["!in", "kind", "PUMP_STATION"],
     paint: {
       "circle-radius": 3,
-      "circle-color": "#5b6893",
-      "circle-stroke-color": "#05080f",
+      "circle-color": PALETTE.textFaint,
+      "circle-stroke-color": PALETTE.canvas,
       "circle-stroke-width": 0.8,
       "circle-opacity": 0.85,
     },
@@ -582,8 +583,8 @@ function addStaticLayers(map: MlMap) {
     filter: ["==", ["get", "kind"], "PUMP_STATION"],
     paint: {
       "circle-radius": 5,
-      "circle-color": "#6fe6d6",
-      "circle-stroke-color": "#05080f",
+      "circle-color": PALETTE.aquaDim,
+      "circle-stroke-color": PALETTE.canvas,
       "circle-stroke-width": 1,
     },
   });
@@ -594,13 +595,13 @@ function addStaticLayers(map: MlMap) {
     id: "user-accuracy-fill",
     type: "fill",
     source: "user-accuracy",
-    paint: { "fill-color": "#2dd4bf", "fill-opacity": 0.1 },
+    paint: { "fill-color": PALETTE.aqua, "fill-opacity": 0.1 },
   });
   map.addLayer({
     id: "user-accuracy-line",
     type: "line",
     source: "user-accuracy",
-    paint: { "line-color": "#2dd4bf", "line-opacity": 0.35, "line-width": 1 },
+    paint: { "line-color": PALETTE.aqua, "line-opacity": 0.35, "line-width": 1 },
   });
 
   // clickable jurisdiction polygons → spatial filter

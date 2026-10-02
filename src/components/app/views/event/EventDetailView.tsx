@@ -20,12 +20,12 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Reveal, Stagger, StaggerItem, CountUp, PulseDot, AnimatedProgress } from "@/components/motion/kit";
 import {
   ArrowLeft, RefreshCw, Camera, MapPin, Umbrella, HardHat, History, FileWarning, GitMerge, Network,
-  MessageSquare, Wrench, Upload, FileSearch, Gauge, Sparkles, ListChecks, ClipboardCheck, ScrollText,
+  MessageSquare, Wrench, Upload, FileSearch, Gauge, Braces, ListChecks, ClipboardCheck, ScrollText,
 } from "lucide-react";
 import { useState, useRef } from "react";
 import { assetPath } from "@/lib/client/assets";
 
-// URBAN EVENT DETAIL - full dossier: evidence, AI investigation, risk
+// URBAN EVENT DETAIL - full dossier: evidence, investigation, risk
 // breakdown, responsibility, verification workflow, audit history.
 
 interface EventDetailResponse {
@@ -212,7 +212,7 @@ export function EventDetailView() {
             <TabsList className="bg-ink-850 w-full justify-start overflow-x-auto rounded-lg no-scrollbar h-9">
               <DossierTab value="overview" current={tab}>Overview</DossierTab>
               <DossierTab value="evidence" current={tab}>Evidence ({event.evidence.length})</DossierTab>
-              <DossierTab value="investigation" current={tab}>AI Investigation</DossierTab>
+              <DossierTab value="investigation" current={tab}>Investigation</DossierTab>
               <DossierTab value="response" current={tab}>Response & Verification</DossierTab>
               <DossierTab value="audit" current={tab}>Audit</DossierTab>
             </TabsList>
@@ -465,7 +465,7 @@ function EvidenceTab({ d, onMutated }: { d: D; onMutated: () => void }) {
       <Reveal>
         <Panel title={`Evidence Chain · ${e.evidence.length} Items`} icon={<Camera />}>
           {e.evidence.length === 0 ? (
-            <EmptyState icon={<Camera className="size-7" />} title="No Evidence Yet" hint="Field teams can attach photos and notes here. The system adds its own AI summaries automatically." />
+            <EmptyState icon={<Camera className="size-7" />} title="No Evidence Yet" hint="Field teams can attach photos and notes here. Summaries are generated automatically." />
           ) : (
             <Stagger className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {e.evidence.map((ev) => (
@@ -553,7 +553,7 @@ function EvidenceTab({ d, onMutated }: { d: D; onMutated: () => void }) {
   );
 }
 
-// --- AI Investigation tab -------------------------------------------------------------
+// --- Investigation tab -------------------------------------------------------------
 
 function InvestigationTab({ d }: { d: D }) {
   const { event: e } = d;
@@ -658,7 +658,7 @@ function InvestigationTab({ d }: { d: D }) {
 
       {aiEvidence.length > 0 && (
         <Reveal delay={0.18}>
-          <Panel title="AI Risk Advisories · Structured Outputs" icon={<Sparkles />}>
+          <Panel title="Risk Advisories · Structured Outputs" icon={<Braces />}>
             <div className="space-y-3">
               {aiEvidence.map((ev) => {
                 let parsed: { narrative: string; factors?: { key: string; label: string; direction: string; weight: number }[]; recommendedInvestigation?: string } | null = null;

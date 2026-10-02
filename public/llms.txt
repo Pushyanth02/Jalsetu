@@ -16,9 +16,10 @@
 ## What This System Does
 
 1. Citizens report waterlogging (location, depth, description, optional photo).
-2. AI classifies each report (category, severity, confidence). The deployed
-   app runs a deterministic rule-based provider (labelled "MOCK") - same input,
-   same output, no network. The active provider is always shown honestly.
+2. A deterministic classifier tags each report (category, severity,
+   confidence). The deployed app runs a rule-based provider (labelled "MOCK")
+   - same input, same output, no network. The active provider is always shown
+   honestly.
 3. Near-duplicate reports are merged into "urban events" by time-space clustering.
 4. Events are enriched with rainfall, drains, pumps, jurisdiction and history.
 5. A transparent rule-based risk model scores each event 0-100 (LOW to CRITICAL).
@@ -36,7 +37,7 @@
 - The former REST API surface (envelope: { ok, data | error }) is reimplemented
   in the browser, so every view works identically offline. Mutations run
   client-side and reset on reload - this is documented in the UI.
-- AI classification is deterministic (rule-based mock provider); no LLM calls,
+- Classification is deterministic (rule-based provider); no LLM calls,
   no API keys, nothing to configure.
 - The interactive map is MapLibre GL with keyless tiles (Esri World Dark Gray
   Canvas + OpenStreetMap labels).
@@ -47,7 +48,7 @@
 - /#/command - Command Center: live ops overview, KPIs, map, alerts, event queue
 - /#/map - Waterlogging Map Explorer: interactive map, filters, layers, Locate Me
 - /#/events/<code> - Urban Event Dossier: evidence, risk, responsibility, verification
-- /#/investigate - AI Investigation Tools: classify, cluster, score (no chain-of-thought shown)
+- /#/investigate - Investigation Tools: classify, cluster, score (deterministic, no chain-of-thought shown)
 - /#/responsibility - Responsibility Register: agency routing, workload, escalation
 - /#/verify - Field Verification Board: assignment to verified closure
 - /#/report - Citizen Report: 3-step guided submission with tracking reference
@@ -61,7 +62,7 @@
   regenerate offline with `bun run seed`).
 - Reports submitted through the Report view during a browsing session are kept
   in memory only and labelled "Live Submission" - a reload resets the demo data.
-- AI outputs (classification, risk narrative) are MODEL OUTPUT with provider,
+- Model outputs (classification, risk narrative) are MODEL OUTPUT with provider,
   model version and confidence always displayed.
 - Performance metrics are computed on the synthetic pilot dataset and labelled
   as evaluation results, never as real-world performance.

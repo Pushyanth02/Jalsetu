@@ -20,13 +20,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {
-  Sparkles, GitMerge, Gauge, Search, ChevronRight, Radio, CheckCircle2, Brain, ShieldAlert,
+  Tags, FileText, GitMerge, Gauge, Search, ChevronRight, Radio, CheckCircle2, Database, ShieldAlert,
 } from "lucide-react";
 
-// AI INVESTIGATION - three structured assistance tools (classification,
+// INVESTIGATION TOOLS - three structured assistance tools (classification,
 // duplicate clustering, risk assessment) with honest provenance and honest
 // fallback reporting. Structured output only; no chain-of-thought is ever
-// requested, returned, or displayed.
+// requested, returned, or displayed. All three run on deterministic
+// algorithms in the browser - no generative model is involved.
 
 // --- API types -----------------------------------------------------------------------
 
@@ -100,9 +101,9 @@ type ClusterMutation = UseMutationResult<{ data: ClusterResponse; meta: Record<s
 type RiskMutation = UseMutationResult<RiskResponse, Error, string>;
 
 const TOOLS: { id: ToolId; label: string; hint: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: "classify", label: "Classification", hint: "Sorts a report into a category, rates severity and flags possible duplicates", icon: Sparkles },
+  { id: "classify", label: "Classification", hint: "Sorts a report into a category, rates severity and flags possible duplicates", icon: Tags },
   { id: "cluster", label: "Duplicate Clustering", hint: "Groups nearby reports from the last 72 hours", icon: GitMerge },
-  { id: "risk", label: "Risk Assessment", hint: "Scores urgency from 7 factors, plus structured AI advice", icon: Gauge },
+  { id: "risk", label: "Risk Assessment", hint: "Scores urgency from 7 factors, plus structured advice", icon: Gauge },
 ];
 
 const SEVERITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
@@ -189,7 +190,7 @@ export function InvestigateView() {
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <span className="flex items-center gap-2 shrink-0">
             <Radio className="size-3.5 text-water" aria-hidden />
-            <span className="micro-label !text-[0.62rem] text-slate-600">AI Investigation</span>
+            <span className="micro-label !text-[0.62rem] text-slate-600">Investigation Tools</span>
           </span>
           {health ? (
             <>
@@ -369,7 +370,7 @@ function ClassifyInput({ classify }: { classify: ClassifyMutation }) {
             }
             className="group relative w-full overflow-hidden rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim shadow-sm"
           >
-            <Sparkles className={cn("size-3.5", pending && "animate-pulse")} aria-hidden />
+            <Tags className={cn("size-3.5", pending && "animate-pulse")} aria-hidden />
             {pending ? "Classifying…" : "Classify text"}
             <Shine />
           </Button>
@@ -429,7 +430,7 @@ function ReportQueue({ pending, onClassify }: { pending: boolean; onClassify: (r
                 onClick={() => onClassify(r)}
                 className="ml-auto group relative h-7 overflow-hidden rounded-lg bg-aqua border-aqua text-ink-950 hover:bg-aqua-dim hover:text-ink-950 text-[0.65rem] shadow-sm"
               >
-                <Sparkles className={cn("size-3", pending && "animate-pulse")} aria-hidden />
+                <Tags className={cn("size-3", pending && "animate-pulse")} aria-hidden />
                 {r.classification ? "Re-run" : "Classify"}
                 <Shine />
               </Button>
@@ -444,7 +445,7 @@ function ReportQueue({ pending, onClassify }: { pending: boolean; onClassify: (r
 function ClassifyResults({ m }: { m: ClassifyMutation }) {
   if (m.isPending) {
     return (
-      <Panel title="Classification · Result" icon={<Sparkles />}>
+      <Panel title="Classification · Result" icon={<Tags />}>
         <LoadingRows rows={5} />
         <p className="micro-label !text-[0.52rem] text-muted-foreground/60 mt-2">
           running provider call for {m.variables?.reportRef ?? "ad-hoc text"}…
@@ -454,7 +455,7 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
   }
   if (m.isError) {
     return (
-      <Panel title="Classification · Result" icon={<Sparkles />}>
+      <Panel title="Classification · Result" icon={<Tags />}>
         <ErrorNote
           message={(m.error as Error).message}
           onRetry={m.variables ? () => m.mutate(m.variables!) : undefined}
@@ -464,9 +465,9 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
   }
   if (!m.data) {
     return (
-      <Panel title="Classification · Result" icon={<Sparkles />}>
+      <Panel title="Classification · Result" icon={<Tags />}>
         <EmptyState
-          icon={<Sparkles className="size-7" />}
+          icon={<Tags className="size-7" />}
           title="No Classification Run Yet"
           hint="Pick a report from the queue, or switch to ad-hoc text mode, then run the classifier."
         />
@@ -484,7 +485,7 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
       <Reveal key={`cl-main-${rkey}`}>
         <Panel
           title={`Classification · ${r._label}`}
-          icon={<Sparkles />}
+          icon={<Tags />}
           actions={<ProviderChip provider={prov.provider} model={prov.modelId} />}
         >
           {/* verdict headline */}
@@ -571,7 +572,7 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
 
       {/* context */}
       <Reveal key={`cl-ctx-${rkey}`} delay={0.14}>
-        <Panel title="Evidence Context · Fed to the Model" icon={<Brain />}>
+        <Panel title="Evidence Context · Fed to the Model" icon={<Database />}>
           <ul className="space-y-2.5">
             <EvidenceCheck label="Rainfall 24h / 72h">
               <span className="text-water">{Math.round(r.context.rainfall24hMm ?? 0)} / {Math.round(r.context.rainfall72hMm ?? 0)} mm</span>
@@ -666,7 +667,7 @@ function ClusterInput({ cluster, radius, setRadius }: { cluster: ClusterMutation
         <Shine />
       </Button>
       <p className="text-[0.6rem] text-muted-foreground/70 leading-relaxed">
-        Looks at all reports from the last 72 hours. It uses a fixed, deterministic method with no AI call, so the same inputs always produce the same groups.
+        Looks at all reports from the last 72 hours. It uses a fixed, deterministic method with no network call, so the same inputs always produce the same groups.
       </p>
       {cluster.isError && (
         <p className="micro-label !text-[0.52rem] text-sev-critical" role="alert">
@@ -860,7 +861,7 @@ function RiskInput({ risk }: { risk: RiskMutation }) {
         <Shine />
       </Button>
       <p className="text-[0.6rem] text-muted-foreground/70 leading-relaxed">
-        Re-scores the incident with the transparent 7-factor risk engine and asks the AI for a structured advisory (a written second opinion). The result is saved to the event dossier.
+        Re-scores the incident with the transparent 7-factor risk engine and generates a structured advisory (a written second opinion) from the active provider. The result is saved to the event dossier.
       </p>
       {risk.isError && (
         <p className="micro-label !text-[0.52rem] text-sev-critical" role="alert">
@@ -947,8 +948,8 @@ function RiskResults({ m }: { m: RiskMutation }) {
 
       <Reveal key={`rk-adv-${rkey}`} delay={0.08}>
         <Panel
-          title="AI Advisory · Structured Output"
-          icon={<Brain />}
+          title="Risk Advisory · Structured Output"
+          icon={<FileText />}
           actions={<ProviderChip provider={r.advisory.provider} model={r.advisory.modelId} />}
         >
           {r.advisory.fallbackUsed && r.advisory.error && (

@@ -37,9 +37,9 @@ export default function NotFound() {
     <div className="min-h-[100dvh] flex flex-col bg-background">
       <header className="hairline-b bg-ink-900">
         <div className="px-4 sm:px-6 h-16 flex items-center gap-3">
-          <span className="grid size-9 place-items-center rounded-[10px] bg-gradient-to-b from-[#6fe6d6] to-[#0d7d6f] shrink-0" aria-hidden>
+          <span className="grid size-9 place-items-center rounded-[10px] bg-gradient-to-b from-aqua-dim to-aqua-deep shrink-0" aria-hidden>
             <svg viewBox="0 0 24 24" className="size-5" fill="none" aria-hidden>
-              <path d="M12 3c2.6 3.6 4.7 6 4.7 8.4a4.7 4.7 0 1 1-9.4 0C7.3 9 9.4 6.6 12 3z" fill="#04211e" />
+              <path d="M12 3c2.6 3.6 4.7 6 4.7 8.4a4.7 4.7 0 1 1-9.4 0C7.3 9 9.4 6.6 12 3z" className="fill-ink-950" />
             </svg>
           </span>
           <span className="font-display font-bold text-slate-100 text-sm">JalSetu</span>

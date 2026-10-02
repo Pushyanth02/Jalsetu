@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { PALETTE } from "@/lib/palette";
 
-// Map legend: severity ramp, status symbols, layer keys. Floating white card
+// Map legend: severity ramp, status symbols, layer keys. Floating panel
 // over the dark ops basemap. Collapsible — starts collapsed on phones so it
 // never covers the majority of the small map canvas.
 export function MapLegend({ compact }: { compact?: boolean }) {
@@ -44,15 +45,15 @@ export function MapLegend({ compact }: { compact?: boolean }) {
       )}
       <p className="micro-label !text-[0.55rem] text-slate-500 mb-2">legend</p>
       <ul className="space-y-1.5 text-[0.66rem] text-slate-400">
-        <LegendRow color="#ff4d6a" label="severity 4 · critical" />
-        <LegendRow color="#fb8f3c" label="severity 3 · high" />
-        <LegendRow color="#f5a524" label="severity 2 · moderate" />
-        <LegendRow color="#5b6893" label="severity 1 · closed/low" />
-        <LegendRow color="#17a892" shape="line" label="drain / catchment" />
-        <LegendRow color="#6fe6d6" shape="dot-lg" label="pump station" />
-        <LegendRow color="#f5a524" shape="halo" label="ground-truth hotspot" />
-        <LegendRow color="#2dd4bf" shape="glow" label="rainfall gauge (mm)" />
-        <LegendRow color="#2dd4bf" shape="dot-lg" label="your location (Locate Me)" />
+        <LegendRow color={PALETTE.sevCritical} label="severity 4 · critical" />
+        <LegendRow color={PALETTE.sevHigh} label="severity 3 · high" />
+        <LegendRow color={PALETTE.sevModerate} label="severity 2 · moderate" />
+        <LegendRow color={PALETTE.textFaint} label="severity 1 · closed/low" />
+        <LegendRow color={PALETTE.aquaMid} shape="line" label="drain / catchment" />
+        <LegendRow color={PALETTE.aquaDim} shape="dot-lg" label="pump station" />
+        <LegendRow color={PALETTE.sevModerate} shape="halo" label="ground-truth hotspot" />
+        <LegendRow color={PALETTE.aqua} shape="glow" label="rainfall gauge (mm)" />
+        <LegendRow color={PALETTE.aqua} shape="dot-lg" label="your location (Locate Me)" />
       </ul>
       <p className="mt-2.5 pt-2 hairline-t micro-label !text-[0.52rem] text-slate-400 leading-relaxed">
         marker size ∝ risk score · tap a marker for details

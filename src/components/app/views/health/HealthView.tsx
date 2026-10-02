@@ -12,9 +12,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { BarChart, Bar, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { cn } from "@/lib/utils";
+import { PALETTE } from "@/lib/palette";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import {
-  Activity, Database, BrainCircuit, RefreshCw, Gauge, HeartPulse, History, Server,
+  Activity, Database, Cpu, RefreshCw, Gauge, HeartPulse, History, Server,
   ShieldCheck, AlertTriangle, BookOpen,
 } from "lucide-react";
 
@@ -97,23 +98,23 @@ interface HealthResponse {
   dataLabel: string;
 }
 
-const BLUE = "#2dd4bf";  // at/above confidence flag threshold (aqua)
-const AMBER = "#f5a524"; // below confidence flag threshold (amber)
-const GRID_STROKE = "#1a2440";
-const TICK = { fill: "#7a88b8", fontSize: 9, fontFamily: "var(--font-plex-mono)" };
+const BLUE = PALETTE.aqua;   // at/above confidence flag threshold
+const AMBER = PALETTE.sevModerate; // below confidence flag threshold
+const GRID_STROKE = PALETTE.hairline;
+const TICK = { fill: PALETTE.textDim, fontSize: 9, fontFamily: "var(--font-plex-mono)" };
 const TOOLTIP_STYLE = {
-  background: "#0c142b",
-  border: "1px solid #24406b",
+  background: PALETTE.popover,
+  border: `1px solid ${PALETTE.input}`,
   borderRadius: 8,
   fontSize: 11,
   fontFamily: "var(--font-plex-mono)",
-  color: "#e9eeff",
+  color: PALETTE.foreground,
   boxShadow: "0 8px 24px -8px rgba(0,0,0,0.9)",
 };
-const LABEL_STYLE = { color: "#8794c2" };
-const CURSOR_FILL = { fill: "rgba(45, 212, 191, 0.06)" };
+const LABEL_STYLE = { color: PALETTE.textMuted };
+const CURSOR_FILL = { fill: `${PALETTE.aqua}0f` };
 
-const clean = (s: string) => s.replace(/-/g, "-").replace(/-/g, "-");
+const clean = (s: string) => s.replace(/[\u2010-\u2015\u2212]/g, "-");
 
 // client-side endpoint probes (same-origin relative paths)
 const ENDPOINTS = ["/api/health", "/api/data-health", "/api/model-health", "/api/events?limit=1", "/api/weather", "/api/hotspots"];
@@ -152,7 +153,7 @@ const GLOSSARY: { term: string; definition: string }[] = [
   { term: "Ground Truth", definition: "Independently known problem sites used to check whether the system's guesses are right." },
   { term: "Baseline", definition: "The old approach: reacting only to how often complaints arrive from an area." },
   { term: "Proposed System", definition: "The new approach: combining complaints, rainfall, drains and infrastructure into one signal." },
-  { term: "AI Classification", definition: "The model reading each report and tagging its category, severity and confidence." },
+  { term: "Classification", definition: "The deterministic rules reading each report and tagging its category, severity and confidence." },
   { term: "Synthetic Demo Data", definition: "Realistic but generated data for safe testing. It is never real citizen data." },
 ];
 
@@ -225,7 +226,7 @@ export function HealthView() {
               </span>
             </div>
             <p className="text-[0.7rem] text-muted-foreground mt-0.5">
-              A quick health check of every data source and AI model behind this dashboard.
+              A quick health check of every data source and model behind this dashboard.
             </p>
           </div>
           <button
@@ -291,7 +292,7 @@ export function HealthView() {
                   />
                 )}
                 <StatCard
-                  icon={<BrainCircuit className="size-5" aria-hidden />}
+                  icon={<Cpu className="size-5" aria-hidden />}
                   tint={hb.ai.available ? "bg-emerald-50 text-verified" : "bg-amber-50 text-sev-moderate"}
                   value={
                     <span className={cn("inline-flex items-center gap-2", hb.ai.available ? "text-verified" : "text-sev-moderate")}>
@@ -299,7 +300,7 @@ export function HealthView() {
                       {hb.ai.available ? "available" : "fallback"}
                     </span>
                   }
-                  label="AI provider"
+                  label="Classifier"
                   sub={hb.ai.provider}
                 />
               </>
@@ -339,7 +340,7 @@ export function HealthView() {
                     </span>
                   )}
                   {hb.ai.fallback && (
-                    <span className="micro-label !text-[0.55rem] text-slate-500" title="Used when the AI provider is unavailable">
+                    <span className="micro-label !text-[0.55rem] text-slate-500" title="Used when the remote model is unavailable">
                       fallback: {clean(hb.ai.fallback)}
                     </span>
                   )}
@@ -433,7 +434,7 @@ export function HealthView() {
         <Reveal delay={0.15}>
           <Panel
             title="Model & Provider"
-            icon={<BrainCircuit />}
+            icon={<Cpu />}
             actions={
               <button onClick={() => modelQ.refetch()} className="micro-label !text-[0.58rem] text-water hover:text-water-dim transition-colors">
                 refetch
@@ -536,7 +537,7 @@ export function HealthView() {
             ) : modelQ.isError ? (
               <ErrorNote message={(modelQ.error as Error).message} onRetry={() => modelQ.refetch()} className="m-4" />
             ) : !mh ? null : mh.runs.length === 0 ? (
-              <EmptyState title="No Model Runs Recorded" hint="Runs appear here after the AI reads new reports or an event's risk is recalculated." />
+              <EmptyState title="No Model Runs Recorded" hint="Runs appear here after the classifier reads new reports or an event's risk is recalculated." />
             ) : (
               <ScrollArea className="max-h-96">
                 <Table>
@@ -637,7 +638,7 @@ export function HealthView() {
                   </span>
                 </div>
                 <p className="micro-label !text-[0.55rem] text-slate-400 !tracking-[0.08em] normal-case leading-relaxed">
-                  When the AI is less than {mh.confidenceDistribution.lowConfidenceFlag} sure about a report, it is flagged for a
+                  When the classifier is less than {mh.confidenceDistribution.lowConfidenceFlag} sure about a report, it is flagged for a
                   human to double-check (see the confidence chips in the event list). The 0.4-0.6 bucket sits across the
                   threshold, so its colour is only a guide.
                 </p>
@@ -719,7 +720,7 @@ export function HealthView() {
               </div>
             )}
             <p className="micro-label !text-[0.55rem] text-slate-400 !tracking-[0.08em] normal-case leading-relaxed px-4 py-2.5 hairline-t">
-              Response times are measured from this browser. The /api/health check also contacts the AI provider, so it can
+              Response times are measured from this browser. The /api/health check also contacts the classifier provider, so it can
               take a few seconds.
             </p>
           </Panel>
