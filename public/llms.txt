@@ -43,7 +43,8 @@
 
 ## Views (hash deep-links on the single page)
 
-- /#/ - Command Center: live ops overview, KPIs, map, alerts, event queue
+- /#/ - Landing page: what JalSetu is, the seven-step pipeline, live pilot numbers
+- /#/command - Command Center: live ops overview, KPIs, map, alerts, event queue
 - /#/map - Waterlogging Map Explorer: interactive map, filters, layers, Locate Me
 - /#/events/<code> - Urban Event Dossier: evidence, risk, responsibility, verification
 - /#/investigate - AI Investigation Tools: classify, cluster, score (no chain-of-thought shown)

@@ -128,7 +128,7 @@ export function VerificationView() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* header: title + filters */}
-      <div className="hairline-b bg-white px-4 sm:px-6 py-3.5">
+      <div className="hairline-b bg-ink-900 px-4 sm:px-6 py-3.5">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5">
           <div className="min-w-0 flex-1">
             <h1 className="flex items-center gap-2.5 font-display text-lg font-bold tracking-tight text-slate-900 leading-tight">
@@ -270,7 +270,7 @@ function BoardCard({ event, onOpen }: { event: EventSummary; onOpen: () => void 
     <HoverLift>
       <button
         onClick={onOpen}
-        className="w-full text-left rounded-xl border border-border/80 bg-white px-3 py-2.5 shadow-xs transition-colors hover:border-water/50 group"
+        className="w-full text-left rounded-xl border border-border/80 bg-ink-900 px-3 py-2.5 shadow-xs transition-colors hover:border-aqua/50 group"
         aria-label={`${event.code}: ${event.title}. Risk ${event.riskBand.toLowerCase()}, ${event.reportCount} reports.`}
       >
         <div className="flex items-center gap-2 flex-wrap">
@@ -633,7 +633,7 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                             </p>
                           )}
                           {photo && (
-                            <figure className="mt-2 flex items-center gap-3 rounded-xl border border-border/70 bg-white p-2.5 shadow-xs ring-1 ring-slate-200/60 max-w-xs">
+                            <figure className="mt-2 flex items-center gap-3 rounded-xl border border-border/70 bg-ink-900 p-2.5 shadow-xs ring-1 ring-hairline max-w-xs">
                               <div className="relative rounded-lg overflow-hidden border border-border/60 size-16 shrink-0 bg-slate-100">
                                 <img src={photo.dataUrl} alt="Field photo preview" className="size-full object-cover" />
                               </div>
@@ -649,7 +649,7 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                           <p className="text-[0.62rem] text-slate-500">
                             Next expected: <span className="text-water">{(nextStage ?? "CLOSED").toLowerCase().replace(/_/g, " ")}</span>. Steps must be recorded in order (checked by the server).
                           </p>
-                          <Button size="sm" className="group relative overflow-hidden rounded-lg bg-water text-white hover:bg-water-dim h-8" disabled={verify.isPending} onClick={submitStage}>
+                          <Button size="sm" className="group relative overflow-hidden rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim h-8" disabled={verify.isPending} onClick={submitStage}>
                             {verify.isPending ? "Recording…" : "Record stage"}
                             <Shine />
                           </Button>
@@ -700,7 +700,7 @@ function StageStepper({ stages }: { stages: string[] }) {
                 className={cn("size-4 rounded-full border-2 grid place-items-center transition-colors", done ? "bg-verified border-verified" : current ? "border-water" : "border-border")}
                 aria-hidden
               >
-                {done && <Check className="size-2.5 text-white" aria-hidden />}
+                {done && <Check className="size-2.5 text-ink-950" aria-hidden />}
               </span>
               <span className={cn("micro-label !text-[0.44rem] text-center leading-tight", done ? "text-verified" : current ? "text-water" : "text-slate-400")}>
                 {s.toLowerCase().replace(/_/g, " ")}

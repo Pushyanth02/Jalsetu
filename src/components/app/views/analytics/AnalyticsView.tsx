@@ -69,21 +69,22 @@ interface ProposedData extends AnalyticsData {
   comparison: { baseline: Metrics; proposed: Metrics; note: string };
 }
 
-// chart + UI colour constants (locked light palette, single blue accent)
-const BLUE = "#2563eb";      // proposed / primary series (blue-600)
-const SLATE_BAR = "#94a3b8"; // baseline series (slate-400)
-const GRID_STROKE = "#e2e8f0";
-const TICK = { fill: "#94a3b8", fontSize: 9, fontFamily: "var(--font-plex-mono)" };
+// chart + UI colour constants (locked Monsoon ink palette: aqua signal on indigo)
+const BLUE = "#2dd4bf";      // proposed / primary series (aqua)
+const SLATE_BAR = "#46568a"; // baseline series (muted indigo)
+const GRID_STROKE = "#1a2440";
+const TICK = { fill: "#7a88b8", fontSize: 9, fontFamily: "var(--font-plex-mono)" };
 const TOOLTIP_STYLE = {
-  background: "#ffffff",
-  border: "1px solid #e2e8f0",
+  background: "#0c142b",
+  border: "1px solid #24406b",
   borderRadius: 8,
   fontSize: 11,
   fontFamily: "var(--font-plex-mono)",
-  boxShadow: "0 4px 12px rgba(15,23,42,0.08)",
+  color: "#e9eeff",
+  boxShadow: "0 8px 24px -8px rgba(0,0,0,0.9)",
 };
-const LABEL_STYLE = { color: "#64748b" };
-const CURSOR_FILL = { fill: "rgba(37, 99, 235, 0.05)" };
+const LABEL_STYLE = { color: "#8794c2" };
+const CURSOR_FILL = { fill: "rgba(45, 212, 191, 0.06)" };
 
 const MATCH_RADIUS_M = 250;
 
@@ -171,7 +172,7 @@ export function AnalyticsView() {
       </div>
 
       {/* header strip */}
-      <div className="hairline-b bg-white px-4 sm:px-6 py-3.5 mt-3.5">
+      <div className="hairline-b bg-ink-900 px-4 sm:px-6 py-3.5 mt-3.5">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">

@@ -10,18 +10,21 @@ export function ViewBreadcrumb() {
   const label = NAV_ITEMS.find((n) => n.id === view)?.label ?? "Command Center";
   const isHome = view === "command" && !eventId;
 
+  // Home in the breadcrumb is the public landing page, not the console.
+  const goHome = () => navigate("landing");
+
   return (
-    <nav aria-label="Breadcrumb" className="hairline-b bg-white px-3 sm:px-4 lg:px-6 py-2 sm:py-1.5 overflow-hidden">
+    <nav aria-label="Breadcrumb" className="hairline-b bg-ink-900 px-3 sm:px-4 lg:px-6 py-2 sm:py-1.5 overflow-hidden">
       <ol className="flex items-center gap-1 text-[0.68rem] leading-none text-slate-500 min-w-0">
         <li className="shrink-0">
           <a
             href="#/"
             onClick={(e) => {
               e.preventDefault();
-              navigate("command");
+              goHome();
             }}
-            className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1.5 hover:text-water hover:bg-slate-100 active:bg-slate-200 transition-colors touch-target"
-            aria-label="Home — Command Center"
+            className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1.5 hover:text-aqua hover:bg-white/[0.06] active:bg-white/[0.1] transition-colors touch-target"
+            aria-label="Home — JalSetu landing page"
           >
             <Home className="size-3.5 shrink-0" aria-hidden />
             <span className="hidden sm:inline font-medium">Home</span>
@@ -29,7 +32,7 @@ export function ViewBreadcrumb() {
         </li>
         {!isHome && (
           <>
-            <li aria-hidden className="shrink-0 text-slate-300">
+            <li aria-hidden className="shrink-0 text-slate-600">
               <ChevronRight className="size-3" />
             </li>
             <li className="min-w-0 shrink">
@@ -40,12 +43,12 @@ export function ViewBreadcrumb() {
                     e.preventDefault();
                     navigate("event");
                   }}
-                  className="rounded-lg px-1.5 py-1.5 hover:text-water hover:bg-slate-100 transition-colors truncate inline-block max-w-[28vw] sm:max-w-none"
+                  className="rounded-lg px-1.5 py-1.5 hover:text-aqua hover:bg-white/[0.06] transition-colors truncate inline-block max-w-[28vw] sm:max-w-none"
                 >
                   {label}
                 </a>
               ) : (
-                <span aria-current="page" className="font-medium text-slate-700 truncate inline-block max-w-[40vw] sm:max-w-none px-1 py-1">
+                <span aria-current="page" className="font-medium text-slate-200 truncate inline-block max-w-[40vw] sm:max-w-none px-1 py-1">
                   {label}
                 </span>
               )}
@@ -54,11 +57,11 @@ export function ViewBreadcrumb() {
         )}
         {view === "event" && eventId && (
           <>
-            <li aria-hidden className="shrink-0 text-slate-300">
+            <li aria-hidden className="shrink-0 text-slate-600">
               <ChevronRight className="size-3" />
             </li>
             <li className="min-w-0">
-              <span aria-current="page" className="data-mono text-water truncate inline-block max-w-[32vw] sm:max-w-none text-[0.7rem] font-semibold px-1 py-1 break-safe">
+              <span aria-current="page" className="data-mono text-aqua truncate inline-block max-w-[32vw] sm:max-w-none text-[0.7rem] font-semibold px-1 py-1 break-safe">
                 {eventId}
               </span>
             </li>

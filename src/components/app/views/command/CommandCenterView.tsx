@@ -42,7 +42,7 @@ export function CommandCenterView() {
   return (
     <div className="flex flex-col min-h-0 flex-1">
       {/* page header */}
-      <div className="hairline-b bg-white">
+      <div className="hairline-b bg-ink-900">
         <div className="px-4 sm:px-6 py-3.5 flex flex-wrap items-center gap-x-4 gap-y-2">
           <div>
             <h1 className="font-display text-lg font-bold tracking-tight text-slate-900 leading-tight">Command Center</h1>
@@ -613,19 +613,19 @@ function RainfallStrip({ weatherQ, nearest }: { weatherQ: { data?: WeatherRespon
               <AreaChart data={series} margin={{ top: 4, right: 8, left: 8, bottom: 0 }}>
                 <defs>
                   <linearGradient id="rainFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor="#2dd4bf" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#2dd4bf" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="label" tick={false} axisLine={false} tickLine={false} />
-                <YAxis width={28} tick={{ fill: "#94a3b8", fontSize: 9, fontFamily: "var(--font-plex-mono)" }} axisLine={false} tickLine={false} />
+                <YAxis width={28} tick={{ fill: "#7a88b8", fontSize: 9, fontFamily: "var(--font-plex-mono)" }} axisLine={false} tickLine={false} />
                 <Tooltip
-                  contentStyle={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 11, fontFamily: "var(--font-plex-mono)", boxShadow: "0 4px 12px rgba(15,23,42,0.08)" }}
-                  labelStyle={{ color: "#64748b" }}
-                  itemStyle={{ color: "#2563eb" }}
+                  contentStyle={{ background: "#0c142b", border: "1px solid #24406b", borderRadius: 8, fontSize: 11, fontFamily: "var(--font-plex-mono)", color: "#e9eeff", boxShadow: "0 8px 24px -8px rgba(0,0,0,0.9)" }}
+                  labelStyle={{ color: "#8794c2" }}
+                  itemStyle={{ color: "#2dd4bf" }}
                   formatter={(v: number) => [`${v} mm`, "avg 3h rain"]}
                 />
-                <Area type="monotone" dataKey="mm" stroke="#2563eb" strokeWidth={1.8} fill="url(#rainFill)" animationDuration={900} />
+                <Area type="monotone" dataKey="mm" stroke="#2dd4bf" strokeWidth={1.8} fill="url(#rainFill)" animationDuration={900} />
               </AreaChart>
             </ResponsiveContainer>
           </div>

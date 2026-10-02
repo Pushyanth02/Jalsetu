@@ -35,18 +35,18 @@ export default function NotFound() {
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background">
-      <header className="hairline-b bg-white">
+      <header className="hairline-b bg-ink-900">
         <div className="px-4 sm:px-6 h-16 flex items-center gap-3">
-          <span className="grid size-9 place-items-center rounded-[10px] bg-gradient-to-b from-[#60a5fa] to-[#2563eb] shrink-0" aria-hidden>
+          <span className="grid size-9 place-items-center rounded-[10px] bg-gradient-to-b from-[#6fe6d6] to-[#0d7d6f] shrink-0" aria-hidden>
             <svg viewBox="0 0 24 24" className="size-5" fill="none" aria-hidden>
-              <path d="M12 3c2.6 3.6 4.7 6 4.7 8.4a4.7 4.7 0 1 1-9.4 0C7.3 9 9.4 6.6 12 3z" fill="#fff" />
+              <path d="M12 3c2.6 3.6 4.7 6 4.7 8.4a4.7 4.7 0 1 1-9.4 0C7.3 9 9.4 6.6 12 3z" fill="#04211e" />
             </svg>
           </span>
-          <span className="font-display font-bold text-slate-900 text-sm">JalSetu</span>
-          <span className="text-[0.62rem] text-slate-400 hidden sm:inline">Delhi Waterlogging Intelligence</span>
+          <span className="font-display font-bold text-slate-100 text-sm">JalSetu</span>
+          <span className="text-[0.62rem] text-slate-500 hidden sm:inline">Delhi Waterlogging Intelligence</span>
           <Link
             href="/"
-            className="ml-auto inline-flex items-center gap-1.5 min-h-11 rounded-lg border border-border px-3.5 text-xs font-semibold text-slate-600 hover:bg-ink-850 transition-colors"
+            className="ml-auto inline-flex items-center gap-1.5 min-h-11 rounded-lg border border-border px-3.5 text-xs font-semibold text-slate-300 hover:border-aqua/40 hover:text-aqua hover:bg-white/[0.04] transition-colors"
           >
             <Home className="size-3.5" aria-hidden />
             Back To Home
@@ -57,28 +57,28 @@ export default function NotFound() {
       <main className="flex-1 grid place-items-center px-4 py-10">
         <div className="w-full max-w-xl">
           <div className="panel rounded-xl p-6 sm:p-8 text-center">
-            <div className="mx-auto size-12 grid place-items-center rounded-xl bg-blue-50 text-water">
+            <div className="mx-auto size-12 grid place-items-center rounded-xl bg-aqua/10 text-aqua aqua-glow">
               <MapPinOff className="size-6" aria-hidden />
             </div>
-            <h1 className="mt-4 font-display text-xl font-bold tracking-tight text-slate-900">
+            <h1 className="mt-4 font-display text-xl font-bold tracking-tight text-slate-100">
               Page Not Found
             </h1>
-            <p className="mt-2 text-sm text-slate-600 leading-relaxed max-w-md mx-auto">
+            <p className="mt-2 text-sm text-slate-400 leading-relaxed max-w-md mx-auto">
               The page you asked for does not exist on this site. It may have been moved,
               or the link may be incomplete. Everything important lives one click away.
             </p>
-            <p className="mt-1.5 data-mono text-[0.65rem] text-slate-400">error 404</p>
+            <p className="mt-1.5 data-mono text-[0.65rem] text-slate-500">error 404</p>
 
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-left">
               {pathways.map(({ href, label, hint, icon: Icon }) => (
                 <Link
                   key={href}
                   href={href}
-                  className="group rounded-xl border border-border bg-white p-3.5 hover:border-water/50 hover:bg-blue-50/40 transition-colors"
+                  className="group rounded-xl border border-border bg-ink-850 p-3.5 hover:border-aqua/50 hover:bg-aqua/[0.07] transition-colors"
                 >
                   <span className="flex items-center gap-2">
-                    <Icon className="size-4 text-water" aria-hidden />
-                    <span className="text-xs font-semibold text-slate-800 group-hover:text-water">{label}</span>
+                    <Icon className="size-4 text-aqua" aria-hidden />
+                    <span className="text-xs font-semibold text-slate-200 group-hover:text-aqua">{label}</span>
                   </span>
                   <span className="mt-1 block text-[0.68rem] text-slate-500 leading-snug">{hint}</span>
                 </Link>
@@ -88,7 +88,7 @@ export default function NotFound() {
 
           <p className="mt-4 text-center text-[0.68rem] text-slate-500">
             Looking for a specific event? Open the{" "}
-            <Link href="/#/map" className="text-water hover:text-water-dim font-medium">
+            <Link href="/#/map" className="text-aqua hover:text-aqua-dim font-medium">
               map
             </Link>{" "}
             and search by event code, area or landmark.
@@ -96,7 +96,7 @@ export default function NotFound() {
         </div>
       </main>
 
-      <footer className="mt-auto hairline-t bg-white px-4 sm:px-6 py-3">
+      <footer className="mt-auto hairline-t bg-ink-900 px-4 sm:px-6 py-3">
         <p className="text-[0.62rem] text-muted-foreground">
           JalSetu · Research prototype · synthetic demo data · not a deployed government system
         </p>

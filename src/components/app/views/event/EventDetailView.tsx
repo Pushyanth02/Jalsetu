@@ -130,7 +130,7 @@ export function EventDetailView() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* header */}
-      <Reveal className="hairline-b bg-white px-4 sm:px-6 py-3.5">
+      <Reveal className="hairline-b bg-ink-900 px-4 sm:px-6 py-3.5">
         <div className="flex items-start gap-3 flex-wrap">
           <button onClick={() => navigate(useUi.getState().view === "event" ? "command" : "map")} className="p-1.5 -ml-1.5 mt-0.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-ink-850 transition-colors" aria-label="Back">
             <ArrowLeft className="size-4" />
@@ -168,7 +168,7 @@ export function EventDetailView() {
             >
               <MapPin className="size-3.5" /> <span className="hidden sm:inline">Locate on map</span>
             </Button>
-            <Button size="sm" onClick={() => reassess.mutateAsync()} disabled={reassess.isPending} className="rounded-lg bg-water text-white hover:bg-water-dim">
+            <Button size="sm" onClick={() => reassess.mutateAsync()} disabled={reassess.isPending} className="rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim">
               <RefreshCw className={cn("size-3.5", reassess.isPending && "animate-spin")} />
               {reassess.isPending ? "Reassessing…" : "Reassess risk"}
             </Button>
@@ -183,7 +183,7 @@ export function EventDetailView() {
 
       {/* body: mini map + tabs */}
       <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-[340px_1fr] overflow-y-auto xl:overflow-hidden">
-        <Reveal delay={0.06} className="xl:hairline-r bg-white flex flex-col xl:min-h-0">
+        <Reveal delay={0.06} className="xl:hairline-r bg-ink-900 flex flex-col xl:min-h-0">
           <div className="relative h-52 xl:h-64 shrink-0">
             <MapView events={[{
               id: event.id, code: event.code, title: event.title, category: event.category,
@@ -199,7 +199,7 @@ export function EventDetailView() {
               closedAt: event.closedAt, reopenedAt: event.reopenedAt,
               groundTruthHotspotId: event.groundTruthHotspotId, source: event.source,
             }]} initialZoom={14.2} />
-            <div className="absolute top-2 left-2 rounded-md bg-white/95 px-2 py-1 shadow-sm ring-1 ring-border/70 pointer-events-none">
+            <div className="absolute top-2 left-2 rounded-md bg-ink-950/85 px-2 py-1 shadow-sm ring-1 ring-border/70 pointer-events-none backdrop-blur-sm">
               <p className="micro-label !text-[0.55rem]">Event Focus</p>
             </div>
           </div>
@@ -250,14 +250,14 @@ function DossierTab({ value, current, children }: { value: string; current: stri
       className={cn(
         "relative rounded-md text-xs font-medium text-slate-500 hover:text-slate-700 data-[state=active]:text-slate-900",
         reduce
-          ? "data-[state=active]:bg-white data-[state=active]:shadow-sm"
+          ? "data-[state=active]:bg-ink-850 data-[state=active]:shadow-sm"
           : "data-[state=active]:bg-transparent data-[state=active]:shadow-none"
       )}
     >
       {active && !reduce && (
         <motion.span
           layoutId="dossier-tab-indicator"
-          className="absolute inset-0 rounded-md bg-white shadow-sm"
+          className="absolute inset-0 rounded-md bg-ink-850 shadow-sm"
           aria-hidden
           transition={{ type: "spring", stiffness: 420, damping: 34 }}
         />
@@ -478,7 +478,7 @@ function EvidenceTab({ d, onMutated }: { d: D; onMutated: () => void }) {
                           <p className="text-[0.6rem] data-mono text-muted-foreground break-words">{ev.content.slice(0, 260)}</p>
                         </div>
                       )}
-                      <span className="absolute top-1 left-1 rounded-md bg-white/95 px-1.5 py-0.5 micro-label !text-[0.48rem] text-slate-500 shadow-sm">
+                      <span className="absolute top-1 left-1 rounded-md bg-ink-950/85 px-1.5 py-0.5 micro-label !text-[0.48rem] text-slate-300 shadow-sm backdrop-blur-sm">
                         {ev.kind.toLowerCase().replace(/_/g, " ")}
                       </span>
                     </div>
@@ -800,7 +800,7 @@ function ResponseTab({ d, onMutated }: { d: D; onMutated: () => void }) {
                           <Button size="sm" variant="outline" className="h-7 text-[0.65rem] border-border rounded-lg" onClick={() => actionUpdate.mutate({ actionId: a.id, status: "IN_PROGRESS" })}>
                             start
                           </Button>
-                          <Button size="sm" className="h-7 text-[0.65rem] rounded-lg bg-verified text-white hover:bg-emerald-700" onClick={() => actionUpdate.mutate({ actionId: a.id, status: "COMPLETED", outcome: "Completed via event dossier." })}>
+                          <Button size="sm" className="h-7 text-[0.65rem] rounded-lg bg-verified text-ink-950 hover:bg-emerald-600" onClick={() => actionUpdate.mutate({ actionId: a.id, status: "COMPLETED", outcome: "Completed via event dossier." })}>
                             complete
                           </Button>
                         </div>
@@ -859,7 +859,7 @@ function AssignForm({ onAssign, pending }: { onAssign: (p: { agencyCode: string;
           </Select>
         </div>
         <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="note (optional)" className="h-8 w-44 bg-ink-900 border-border text-xs" maxLength={200} aria-label="Assignment note" />
-        <Button size="sm" disabled={pending} onClick={() => onAssign({ agencyCode: agency, role, note: note || undefined })} className="h-8 rounded-lg bg-water text-white hover:bg-water-dim">
+        <Button size="sm" disabled={pending} onClick={() => onAssign({ agencyCode: agency, role, note: note || undefined })} className="h-8 rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim">
           {pending ? "Assigning…" : "Assign"}
         </Button>
       </div>
@@ -887,7 +887,7 @@ function VerificationStepper({ stages }: { stages: string[] }) {
                 )}
                 aria-hidden
               >
-                {done && <span className="size-1.5 rounded-full bg-white" />}
+                {done && <span className="size-1.5 rounded-full bg-ink-950" />}
               </span>
               <span className={cn("micro-label !text-[0.46rem] text-center leading-tight", done ? "text-verified" : current ? "text-water" : "text-muted-foreground/60")}>
                 {s.toLowerCase().replace(/_/g, " ")}
@@ -998,7 +998,7 @@ function VerificationForms({ event, onVerify, onReopen, pending }: {
               waterDepthCm: depth ? Number(depth) : undefined,
               notes: notes || undefined,
             })
-          } className="w-full h-8 rounded-lg bg-water text-white hover:bg-water-dim">
+          } className="w-full h-8 rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim">
             {pending ? "Recording…" : "Record stage"}
           </Button>
         </div>

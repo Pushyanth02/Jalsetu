@@ -37,7 +37,7 @@ export const BASEMAP_STYLE: StyleSpecification = {
     },
   },
   layers: [
-    { id: "background", type: "background", paint: { "background-color": "#0a0f11" } },
+    { id: "background", type: "background", paint: { "background-color": "#05080f" } },
     { id: "basemap", type: "raster", source: "esri-dark-base", paint: { "raster-opacity": 0.9, "raster-brightness-max": 0.72 } },
     { id: "basemap-labels", type: "raster", source: "esri-dark-labels", paint: { "raster-opacity": 0.85 } },
   ],
@@ -471,7 +471,7 @@ function addStaticLayers(map: MlMap) {
     type: "fill",
     source: "jurisdictions",
     paint: {
-      "fill-color": ["match", ["get", "kind"], "WARD", "#3b82f6", "CORRIDOR", "#60a5fa", "#2563eb"],
+      "fill-color": ["match", ["get", "kind"], "WARD", "#17a892", "CORRIDOR", "#6fe6d6", "#2dd4bf"],
       "fill-opacity": 0.05,
     },
   });
@@ -480,7 +480,7 @@ function addStaticLayers(map: MlMap) {
     type: "line",
     source: "jurisdictions",
     paint: {
-      "line-color": ["match", ["get", "kind"], "WARD", "#3b82f6", "CORRIDOR", "#60a5fa", "#2563eb"],
+      "line-color": ["match", ["get", "kind"], "WARD", "#17a892", "CORRIDOR", "#6fe6d6", "#2dd4bf"],
       "line-width": 1.2,
       "line-opacity": 0.55,
       "line-dasharray": [3, 2],
@@ -504,11 +504,11 @@ function addStaticLayers(map: MlMap) {
         ["linear"],
         ["heatmap-density"],
         0, "rgba(0,0,0,0)",
-        0.2, "#1e3a8a",
-        0.4, "#1d4ed8",
-        0.6, "#3b82f6",
-        0.8, "#f59e0b",
-        1, "#dc2626",
+        0.2, "#0a6e63",
+        0.4, "#17a892",
+        0.6, "#2dd4bf",
+        0.8, "#f5a524",
+        1, "#ff4d6a",
       ],
     },
   });
@@ -518,8 +518,8 @@ function addStaticLayers(map: MlMap) {
     source: "hotspots",
     paint: {
       "circle-radius": ["interpolate", ["linear"], ["get", "score"], 30, 4, 60, 7, 100, 11],
-      "circle-color": "#ea580c",
-      "circle-stroke-color": "#0a0f11",
+      "circle-color": "#fb8f3c",
+      "circle-stroke-color": "#05080f",
       "circle-stroke-width": 1,
       "circle-opacity": 0.9,
     },
@@ -534,7 +534,7 @@ function addStaticLayers(map: MlMap) {
     paint: {
       "circle-radius": 16,
       "circle-color": "transparent",
-      "circle-stroke-color": "#d97706",
+      "circle-stroke-color": "#f5a524",
       "circle-stroke-width": 1.2,
       "circle-stroke-opacity": 0.7,
     },
@@ -545,7 +545,7 @@ function addStaticLayers(map: MlMap) {
     source: "groundtruth",
     paint: {
       "circle-radius": 3,
-      "circle-color": "#d97706",
+      "circle-color": "#f5a524",
     },
   });
 
@@ -556,7 +556,7 @@ function addStaticLayers(map: MlMap) {
     type: "line",
     source: "drains",
     paint: {
-      "line-color": ["case", ["==", ["get", "kind"], "ROAD_SEGMENT"], "#64748b", "#2e8f85"],
+      "line-color": ["case", ["==", ["get", "kind"], "ROAD_SEGMENT"], "#5b6893", "#2dd4bf"],
       "line-width": ["case", ["==", ["get", "kind"], "ROAD_SEGMENT"], 1.4, 2.2],
       "line-opacity": 0.75,
     },
@@ -569,8 +569,8 @@ function addStaticLayers(map: MlMap) {
     filter: ["!in", "kind", "PUMP_STATION"],
     paint: {
       "circle-radius": 3,
-      "circle-color": "#64748b",
-      "circle-stroke-color": "#0a0f11",
+      "circle-color": "#5b6893",
+      "circle-stroke-color": "#05080f",
       "circle-stroke-width": 0.8,
       "circle-opacity": 0.85,
     },
@@ -582,8 +582,8 @@ function addStaticLayers(map: MlMap) {
     filter: ["==", ["get", "kind"], "PUMP_STATION"],
     paint: {
       "circle-radius": 5,
-      "circle-color": "#7fb8c9",
-      "circle-stroke-color": "#0a0f11",
+      "circle-color": "#6fe6d6",
+      "circle-stroke-color": "#05080f",
       "circle-stroke-width": 1,
     },
   });
@@ -594,13 +594,13 @@ function addStaticLayers(map: MlMap) {
     id: "user-accuracy-fill",
     type: "fill",
     source: "user-accuracy",
-    paint: { "fill-color": "#2563eb", "fill-opacity": 0.1 },
+    paint: { "fill-color": "#2dd4bf", "fill-opacity": 0.1 },
   });
   map.addLayer({
     id: "user-accuracy-line",
     type: "line",
     source: "user-accuracy",
-    paint: { "line-color": "#2563eb", "line-opacity": 0.35, "line-width": 1 },
+    paint: { "line-color": "#2dd4bf", "line-opacity": 0.35, "line-width": 1 },
   });
 
   // clickable jurisdiction polygons → spatial filter

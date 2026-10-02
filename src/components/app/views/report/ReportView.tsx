@@ -136,7 +136,7 @@ function dataUrlKb(dataUrl: string): number {
 export function ReportView() {
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-y-auto">
-      <div className="hairline-b bg-white px-4 sm:px-6 py-3.5">
+      <div className="hairline-b bg-ink-900 px-4 sm:px-6 py-3.5">
         <h1 className="flex items-center gap-2.5 font-display text-lg font-bold tracking-tight text-slate-900 leading-tight">
           <span className="grid size-9 place-items-center rounded-lg bg-blue-50 text-water shrink-0" aria-hidden>
             <FileCheck className="size-4.5" />
@@ -458,7 +458,7 @@ function ReportWizard() {
                 <span
                   className={cn(
                     "grid size-8 place-items-center rounded-full font-semibold data-mono !text-[0.72rem] !tracking-normal transition-colors",
-                    done ? (current ? "bg-water text-white" : "bg-blue-50 text-water") : current ? "bg-water text-white" : "bg-ink-850 text-slate-400"
+                    done ? (current ? "bg-aqua text-ink-950" : "bg-blue-50 text-aqua") : current ? "bg-aqua text-ink-950" : "bg-ink-850 text-slate-400"
                   )}
                   aria-hidden
                 >
@@ -574,12 +574,12 @@ function ReportWizard() {
             {step < 3 ? `${step + 1} of 4` : "Final Check"}
           </span>
           {step < 3 ? (
-            <Button type="button" size="sm" className="group relative overflow-hidden rounded-lg bg-water text-white hover:bg-water-dim" onClick={next}>
+            <Button type="button" size="sm" className="group relative overflow-hidden rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim" onClick={next}>
               {attempted && !stepValid ? "Fix to continue" : "Continue"} <ChevronRight className="size-3.5" aria-hidden />
               <Shine />
             </Button>
           ) : (
-            <Button type="button" size="sm" className="group relative overflow-hidden rounded-lg bg-water text-white hover:bg-water-dim" disabled={submit.isPending} onClick={next}>
+            <Button type="button" size="sm" className="group relative overflow-hidden rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim" disabled={submit.isPending} onClick={next}>
               {submit.isPending ? "Submitting…" : "Submit report"}
               <Shine />
             </Button>
@@ -619,7 +619,7 @@ function StepLocation(p: {
     <div className="space-y-4">
       <div className="relative h-52 sm:h-60 rounded-xl overflow-hidden border border-border/70 shadow-sm">
         <MapView events={[]} interactive className="size-full" />
-        <div className="absolute inset-x-0 bottom-0 bg-white/90 backdrop-blur-sm border-t border-slate-200/70 p-2.5 pointer-events-none">
+        <div className="absolute inset-x-0 bottom-0 bg-ink-950/92 backdrop-blur-sm border-t border-hairline p-2.5 pointer-events-none">
           <p className="micro-label !text-[0.52rem] text-slate-500">
             Pilot area: central Delhi · place your report using coordinates, GPS or an area below
           </p>
@@ -750,7 +750,7 @@ function OptionCard({ selected, children }: { selected: boolean; children: React
     <HoverLift>
       <label
         className={cn(
-          "flex items-start gap-2.5 rounded-xl border p-3 cursor-pointer transition-colors bg-white shadow-xs",
+          "flex items-start gap-2.5 rounded-xl border p-3 cursor-pointer transition-colors bg-ink-900 shadow-xs",
           selected ? "border-water bg-blue-50" : "border-border/80 hover:bg-ink-850/60"
         )}
       >
@@ -887,7 +887,7 @@ function StepEvidence(props: StepEvidenceProps) {
         </div>
         {photoErr && <p className="mt-1.5 text-[0.62rem] text-sev-high" role="alert">{photoErr}</p>}
         {photo && (
-          <figure className="mt-2.5 flex items-start gap-3 rounded-xl border border-border/70 bg-white p-2.5 shadow-sm ring-1 ring-slate-200/60 max-w-sm">
+          <figure className="mt-2.5 flex items-start gap-3 rounded-xl border border-border/70 bg-ink-900 p-2.5 shadow-sm ring-1 ring-hairline max-w-sm">
             <div className="relative rounded-lg overflow-hidden border border-border/60 size-20 shrink-0 bg-slate-100">
               <img src={photo.dataUrl} alt="Report photo preview" className="size-full object-cover" />
             </div>
@@ -925,7 +925,7 @@ function StepEvidence(props: StepEvidenceProps) {
 
       <div className="rounded-xl border border-border/70 bg-slate-50/70 p-3.5">
         <label className="flex items-start gap-2.5 cursor-pointer" htmlFor="rep-consent">
-          <Checkbox id="rep-consent" checked={consent} onCheckedChange={(v) => onConsent(v === true)} className="mt-0.5 data-[state=checked]:bg-water data-[state=checked]:border-water data-[state=checked]:text-white" />
+          <Checkbox id="rep-consent" checked={consent} onCheckedChange={(v) => onConsent(v === true)} className="mt-0.5 data-[state=checked]:bg-aqua data-[state=checked]:border-aqua data-[state=checked]:text-ink-950" />
           <span className="text-xs leading-relaxed text-slate-600">
             <span className="text-slate-800 font-medium">I consent to this report being processed.</span>
             <span className="block mt-0.5 text-slate-500">
@@ -977,7 +977,7 @@ function StepReview(p: {
       </p>
       {p.submitError && <ErrorNote message={p.submitError} />}
       <div className="flex justify-end">
-        <Button size="sm" className="group relative overflow-hidden rounded-lg bg-water text-white hover:bg-water-dim" disabled={p.submitPending} onClick={p.onSubmit}>
+        <Button size="sm" className="group relative overflow-hidden rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim" disabled={p.submitPending} onClick={p.onSubmit}>
           {p.submitPending ? "Submitting…" : "Submit report"}
           <Shine />
         </Button>
@@ -1025,7 +1025,7 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <span className="data-mono text-2xl sm:text-[1.7rem] font-bold text-water tracking-tight">{outcome.publicRef}</span>
-            <Button type="button" variant="outline" size="sm" className="rounded-lg border-blue-200 bg-white text-water hover:bg-blue-100/60 h-7 text-[0.65rem]" onClick={copy}>
+            <Button type="button" variant="outline" size="sm" className="rounded-lg border-aqua/25 bg-ink-850 text-aqua hover:bg-aqua/10 h-7 text-[0.65rem]" onClick={copy}>
               {copied ? <Check className="size-3" aria-hidden /> : <Copy className="size-3" aria-hidden />}
               {copied ? "Copied" : "Copy"}
             </Button>
@@ -1044,7 +1044,7 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
 
       <Reveal delay={0.14}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="rounded-xl border border-border/70 bg-white p-3.5 shadow-xs">
+          <div className="rounded-xl border border-border/70 bg-ink-900 p-3.5 shadow-xs">
             <div className="flex items-center justify-between gap-2">
               <p className="micro-label !text-[0.52rem]">Classification</p>
               <ProviderChip provider={outcome.classification.provider} model={outcome.classification.modelId} />
@@ -1073,7 +1073,7 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
             )}
           </div>
 
-          <div className="rounded-xl border border-border/70 bg-white p-3.5 shadow-xs">
+          <div className="rounded-xl border border-border/70 bg-ink-900 p-3.5 shadow-xs">
             <p className="micro-label !text-[0.52rem]">Risk &amp; Routing</p>
             <div className="mt-2.5 flex items-center gap-2">
               <RiskBadge band={outcome.risk.band} score={outcome.risk.score} />
@@ -1097,11 +1097,11 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
       </Reveal>
 
       <Reveal delay={0.2}>
-        <div className="rounded-xl border border-border/70 bg-white p-3.5 shadow-xs flex items-center gap-3 flex-wrap">
+        <div className="rounded-xl border border-border/70 bg-ink-900 p-3.5 shadow-xs flex items-center gap-3 flex-wrap">
           <span className="micro-label !text-[0.52rem] text-muted-foreground">Urban Event</span>
           <span className="data-mono text-sm font-semibold text-water">{outcome.event.code}</span>
           <span className="micro-label !text-[0.52rem] text-muted-foreground">Status {outcome.event.status.toLowerCase().replace(/_/g, " ")}</span>
-          <Button size="sm" className="ml-auto rounded-lg bg-water text-white hover:bg-water-dim" onClick={() => navigate("event", outcome.event.code)}>
+          <Button size="sm" className="ml-auto rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim" onClick={() => navigate("event", outcome.event.code)}>
             Open event dossier <ChevronRight className="size-3.5" aria-hidden />
           </Button>
         </div>

@@ -111,7 +111,7 @@ export function MapSelectionCard({ events }: { events: EventSummary[] }) {
       <div className="mt-3 flex gap-2">
         <button
           onClick={() => navigate("event", ev.code)}
-          className="flex-1 rounded-lg bg-water text-white micro-label !text-[0.62rem] font-semibold !tracking-[0.12em] py-2 hover:bg-water-dim transition-colors"
+          className="flex-1 rounded-lg bg-aqua text-ink-950 micro-label !text-[0.62rem] font-semibold !tracking-[0.12em] py-2 hover:bg-aqua-dim transition-colors"
         >
           Open full dossier
         </button>

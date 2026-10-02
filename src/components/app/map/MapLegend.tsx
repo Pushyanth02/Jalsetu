@@ -38,21 +38,21 @@ export function MapLegend({ compact }: { compact?: boolean }) {
   return (
     <div className={cn("absolute z-10 bottom-3 left-3 panel rounded-xl p-3 max-w-48", compact && "text-[0.62rem]")}>
       {(compact || isSmall) && (
-        <button onClick={() => setOpen(false)} className="absolute top-1.5 right-2 p-1 micro-label !text-[0.55rem] text-slate-400 hover:text-slate-600" aria-label="Collapse legend">
+        <button onClick={() => setOpen(false)} className="absolute top-1.5 right-2 p-1 micro-label !text-[0.55rem] text-slate-500 hover:text-aqua" aria-label="Collapse legend">
           hide
         </button>
       )}
       <p className="micro-label !text-[0.55rem] text-slate-500 mb-2">legend</p>
-      <ul className="space-y-1.5 text-[0.66rem] text-slate-600">
-        <LegendRow color="#dc2626" label="severity 4 · critical" />
-        <LegendRow color="#ea580c" label="severity 3 · high" />
-        <LegendRow color="#d97706" label="severity 2 · moderate" />
-        <LegendRow color="#64748b" label="severity 1 · closed/low" />
-        <LegendRow color="#3b82f6" shape="line" label="drain / catchment" />
-        <LegendRow color="#60a5fa" shape="dot-lg" label="pump station" />
-        <LegendRow color="#d97706" shape="halo" label="ground-truth hotspot" />
-        <LegendRow color="#3b82f6" shape="glow" label="rainfall gauge (mm)" />
-        <LegendRow color="#2563eb" shape="dot-lg" label="your location (Locate Me)" />
+      <ul className="space-y-1.5 text-[0.66rem] text-slate-400">
+        <LegendRow color="#ff4d6a" label="severity 4 · critical" />
+        <LegendRow color="#fb8f3c" label="severity 3 · high" />
+        <LegendRow color="#f5a524" label="severity 2 · moderate" />
+        <LegendRow color="#5b6893" label="severity 1 · closed/low" />
+        <LegendRow color="#17a892" shape="line" label="drain / catchment" />
+        <LegendRow color="#6fe6d6" shape="dot-lg" label="pump station" />
+        <LegendRow color="#f5a524" shape="halo" label="ground-truth hotspot" />
+        <LegendRow color="#2dd4bf" shape="glow" label="rainfall gauge (mm)" />
+        <LegendRow color="#2dd4bf" shape="dot-lg" label="your location (Locate Me)" />
       </ul>
       <p className="mt-2.5 pt-2 hairline-t micro-label !text-[0.52rem] text-slate-400 leading-relaxed">
         marker size ∝ risk score · tap a marker for details

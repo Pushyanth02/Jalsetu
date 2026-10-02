@@ -11,6 +11,11 @@ import type { ViewId } from "./store";
  */
 
 export const VIEW_SEO: Record<ViewId, { title: string; description: string }> = {
+  landing: {
+    title: "Delhi Waterlogging Intelligence",
+    description:
+      "JalSetu turns citizen waterlogging reports, rainfall, GIS and infrastructure data into explainable, risk-scored urban events for a Delhi pilot. Explore the live demo: command centre, map, event dossiers, AI investigation and field verification.",
+  },
   command: {
     title: "Command Center",
     description:

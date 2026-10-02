@@ -97,20 +97,21 @@ interface HealthResponse {
   dataLabel: string;
 }
 
-const BLUE = "#3b82f6";  // at/above confidence flag threshold (blue-500)
-const AMBER = "#f59e0b"; // below confidence flag threshold (amber-500)
-const GRID_STROKE = "#e2e8f0";
-const TICK = { fill: "#94a3b8", fontSize: 9, fontFamily: "var(--font-plex-mono)" };
+const BLUE = "#2dd4bf";  // at/above confidence flag threshold (aqua)
+const AMBER = "#f5a524"; // below confidence flag threshold (amber)
+const GRID_STROKE = "#1a2440";
+const TICK = { fill: "#7a88b8", fontSize: 9, fontFamily: "var(--font-plex-mono)" };
 const TOOLTIP_STYLE = {
-  background: "#ffffff",
-  border: "1px solid #e2e8f0",
+  background: "#0c142b",
+  border: "1px solid #24406b",
   borderRadius: 8,
   fontSize: 11,
   fontFamily: "var(--font-plex-mono)",
-  boxShadow: "0 4px 12px rgba(15,23,42,0.08)",
+  color: "#e9eeff",
+  boxShadow: "0 8px 24px -8px rgba(0,0,0,0.9)",
 };
-const LABEL_STYLE = { color: "#64748b" };
-const CURSOR_FILL = { fill: "rgba(37, 99, 235, 0.05)" };
+const LABEL_STYLE = { color: "#8794c2" };
+const CURSOR_FILL = { fill: "rgba(45, 212, 191, 0.06)" };
 
 const clean = (s: string) => s.replace(/-/g, "-").replace(/-/g, "-");
 
@@ -214,7 +215,7 @@ export function HealthView() {
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* header strip */}
-      <div className="hairline-b bg-white px-4 sm:px-6 py-3.5">
+      <div className="hairline-b bg-ink-900 px-4 sm:px-6 py-3.5">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
@@ -497,7 +498,7 @@ export function HealthView() {
 
                 <div className="rounded-xl border border-border bg-ink-850/50 px-3.5 py-3">
                   <p className="micro-label !text-[0.55rem] text-slate-500 mb-2">Model Runs · Last 25</p>
-                  <div className="flex flex-wrap divide-x divide-border rounded-lg border border-border bg-white">
+                  <div className="flex flex-wrap divide-x divide-border rounded-lg border border-border bg-ink-900">
                     <Segment label="Total" value={<CountUp value={mh.runsSummary.total} />} tone="plain" border={false} />
                     <Segment label="Succeeded" value={<CountUp value={mh.runsSummary.succeeded} />} tone="teal" border={false} />
                     <Segment label="Failed" value={<CountUp value={mh.runsSummary.failed} />} tone={mh.runsSummary.failed > 0 ? "red" : "plain"} border={false} />
@@ -732,7 +733,7 @@ export function HealthView() {
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {GLOSSARY.map((g) => (
-                <div key={g.term} className="rounded-xl border border-border bg-white px-3.5 py-2.5 shadow-xs">
+                <div key={g.term} className="rounded-xl border border-border bg-ink-900 px-3.5 py-2.5 shadow-xs">
                   <p className="text-xs leading-relaxed">
                     <span className="font-bold text-slate-800">{g.term}: </span>
                     <span className="text-[0.68rem] text-slate-500">{g.definition}</span>

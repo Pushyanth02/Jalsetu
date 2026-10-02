@@ -248,7 +248,7 @@ export function InvestigateView() {
                       <span
                         className={cn(
                           "grid size-9 lg:size-10 place-items-center rounded-lg shrink-0",
-                          active ? "bg-white text-water shadow-sm" : "bg-blue-50 text-water"
+                          active ? "bg-aqua/10 text-aqua shadow-sm" : "bg-ink-850 text-slate-400"
                         )}
                       >
                         <t.icon className="size-4 lg:size-5" aria-hidden />
@@ -367,7 +367,7 @@ function ClassifyInput({ classify }: { classify: ClassifyMutation }) {
                 lng: lng.trim() && Number.isFinite(lngNum) ? lngNum : undefined,
               })
             }
-            className="group relative w-full overflow-hidden rounded-lg bg-water text-white hover:bg-water-dim shadow-sm"
+            className="group relative w-full overflow-hidden rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim shadow-sm"
           >
             <Sparkles className={cn("size-3.5", pending && "animate-pulse")} aria-hidden />
             {pending ? "Classifying…" : "Classify text"}
@@ -427,7 +427,7 @@ function ReportQueue({ pending, onClassify }: { pending: boolean; onClassify: (r
                 variant="outline"
                 disabled={pending}
                 onClick={() => onClassify(r)}
-                className="ml-auto group relative h-7 overflow-hidden rounded-lg bg-water border-water text-white hover:bg-water-dim hover:text-white text-[0.65rem] shadow-sm"
+                className="ml-auto group relative h-7 overflow-hidden rounded-lg bg-aqua border-aqua text-ink-950 hover:bg-aqua-dim hover:text-ink-950 text-[0.65rem] shadow-sm"
               >
                 <Sparkles className={cn("size-3", pending && "animate-pulse")} aria-hidden />
                 {r.classification ? "Re-run" : "Classify"}
@@ -659,7 +659,7 @@ function ClusterInput({ cluster, radius, setRadius }: { cluster: ClusterMutation
         size="sm"
         disabled={cluster.isPending}
         onClick={() => cluster.mutate(radius)}
-        className="group relative w-full overflow-hidden rounded-lg bg-water text-white hover:bg-water-dim shadow-sm"
+        className="group relative w-full overflow-hidden rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim shadow-sm"
       >
         <GitMerge className={cn("size-3.5", cluster.isPending && "animate-pulse")} aria-hidden />
         {cluster.isPending ? "Clustering…" : "Run clustering"}
@@ -853,7 +853,7 @@ function RiskInput({ risk }: { risk: RiskMutation }) {
         size="sm"
         disabled={!selectedEvent || risk.isPending}
         onClick={() => selectedEvent && risk.mutate(selectedEvent.id)}
-        className="group relative w-full overflow-hidden rounded-lg bg-water text-white hover:bg-water-dim shadow-sm"
+        className="group relative w-full overflow-hidden rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim shadow-sm"
       >
         <Gauge className={cn("size-3.5", risk.isPending && "animate-pulse")} aria-hidden />
         {risk.isPending ? "Assessing…" : "Assess risk"}

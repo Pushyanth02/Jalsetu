@@ -44,7 +44,7 @@ export class MapErrorBoundary extends React.Component<Props, State> {
             <p className="mt-2 data-mono text-[0.6rem] text-slate-400 break-words">{this.state.error.message}</p>
             <button
               onClick={() => this.setState({ error: null }, this.props.onRetry)}
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-water px-4 py-2.5 text-xs font-semibold text-white hover:bg-water-dim transition-colors"
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-aqua px-4 py-2.5 text-xs font-semibold text-ink-950 hover:bg-aqua-dim transition-colors"
             >
               <RotateCw className="size-3.5" aria-hidden />
               Retry Loading Map
