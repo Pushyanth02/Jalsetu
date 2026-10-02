@@ -31,18 +31,20 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "health", label: "Data & Model Health", shortLabel: "Health", icon: Droplets, group: "research" },
 ];
 
+import { assetPath, assetSrcSet } from "@/lib/client/assets";
+
 /** JalSetu logo — optimized for LCP, crisp on all DPIs */
 export function BrandLockup({ compact = false }: { compact?: boolean }) {
   return (
     <span className="flex items-center gap-2.5">
       <img
-        src="/img/jalsetu-mark.svg"
+        src={assetPath("/img/jalsetu-mark.svg")}
         alt="JalSetu"
         width={34}
         height={34}
         decoding="sync"
         fetchPriority="high"
-        className="shrink-0 rounded-[10px] size-[34px] object-contain"
+        className="shrink-0 rounded-[10px] size-8.5 object-contain"
       />
       <span className="min-w-0 text-left">
         <span className="block font-display text-[1.05rem] font-bold leading-none text-white tracking-tight">JalSetu</span>
@@ -59,13 +61,13 @@ export function BrandLockupLight({ compact = false }: { compact?: boolean }) {
   return (
     <span className="flex items-center gap-2.5">
       <img
-        src="/img/jalsetu-mark.svg"
+        src={assetPath("/img/jalsetu-mark.svg")}
         alt="JalSetu"
         width={28}
         height={28}
         decoding="async"
         loading="lazy"
-        className="shrink-0 rounded-[8px] size-7 object-contain"
+        className="shrink-0 rounded-xl size-7 object-contain"
       />
       <span className="min-w-0 text-left">
         <span className="block font-display text-sm font-bold leading-none text-slate-100">JalSetu</span>
@@ -96,7 +98,7 @@ export function NavRail() {
   return (
     <nav
       aria-label="Primary"
-      className="hidden lg:flex w-[240px] xl:w-[264px] shrink-0 flex-col bg-sb-900 border-r border-hairline"
+      className="hidden lg:flex w-60 xl:w-66 shrink-0 flex-col bg-sb-900 border-r border-hairline"
     >
       <div className="px-5 pt-5 pb-4 border-b border-hairline shrink-0">
         <button
@@ -111,7 +113,7 @@ export function NavRail() {
       <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-4 space-y-5">
         {groups.map((g) => (
           <div key={g.key}>
-            <p className="px-3 pb-2 micro-label !text-[0.56rem] !text-aqua/60 tracking-[0.14em]">{g.label}</p>
+            <p className="px-3 pb-2 micro-label text-[0.56rem]! text-aqua/60! tracking-[0.14em]">{g.label}</p>
             <ul className="space-y-0.5" role="list">
               {NAV_ITEMS.filter((n) => n.group === g.key).map((item) => {
                 const active = view === item.id;
@@ -127,14 +129,14 @@ export function NavRail() {
                         "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 xl:py-2 text-[0.84rem] font-medium transition-colors text-left touch-target",
                         active
                           ? "text-aqua bg-aqua/10 ring-1 ring-aqua/25"
-                          : "text-white/60 hover:text-white hover:bg-white/[0.06]",
+                          : "text-white/60 hover:text-white hover:bg-white/6",
                         disabled && "opacity-35 cursor-not-allowed hover:bg-transparent hover:text-white/60"
                       )}
                     >
                       {active && (
                         <motion.span
                           layoutId="nav-active-bar"
-                          className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-water-dim"
+                          className="absolute left-0 top-1.5 bottom-1.5 w-0.75 rounded-full bg-water-dim"
                           transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 500, damping: 38 }}
                           aria-hidden
                         />
@@ -180,19 +182,22 @@ function WeatherWidget() {
     <div className="shrink-0 border-t border-hairline p-4">
       <div className="relative overflow-hidden rounded-xl h-24 bg-sb-850">
         <picture>
-          <source srcSet="/img/weather-delhi.webp 480w" type="image/webp" sizes="280px" />
+          <source srcSet={assetSrcSet("/img/weather-delhi.webp 480w")} type="image/webp" sizes="280px" />
           <img
-            src="/img/weather-delhi.png"
+            src={assetPath("/img/weather-delhi.png")}
             alt=""
             width={480}
             height={96}
             loading="lazy"
             decoding="async"
             className="absolute inset-0 size-full object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
             aria-hidden
           />
         </picture>
-        <div className="absolute inset-0 bg-gradient-to-t from-sb-900/90 via-sb-900/35 to-transparent" aria-hidden />
+        <div className="absolute inset-0 bg-linear-to-t from-sb-900/90 via-sb-900/35 to-transparent" aria-hidden />
         <div className="absolute bottom-2 left-3 right-3 flex items-end justify-between gap-2">
           <div>
             <p className="flex items-baseline gap-1.5 leading-none">
@@ -211,7 +216,7 @@ function WeatherWidget() {
       </div>
       <div className="mt-2.5 flex items-center justify-between gap-2">
         <span className="data-mono text-[0.6rem] text-white/45 truncate" suppressHydrationWarning>{dateLabel}</span>
-        <span className="micro-label !text-[0.52rem] !text-white/30 shrink-0">synthetic</span>
+        <span className="micro-label text-[0.52rem]! text-white/30! shrink-0">synthetic</span>
       </div>
     </div>
   );
@@ -241,9 +246,9 @@ export function MobileNav() {
   return (
     <nav
       aria-label="Primary mobile"
-      className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-ink-950/95 backdrop-blur-xl supports-[backdrop-filter]:bg-ink-950/80 border-t border-hairline shadow-[0_-8px_28px_-12px_rgba(0,0,0,0.95)] safe-pb"
+      className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-ink-950/95 backdrop-blur supports-backdrop-filter:bg-ink-950/80 border-t border-hairline shadow-[0_-8px_28px_-12px_rgba(0,0,0,0.95)] safe-pb"
     >
-      <ul className="grid grid-cols-5 items-end max-w-[520px] mx-auto" role="list">
+      <ul className="grid grid-cols-5 items-end max-w-130 mx-auto" role="list">
         {left.slice(0, 2).map((item) => (
           <MobileNavItem key={item.id} item={item} active={view === item.id} />
         ))}
@@ -254,14 +259,14 @@ export function MobileNav() {
             aria-label="Report a waterlogging issue"
             aria-current={view === "report" ? "page" : undefined}
             className={cn(
-              "relative -mt-5 grid size-[56px] place-items-center rounded-full bg-aqua text-ink-950 shadow-lg shadow-aqua/30 transition-all touch-target",
+              "relative -mt-5 grid size-14 place-items-center rounded-full bg-aqua text-ink-950 shadow-lg shadow-aqua/30 transition-all touch-target",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aqua",
               view === "report" && "ring-2 ring-aqua ring-offset-2 ring-offset-ink-950"
             )}
           >
             <Plus className="size-6" aria-hidden />
           </motion.button>
-          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 micro-label !text-[0.52rem] !text-water font-semibold pointer-events-none">
+          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 micro-label text-[0.52rem]! text-water! font-semibold pointer-events-none">
             Report
           </span>
         </li>

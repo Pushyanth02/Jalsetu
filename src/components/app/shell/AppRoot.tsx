@@ -55,11 +55,11 @@ export function AppRoot() {
   }
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-background">
+    <div className="flex min-h-dvh flex-col bg-background">
       <TopBar />
       <div className="flex flex-1 min-h-0">
         <NavRail />
-        <main className="flex-1 min-w-0 min-h-0 flex flex-col pb-[88px] sm:pb-[76px] lg:pb-0" id="main" tabIndex={-1}>
+        <main className="flex-1 min-w-0 min-h-0 flex flex-col pb-22 sm:pb-19 lg:pb-0" id="main" tabIndex={-1}>
           <ViewBreadcrumb />
           <motion.div
             key={`${view}:${eventId ?? ""}`}
@@ -86,6 +86,8 @@ export function AppRoot() {
   );
 }
 
+import { assetPath } from "@/lib/client/assets";
+
 function AppFooter() {
   const { data } = useQuery({
     queryKey: ["footer-versions"],
@@ -99,7 +101,7 @@ function AppFooter() {
           <BrandLockupLight compact />
         </span>
         <span className="sm:hidden flex items-center gap-2">
-          <img src="/img/jalsetu-mark.svg" alt="" width={22} height={22} className="size-[22px] rounded-md shrink-0" aria-hidden />
+          <img src={assetPath("/img/jalsetu-mark.svg")} alt="" width={22} height={22} className="size-5.5 rounded-md shrink-0" aria-hidden />
           <span className="font-display font-bold text-slate-100 text-xs">JalSetu</span>
         </span>
         <span className="hidden md:inline text-slate-400 font-medium">Urban Event Intelligence · Delhi pilot</span>
@@ -118,8 +120,8 @@ function AppFooter() {
         <FooterLink href="#/analytics" label="Research & Analytics" />
         <FooterLink href="#/health" label="Data & Model Health" />
         <span className="hidden sm:inline text-slate-600" aria-hidden>·</span>
-        <FooterLink href="/llms.txt" label="For AI Assistants" external />
-        <FooterLink href="/sitemap.xml" label="Sitemap" external />
+        <FooterLink href={assetPath("/llms.txt")} label="For AI Assistants" external />
+        <FooterLink href={assetPath("/sitemap.xml")} label="Sitemap" external />
       </nav>
     </footer>
   );

@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { CountUp, SpotlightCard, Stagger, StaggerItem, Reveal, PulseDot, HoverLift } from "@/components/motion/kit";
 import { useState } from "react";
+import { assetPath } from "@/lib/client/assets";
 
 // COMMAND CENTER - replicates the reference design: KPI stat cards, live
 // operations map with floating layers panel, recent reports + operational
@@ -57,7 +58,7 @@ export function CommandCenterView() {
               <span className="text-[0.65rem] font-semibold text-emerald-700">Live Data</span>
               <span className="data-mono text-[0.6rem] text-emerald-600/70">demo mode</span>
             </span>
-            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 micro-label !text-[0.58rem] text-water">
+            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 micro-label text-[0.58rem]! text-water">
               <Radio className="size-3" aria-hidden /> 3 pilot jurisdictions
             </span>
           </div>
@@ -293,10 +294,10 @@ function LayersPanel() {
             aria-label="Map layers"
           >
             <div className="flex items-center justify-between mb-2">
-              <p className="micro-label !text-[0.56rem] text-slate-500 flex items-center gap-1.5">
+              <p className="micro-label text-[0.56rem]! text-slate-500 flex items-center gap-1.5">
                 <Layers className="size-3" aria-hidden /> Layers
               </p>
-              <button onClick={() => setOpen(false)} className="micro-label !text-[0.55rem] text-slate-400 hover:text-slate-600" aria-label="Hide layers panel">
+              <button onClick={() => setOpen(false)} className="micro-label text-[0.55rem]! text-slate-400 hover:text-slate-600" aria-label="Hide layers panel">
                 hide
               </button>
             </div>
@@ -323,7 +324,7 @@ function LayersPanel() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setOpen(true)}
-            className="panel rounded-lg px-2.5 py-1.5 micro-label !text-[0.58rem] text-slate-600 flex items-center gap-1.5"
+            className="panel rounded-lg px-2.5 py-1.5 micro-label text-[0.58rem]! text-slate-600 flex items-center gap-1.5"
             aria-label="Show layers panel"
           >
             <Layers className="size-3" aria-hidden /> layers
@@ -367,6 +368,43 @@ interface ReportRow {
   classificationConfidence?: number;
 }
 
+function getReportThumbnail(category: string, description: string): { webp: string; png: string; label: string } {
+  const desc = description.toLowerCase();
+  if (category === "POTHOLE" || desc.includes("pothole") || desc.includes("crater") || desc.includes("broken road")) {
+    return {
+      webp: assetPath("/img/pothole.webp"),
+      png: assetPath("/img/pothole.png"),
+      label: "pothole water accumulation",
+    };
+  }
+  if (category === "DRAIN_OVERFLOW" || desc.includes("drain") || desc.includes("overflow") || desc.includes("nalah") || desc.includes("nala")) {
+    return {
+      webp: assetPath("/img/drain-overflow.webp"),
+      png: assetPath("/img/drain-overflow.png"),
+      label: "overflowing storm drain",
+    };
+  }
+  if (category === "SEWER_BACKUP" || desc.includes("sewer") || desc.includes("manhole") || desc.includes("backup")) {
+    return {
+      webp: assetPath("/img/sewer-backup.webp"),
+      png: assetPath("/img/sewer-backup.png"),
+      label: "sewer manhole overflow",
+    };
+  }
+  if (category === "UNDERPASS" || desc.includes("underpass") || desc.includes("subway") || desc.includes("ito") || desc.includes("minto")) {
+    return {
+      webp: assetPath("/img/ito-underpass.webp"),
+      png: assetPath("/img/ito-underpass.png"),
+      label: "flooded underpass",
+    };
+  }
+  return {
+    webp: assetPath("/img/street-flood.webp"),
+    png: assetPath("/img/street-flood.png"),
+    label: "waterlogged street",
+  };
+}
+
 function RecentReportsPanel() {
   const openEvent = useUi((s) => s.openEvent);
   const { data, isLoading, error, refetch } = useQuery({
@@ -380,7 +418,7 @@ function RecentReportsPanel() {
       title="Recent Reports"
       icon={<Droplets />}
       actions={
-        <button onClick={() => navigate("report")} className="micro-label !text-[0.58rem] text-water hover:text-water-dim transition-colors">
+        <button onClick={() => navigate("report")} className="micro-label text-[0.58rem]! text-water hover:text-water-dim transition-colors">
           view all →
         </button>
       }
@@ -397,49 +435,54 @@ function RecentReportsPanel() {
         <>
           <ul>
             <Stagger>
-              {data.slice(0, 5).map((r) => (
-                <StaggerItem key={r.id}>
-                  <li className="hairline-b last:border-0">
-                    <button
-                      onClick={() => (r.urbanEventId ? openEvent(r.urbanEventId) : navigate("report"))}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-ink-850/70 transition-colors group"
-                      aria-label={`Report ${r.publicRef}`}
-                    >
-                      <picture>
-                        <source
-                          srcSet={r.category === "UNDERPASS" ? "/img/ito-underpass.webp" : "/img/street-flood.webp"}
-                          type="image/webp"
-                        />
-                        <img
-                          src={r.category === "UNDERPASS" ? "/img/ito-underpass.png" : "/img/street-flood.png"}
-                          alt={`${r.publicRef} report thumbnail: ${r.category === "UNDERPASS" ? "flooded underpass" : "waterlogged street"} (illustrative)`}
-                          width={56}
-                          height={44}
-                          className="h-11 w-14 rounded-lg object-cover shrink-0 ring-1 ring-border"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      </picture>
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-center gap-2">
-                          <span className="data-mono text-[0.68rem] font-semibold text-water">{r.publicRef}</span>
-                          <SeverityPill severity={r.severityReported} />
-                          {r.isDuplicate && <span className="micro-label !text-[0.55rem] text-slate-400">merged</span>}
+              {data.slice(0, 5).map((r) => {
+                const thumb = getReportThumbnail(r.category, r.description);
+                return (
+                  <StaggerItem key={r.id}>
+                    <li className="hairline-b last:border-0">
+                      <button
+                        onClick={() => (r.urbanEventId ? openEvent(r.urbanEventId) : navigate("report"))}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-ink-850/70 transition-colors group"
+                        aria-label={`Report ${r.publicRef}`}
+                      >
+                        <div className="relative h-11 w-14 rounded-lg overflow-hidden shrink-0 ring-1 ring-border bg-slate-200">
+                          <picture>
+                            <source srcSet={thumb.webp} type="image/webp" />
+                            <img
+                              src={thumb.png}
+                              alt={`${r.publicRef} report thumbnail: ${thumb.label} (illustrative)`}
+                              width={56}
+                              height={44}
+                              className="size-full object-cover"
+                              loading="lazy"
+                              decoding="async"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                              }}
+                            />
+                          </picture>
+                        </div>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center gap-2">
+                            <span className="data-mono text-[0.68rem] font-semibold text-water">{r.publicRef}</span>
+                            <SeverityPill severity={r.severityReported} />
+                            {r.isDuplicate && <span className="micro-label text-[0.55rem]! text-slate-400">merged</span>}
+                          </span>
+                          <span className="mt-0.5 block text-[0.76rem] text-slate-600 leading-snug line-clamp-1">{r.description}</span>
+                          <span className="mt-1 flex items-center gap-2 text-[0.62rem] text-slate-400">
+                            <span className="data-mono">{r.channel.toLowerCase()}</span>
+                            <TimeAgo iso={r.submittedAt} />
+                          </span>
                         </span>
-                        <span className="mt-0.5 block text-[0.76rem] text-slate-600 leading-snug line-clamp-1">{r.description}</span>
-                        <span className="mt-1 flex items-center gap-2 text-[0.62rem] text-slate-400">
-                          <span className="data-mono">{r.channel.toLowerCase()}</span>
-                          <TimeAgo iso={r.submittedAt} />
-                        </span>
-                      </span>
-                      <ChevronRight className="size-4 text-slate-400 group-hover:text-water shrink-0 transition-colors" aria-hidden />
-                    </button>
-                  </li>
-                </StaggerItem>
-              ))}
+                        <ChevronRight className="size-4 text-slate-400 group-hover:text-water shrink-0 transition-colors" aria-hidden />
+                      </button>
+                    </li>
+                  </StaggerItem>
+                );
+              })}
             </Stagger>
           </ul>
-          <p className="hairline-t px-4 py-2 micro-label !text-[0.52rem] text-muted-foreground/70">
+          <p className="hairline-t px-4 py-2 micro-label text-[0.52rem]! text-muted-foreground/70">
             thumbnails are illustrative · report photos never faked
           </p>
         </>
@@ -456,7 +499,7 @@ function SeverityPill({ severity }: { severity: string }) {
     : severity === "HIGH" ? "bg-orange-50 text-orange-700 border-orange-200"
     : severity === "MEDIUM" ? "bg-amber-50 text-amber-700 border-amber-200"
     : "bg-emerald-50 text-emerald-700 border-emerald-200";
-  return <span className={cn("inline-flex rounded-full border px-1.5 py-0.5 micro-label !text-[0.55rem]", cls)}>{severity.toLowerCase()}</span>;
+  return <span className={cn("inline-flex rounded-full border px-1.5 py-0.5 micro-label text-[0.55rem]!", cls)}>{severity.toLowerCase()}</span>;
 }
 
 /* ---------------------------------------------------- operational alerts */
@@ -474,7 +517,7 @@ function OperationalAlertsPanel() {
     <Panel
       title="Operational Alerts"
       icon={<AlertTriangle />}
-      actions={<span className="micro-label !text-[0.55rem] text-muted-foreground">{d ? `${d.alerts.length} active` : ""}</span>}
+      actions={<span className="micro-label text-[0.55rem]! text-muted-foreground">{d ? `${d.alerts.length} active` : ""}</span>}
       dense
       className="overflow-hidden"
     >
@@ -530,7 +573,7 @@ function ActiveEventQueue({ eventsQ, total }: { eventsQ: { data?: EventSummary[]
       }
       icon={<Radio />}
       actions={
-        <button onClick={() => navigate("map")} className="micro-label !text-[0.58rem] text-water hover:text-water-dim transition-colors">
+        <button onClick={() => navigate("map")} className="micro-label text-[0.58rem]! text-water hover:text-water-dim transition-colors">
           open map →
         </button>
       }
@@ -568,7 +611,7 @@ export function EventRow({ event }: { event: EventSummary }) {
           <StatusBadge status={event.status} />
           <RiskBadge band={event.riskBand} score={event.riskScore} />
           {event.recurrenceCount > 0 && (
-            <span className="micro-label !text-[0.55rem] text-sev-high" title={`recurred ${event.recurrenceCount}×`}>
+            <span className="micro-label text-[0.55rem]! text-sev-high" title={`recurred ${event.recurrenceCount}×`}>
               ↻{event.recurrenceCount}
             </span>
           )}
@@ -597,7 +640,7 @@ function RainfallStrip({ weatherQ, nearest }: { weatherQ: { data?: WeatherRespon
       icon={<Umbrella />}
       actions={
         nearest && (
-          <span className="micro-label !text-[0.55rem] text-slate-400">
+          <span className="micro-label text-[0.55rem]! text-slate-400">
             nearest: {nearest.name} · {(nearest.distanceM / 1000).toFixed(1)}km
           </span>
         )
@@ -636,7 +679,7 @@ function RainfallStrip({ weatherQ, nearest }: { weatherQ: { data?: WeatherRespon
               </span>
             ))}
             <SourceBadge source="SYNTHETIC_DEMO" />
-            <span className="micro-label !text-[0.5rem] text-slate-400">window 72h</span>
+            <span className="micro-label text-[0.5rem]! text-slate-400">window 72h</span>
           </div>
         </>
       ) : (
@@ -672,7 +715,7 @@ function ErrorNoteInline({ message, onRetry }: { message: string; onRetry?: () =
       <span className="text-sev-critical" aria-hidden>⚠</span>
       <span className="text-red-700 flex-1">{message}</span>
       {onRetry && (
-        <button onClick={onRetry} className="micro-label !text-[0.6rem] text-water hover:text-water-dim">retry</button>
+        <button onClick={onRetry} className="micro-label text-[0.6rem]! text-water hover:text-water-dim">retry</button>
       )}
     </div>
   );

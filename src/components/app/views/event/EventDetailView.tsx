@@ -23,6 +23,7 @@ import {
   MessageSquare, Wrench, Upload, FileSearch, Gauge, Sparkles, ListChecks, ClipboardCheck, ScrollText,
 } from "lucide-react";
 import { useState, useRef } from "react";
+import { assetPath } from "@/lib/client/assets";
 
 // URBAN EVENT DETAIL - full dossier: evidence, AI investigation, risk
 // breakdown, responsibility, verification workflow, audit history.
@@ -200,7 +201,7 @@ export function EventDetailView() {
               groundTruthHotspotId: event.groundTruthHotspotId, source: event.source,
             }]} initialZoom={14.2} />
             <div className="absolute top-2 left-2 rounded-md bg-ink-950/85 px-2 py-1 shadow-sm ring-1 ring-border/70 pointer-events-none backdrop-blur-sm">
-              <p className="micro-label !text-[0.55rem]">Event Focus</p>
+              <p className="micro-label text-[0.55rem]!">Event Focus</p>
             </div>
           </div>
           <QuickFacts d={d} />
@@ -276,7 +277,7 @@ function QuickFacts({ d }: { d: D }) {
       <div>
         <p className="micro-label mb-1.5">Risk</p>
         <RiskMeter score={e.riskScore} band={e.riskBand} />
-        <p className="mt-1 micro-label !text-[0.52rem] text-muted-foreground/70">
+        <p className="mt-1 micro-label text-[0.52rem]! text-muted-foreground/70">
           {e.riskModelVersion} · assessed {e.riskAssessedAt ? timeAgo(e.riskAssessedAt) : "-"}
         </p>
       </div>
@@ -298,7 +299,7 @@ function QuickFacts({ d }: { d: D }) {
 function Fact({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <dt className="micro-label !text-[0.55rem]">{label}</dt>
+      <dt className="micro-label text-[0.55rem]!">{label}</dt>
       <dd className="flex items-center">{value}</dd>
     </div>
   );
@@ -331,8 +332,8 @@ function OverviewTab({ d }: { d: D }) {
               <StaggerItem key={r.id} className="py-2.5 first:pt-0 last:pb-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="data-mono text-[0.65rem] text-water">{r.publicRef}</span>
-                  <span className="micro-label !text-[0.52rem]">{r.channel.toLowerCase()}</span>
-                  {r.isDuplicate && <span className="micro-label !text-[0.52rem] text-sev-moderate" title="This report described the same incident, so it was counted inside this event instead of separately">merged as duplicate</span>}
+                  <span className="micro-label text-[0.52rem]!">{r.channel.toLowerCase()}</span>
+                  {r.isDuplicate && <span className="micro-label text-[0.52rem]! text-sev-moderate" title="This report described the same incident, so it was counted inside this event instead of separately">merged as duplicate</span>}
                   <TimeAgo iso={r.submittedAt} />
                 </div>
                 <p className="mt-1 text-[0.82rem] text-slate-700 leading-relaxed">{r.description}</p>
@@ -362,7 +363,7 @@ function OverviewTab({ d }: { d: D }) {
                     <span className={cn("size-2 rounded-full shrink-0", a.conditionScore < 45 ? "bg-sev-high" : a.conditionScore < 65 ? "bg-sev-moderate" : "bg-verified")} aria-hidden />
                     <span className="flex-1 min-w-0">
                       <span className="block truncate text-slate-700">{a.name}</span>
-                      <span className="micro-label !text-[0.5rem]">{a.kind.toLowerCase().replace(/_/g, " ")} · {a.agencyCode} · condition {a.conditionScore}</span>
+                      <span className="micro-label text-[0.5rem]!">{a.kind.toLowerCase().replace(/_/g, " ")} · {a.agencyCode} · condition {a.conditionScore}</span>
                     </span>
                   </li>
                 ))}
@@ -401,7 +402,7 @@ function OverviewTab({ d }: { d: D }) {
                       {m.performedAt ? new Date(m.performedAt).toLocaleDateString("en-IN", { month: "short", year: "numeric" }) : "scheduled"}
                     </span>
                     <span className="flex-1 truncate text-slate-700">{m.asset?.name ?? "asset"} · {m.kind.toLowerCase()}</span>
-                    <span className={cn("micro-label !text-[0.5rem]", m.status === "COMPLETED" ? "text-verified" : "text-water")}>{m.status.toLowerCase()}</span>
+                    <span className={cn("micro-label text-[0.5rem]!", m.status === "COMPLETED" ? "text-verified" : "text-water")}>{m.status.toLowerCase()}</span>
                   </li>
                 ))}
               </ul>
@@ -470,21 +471,29 @@ function EvidenceTab({ d, onMutated }: { d: D; onMutated: () => void }) {
               {e.evidence.map((ev) => (
                 <StaggerItem key={ev.id}>
                   <figure className="group">
-                    <div className="relative rounded-lg overflow-hidden border border-border/70 aspect-[4/3] bg-ink-850">
+                    <div className="relative rounded-lg overflow-hidden border border-border/70 aspect-4/3 bg-ink-850">
                       {ev.mediaType.startsWith("image/") ? (
-                        <img src={ev.content} alt={ev.caption ?? `${ev.kind} evidence`} className="size-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+                        <img
+                          src={ev.content.startsWith("data:") ? ev.content : assetPath(ev.content)}
+                          alt={ev.caption ?? `${ev.kind} evidence`}
+                          className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          loading="lazy"
+                          onError={(el) => {
+                            el.currentTarget.style.display = "none";
+                          }}
+                        />
                       ) : (
                         <div className="size-full p-2.5 overflow-auto">
-                          <p className="text-[0.6rem] data-mono text-muted-foreground break-words">{ev.content.slice(0, 260)}</p>
+                          <p className="text-[0.6rem] data-mono text-muted-foreground wrap-break-word">{ev.content.slice(0, 260)}</p>
                         </div>
                       )}
-                      <span className="absolute top-1 left-1 rounded-md bg-ink-950/85 px-1.5 py-0.5 micro-label !text-[0.48rem] text-slate-300 shadow-sm backdrop-blur-sm">
+                      <span className="absolute top-1 left-1 rounded-md bg-ink-950/85 px-1.5 py-0.5 micro-label text-[0.48rem]! text-slate-300 shadow-sm backdrop-blur-sm">
                         {ev.kind.toLowerCase().replace(/_/g, " ")}
                       </span>
                     </div>
                     <figcaption className="mt-1.5 text-[0.65rem] text-muted-foreground leading-snug">
                       <span className="block truncate">{ev.caption ?? "-"}</span>
-                      <span className="micro-label !text-[0.48rem] !text-muted-foreground/60">{ev.capturedBy.toLowerCase()} · {fmtDateTime(ev.capturedAt)}</span>
+                      <span className="micro-label text-[0.48rem]! text-muted-foreground/60!">{ev.capturedBy.toLowerCase()} · {fmtDateTime(ev.capturedAt)}</span>
                     </figcaption>
                   </figure>
                 </StaggerItem>
@@ -571,7 +580,7 @@ function InvestigationTab({ d }: { d: D }) {
                 ))}
               </ul>
             )}
-            <p className="mt-3 micro-label !text-[0.5rem] text-muted-foreground/60">
+            <p className="mt-3 micro-label text-[0.5rem]! text-muted-foreground/60">
               Structured output only. No chain-of-thought is exposed or stored.
             </p>
           </Panel>
@@ -638,7 +647,7 @@ function InvestigationTab({ d }: { d: D }) {
                   <li key={i} className="flex items-center gap-3 text-xs">
                     <span className="data-mono text-muted-foreground w-20 shrink-0">{timeAgo(r.computedAt)}</span>
                     <RiskBadge band={r.band} score={r.score} />
-                    <span className="micro-label !text-[0.5rem] text-muted-foreground">{r.provider.toLowerCase()}</span>
+                    <span className="micro-label text-[0.5rem]! text-muted-foreground">{r.provider.toLowerCase()}</span>
                   </li>
                 ))
               )}
@@ -742,7 +751,7 @@ function ResponseTab({ d, onMutated }: { d: D; onMutated: () => void }) {
   return (
     <>
       <Reveal>
-        <Panel title="Responsibility Chain" icon={<Network />} actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/60">routing-rules v1.2</span>}>
+        <Panel title="Responsibility Chain" icon={<Network />} actions={<span className="micro-label text-[0.5rem]! text-muted-foreground/60">routing-rules v1.2</span>}>
           <ol className="space-y-0">
             <ChainLevel level="EVENT" label={e.code} detail={`${e.reportCount} reports · risk ${e.riskScore} (${e.riskBand})`} />
             <ChainLevel level="JURISDICTION" label={e.jurisdiction?.name ?? "-"} detail={e.jurisdiction ? `${e.jurisdiction.kind.toLowerCase()} · administered by ${e.jurisdiction.agencyCode ?? "n/a"}` : "outside pilot"} />
@@ -779,13 +788,13 @@ function ResponseTab({ d, onMutated }: { d: D; onMutated: () => void }) {
                     <li className="rounded-lg border border-border bg-slate-50 p-3">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="data-mono text-[0.62rem] font-semibold text-water">{a.kind.replace(/_/g, " ").toLowerCase()}</span>
-                      <span className={cn("micro-label !text-[0.5rem]", a.priority === "URGENT" ? "text-sev-critical" : a.priority === "HIGH" ? "text-sev-high" : "text-muted-foreground")}>{a.priority.toLowerCase()}</span>
+                      <span className={cn("micro-label text-[0.5rem]!", a.priority === "URGENT" ? "text-sev-critical" : a.priority === "HIGH" ? "text-sev-high" : "text-muted-foreground")}>{a.priority.toLowerCase()}</span>
                       <span className="ml-auto data-mono text-[0.62rem] text-muted-foreground">{a.agencyCode ?? "-"}{a.assignedTo ? ` · ${a.assignedTo}` : ""}</span>
                     </div>
                     <p className="mt-1 text-[0.8rem] text-slate-700">{a.instruction}</p>
                     {a.outcome && <p className="mt-1 text-xs text-verified/90">Outcome: {a.outcome}</p>}
                     <div className="mt-2 flex items-center gap-2 flex-wrap">
-                      <span className={cn("micro-label !text-[0.5rem]", a.status === "COMPLETED" ? "text-verified" : a.status === "FAILED" ? "text-sev-critical" : "text-water")}>
+                      <span className={cn("micro-label text-[0.5rem]!", a.status === "COMPLETED" ? "text-verified" : a.status === "FAILED" ? "text-sev-critical" : "text-water")}>
                         {a.status.toLowerCase().replace(/_/g, " ")}
                       </span>
                       {a.assignedAt && <span className="text-[0.62rem] text-muted-foreground">assigned {timeAgo(a.assignedAt)}</span>}
@@ -889,12 +898,12 @@ function VerificationStepper({ stages }: { stages: string[] }) {
               >
                 {done && <span className="size-1.5 rounded-full bg-ink-950" />}
               </span>
-              <span className={cn("micro-label !text-[0.46rem] text-center leading-tight", done ? "text-verified" : current ? "text-water" : "text-muted-foreground/60")}>
+              <span className={cn("micro-label text-[0.46rem]! text-center leading-tight", done ? "text-verified" : current ? "text-water" : "text-muted-foreground/60")}>
                 {s.toLowerCase().replace(/_/g, " ")}
               </span>
             </div>
             {i < VERIFICATION_STAGES.length - 1 && (
-              <span className={cn("h-[2px] w-4 sm:w-6", done ? "bg-verified/60" : "bg-border")} aria-hidden />
+              <span className={cn("h-0.5 w-4 sm:w-6", done ? "bg-verified/60" : "bg-border")} aria-hidden />
             )}
           </li>
         );
@@ -914,7 +923,7 @@ function VerificationTimeline({ verifications }: { verifications: D["event"]["ve
           <span className={cn("absolute left-0 top-1 size-2.5 rounded-full", v.stage === "VERIFIED" || v.stage === "CLOSED" ? "bg-verified" : "bg-water-dim")} aria-hidden />
           {i < verifications.length - 1 && <span className="absolute left-[4.5px] top-3.5 bottom-0 w-px bg-border" aria-hidden />}
           <div className="flex items-baseline gap-2 flex-wrap">
-            <span className="micro-label !text-[0.52rem]">{v.stage.toLowerCase().replace(/_/g, " ")}</span>
+            <span className="micro-label text-[0.52rem]!">{v.stage.toLowerCase().replace(/_/g, " ")}</span>
             <span className="text-[0.62rem] text-muted-foreground">{v.verifiedBy.toLowerCase()} · {fmtDateTime(v.verifiedAt)}</span>
           </div>
           {v.notes && <p className="mt-0.5 text-xs text-slate-600">{v.notes}</p>}
@@ -1028,7 +1037,7 @@ function AuditTab({ d }: { d: D }) {
                     <span className={cn("absolute left-0 top-3.5 size-1.5 rounded-full", a.actor === "SYSTEM" ? "bg-muted-foreground" : a.actor === "CITIZEN" ? "bg-water-dim" : "bg-sev-moderate")} aria-hidden />
                     <div className="flex items-baseline gap-2 flex-wrap">
                       <span className="data-mono text-[0.65rem] text-water">{a.action}</span>
-                      <span className="micro-label !text-[0.5rem]">{a.actor.toLowerCase()}</span>
+                      <span className="micro-label text-[0.5rem]!">{a.actor.toLowerCase()}</span>
                       <span className="ml-auto"><TimeAgo iso={a.at} /></span>
                     </div>
                     {a.note && <p className="text-xs text-muted-foreground mt-0.5">{a.note}</p>}
@@ -1053,10 +1062,10 @@ function ChainLevel({ level, label, detail, asset, status, source }: {
       <span className={cn("absolute left-0 top-1.5 size-2 rounded-full", level === "ESCALATION" ? "bg-sev-critical" : level === "SUPPORT" ? "bg-sev-moderate" : level === "PRIMARY" || level === "AGENCY" ? "bg-water" : "bg-muted-foreground")} aria-hidden />
       <span className="absolute left-1 top-4.5 bottom-0 w-px bg-border" aria-hidden />
       <div className="flex items-baseline gap-2 flex-wrap">
-        <span className="micro-label !text-[0.5rem]">{level.toLowerCase()}</span>
+        <span className="micro-label text-[0.5rem]!">{level.toLowerCase()}</span>
         <span className="data-mono text-xs font-semibold text-foreground">{label}</span>
-        {status && <span className="micro-label !text-[0.46rem] text-muted-foreground/70">{status.toLowerCase()}</span>}
-        {source && <span className="micro-label !text-[0.46rem] text-muted-foreground/60">via {source.toLowerCase()}</span>}
+        {status && <span className="micro-label text-[0.46rem]! text-muted-foreground/70">{status.toLowerCase()}</span>}
+        {source && <span className="micro-label text-[0.46rem]! text-muted-foreground/60">via {source.toLowerCase()}</span>}
       </div>
       <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{detail}</p>
       {asset && <p className="text-[0.65rem] text-muted-foreground/80 mt-0.5">asset: {asset}</p>}
@@ -1067,7 +1076,7 @@ function ChainLevel({ level, label, detail, asset, status, source }: {
 function Readout({ label, value, tone }: { label: string; value: React.ReactNode; tone?: string }) {
   return (
     <div className="rounded-lg border border-border/70 bg-slate-50 px-3 py-2">
-      <p className="micro-label !text-[0.5rem]">{label}</p>
+      <p className="micro-label text-[0.5rem]!">{label}</p>
       <p className={cn("data-mono text-sm mt-0.5", tone ?? "text-foreground")}>{value}</p>
     </div>
   );
