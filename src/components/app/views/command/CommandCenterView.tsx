@@ -9,8 +9,8 @@ import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip } from "rec
 import { AlertTriangle, ChevronRight, Umbrella, CheckCircle2, Layers, Radio, Droplets, TrendingUp, TrendingDown, Minus, ClipboardCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { CountUp, SpotlightCard, Stagger, StaggerItem, Reveal, PulseDot, HoverLift } from "@/components/motion/kit";
-import { useState } from "react";
+import { CountUp, Stagger, StaggerItem, Reveal, PulseDot, HoverLift } from "@/components/motion/kit";
+import { memo, useState } from "react";
 import { assetPath } from "@/lib/client/assets";
 import { PALETTE } from "@/lib/palette";
 
@@ -196,7 +196,7 @@ function KpiCard({ label, value, delta, icon, tint, to, filterRisk, hint }: {
   const reduce = useReducedMotion();
   return (
     <HoverLift>
-      <SpotlightCard className="rounded-xl">
+      <div className="rounded-xl">
         <button
           onClick={() => {
             if (filterRisk) setFilters({ riskBand: filterRisk as "HIGH" });
@@ -219,7 +219,7 @@ function KpiCard({ label, value, delta, icon, tint, to, filterRisk, hint }: {
           </motion.span>
           <span className="block mt-1.5 text-[0.72rem] font-medium text-slate-500 leading-snug">{label}</span>
         </button>
-      </SpotlightCard>
+      </div>
     </HoverLift>
   );
 }
@@ -369,10 +369,15 @@ interface ReportRow {
   classificationConfidence?: number;
 }
 
-function getReportThumbnail(category: string, description: string): { webp: string; png: string; label: string } {
+// AVIF first, WebP second, PNG last: the browser picks the smallest format it
+// can decode, and the PNG only ever downloads on an ancient engine.
+type Thumb = { avif: string; webp: string; png: string; label: string };
+
+function getReportThumbnail(category: string, description: string): Thumb {
   const desc = description.toLowerCase();
   if (category === "POTHOLE" || desc.includes("pothole") || desc.includes("crater") || desc.includes("broken road")) {
     return {
+      avif: assetPath("/img/pothole.avif"),
       webp: assetPath("/img/pothole.webp"),
       png: assetPath("/img/pothole.png"),
       label: "pothole water accumulation",
@@ -380,6 +385,7 @@ function getReportThumbnail(category: string, description: string): { webp: stri
   }
   if (category === "DRAIN_OVERFLOW" || desc.includes("drain") || desc.includes("overflow") || desc.includes("nalah") || desc.includes("nala")) {
     return {
+      avif: assetPath("/img/drain-overflow.avif"),
       webp: assetPath("/img/drain-overflow.webp"),
       png: assetPath("/img/drain-overflow.png"),
       label: "overflowing storm drain",
@@ -387,6 +393,7 @@ function getReportThumbnail(category: string, description: string): { webp: stri
   }
   if (category === "SEWER_BACKUP" || desc.includes("sewer") || desc.includes("manhole") || desc.includes("backup")) {
     return {
+      avif: assetPath("/img/sewer-backup.avif"),
       webp: assetPath("/img/sewer-backup.webp"),
       png: assetPath("/img/sewer-backup.png"),
       label: "sewer manhole overflow",
@@ -394,12 +401,14 @@ function getReportThumbnail(category: string, description: string): { webp: stri
   }
   if (category === "UNDERPASS" || desc.includes("underpass") || desc.includes("subway") || desc.includes("ito") || desc.includes("minto")) {
     return {
+      avif: assetPath("/img/ito-underpass.avif"),
       webp: assetPath("/img/ito-underpass.webp"),
       png: assetPath("/img/ito-underpass.png"),
       label: "flooded underpass",
     };
   }
   return {
+    avif: assetPath("/img/street-flood.avif"),
     webp: assetPath("/img/street-flood.webp"),
     png: assetPath("/img/street-flood.png"),
     label: "waterlogged street",
@@ -448,6 +457,7 @@ function RecentReportsPanel() {
                       >
                         <div className="relative h-11 w-14 rounded-lg overflow-hidden shrink-0 ring-1 ring-border bg-slate-200">
                           <picture>
+                            <source srcSet={thumb.avif} type="image/avif" />
                             <source srcSet={thumb.webp} type="image/webp" />
                             <img
                               src={thumb.png}
@@ -598,7 +608,10 @@ function ActiveEventQueue({ eventsQ, total }: { eventsQ: { data?: EventSummary[]
   );
 }
 
-export function EventRow({ event }: { event: EventSummary }) {
+// Memoised: this row is rendered up to 200 times in a list, and `event` comes
+// straight from the query cache, so its identity is stable across re-renders
+// that only change unrelated parent state.
+export const EventRow = memo(function EventRow({ event }: { event: EventSummary }) {
   const openEvent = useUi((s) => s.openEvent);
   return (
     <li className="hairline-r hairline-b last:border-0">
@@ -628,7 +641,7 @@ export function EventRow({ event }: { event: EventSummary }) {
       </button>
     </li>
   );
-}
+});
 
 /* ------------------------------------------------------------ rainfall */
 

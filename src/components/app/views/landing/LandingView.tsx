@@ -1,18 +1,13 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { motion, useReducedMotion } from "framer-motion";
-import {
-  Droplets, Radar, FileSearch, Network, ClipboardCheck, Flag, BarChart3,
-  Activity, ArrowRight, MapPin, ShieldCheck, Tags, FileText, Menu, X,
-  Layers, CloudRain, Building2, Clock3, CheckCircle2, AlertTriangle,
-} from "lucide-react";
-import { useState } from "react";
+import { AlertTriangle, ArrowRight, FileText, Flag, MapPin, Menu, X } from "lucide-react";
+import { useState, type ReactNode } from "react";
 import { navigate, type ViewId } from "@/lib/client/store";
 import { assetPath, assetSrcSet } from "@/lib/client/assets";
 import { apiGet, type OverviewResponse, type HotspotResponse } from "@/lib/client/api";
-import { Reveal, Stagger, StaggerItem, CountUp, SpotlightCard, PulseDot, AnimatedProgress } from "@/components/motion/kit";
-import { cn } from "@/lib/utils";
+import { Reveal, Stagger, StaggerItem, CountUp, PulseDot, AnimatedProgress } from "@/components/motion/kit";
+import { RISK_META } from "@/components/app/shared/domain";
 
 /**
  * LANDING — the front door of the Monsoon ink site.
@@ -21,57 +16,99 @@ import { cn } from "@/lib/utils";
  * the console is the product behind it. Every number on this page is read
  * from the same in-browser API the console uses, so the landing page can
  * never drift from the data it describes.
+ *
+ * Design rules for this page: no ambient orbs, no background grids, no
+ * gradient headlines, no card-grid of "features". It is laid out like a
+ * document — rules, an index, a ledger — and the only accent is one aqua rule.
  */
 
+type Group = "Operations" | "Evidence flow" | "Research";
+
+const GROUPS: Group[] = ["Operations", "Evidence flow", "Research"];
+
+const PROBLEMS = [
+  {
+    title: "Complaints are not incidents",
+    body: "Counting reports measures who has a phone, not where the water is. Busy junctions drown out the drains that actually back up every monsoon.",
+  },
+  {
+    title: "Ownership is ambiguous",
+    body: "A blocked drain, a low road, a failing pump and an encroachment sit with different agencies. Without an explicit chain, an event simply floats.",
+  },
+  {
+    title: "Closure is unverified",
+    body: "If nobody checks the ground, a cleared ticket and an unfixed street look identical. Recurrence is the only honest audit, and it rarely happens.",
+  },
+] as const;
+
 const PIPELINE = [
-  { icon: Flag, step: "01", title: "Citizens report", body: "Location, depth, description and a photo in under a minute. No account, no app install." },
-  { icon: Tags, step: "02", title: "Rules classify", body: "A deterministic classifier assigns category, severity and confidence — provider and model version always shown." },
-  { icon: Layers, step: "03", title: "Events merge", body: "Near-duplicate reports cluster by time and space into a single urban event." },
-  { icon: CloudRain, step: "04", title: "Evidence fuses", body: "Rainfall, drains, pumps, jurisdiction and recurrence history enrich each event." },
-  { icon: Radar, step: "05", title: "Risk is scored", body: "A transparent 7-factor rule model returns 0-100 with the contribution of every factor." },
-  { icon: Network, step: "06", title: "Agencies routed", body: "The accountable owner is assigned through explainable rules, with an escalation path." },
-  { icon: ClipboardCheck, step: "07", title: "Field verifies", body: "Crews close the loop with photos and depth readings. Recurrence reopens the event." },
+  { step: "01", title: "Citizens report", body: "Location, depth, description and a photo in under a minute. No account, no app install." },
+  { step: "02", title: "Rules classify", body: "A deterministic classifier assigns category, severity and confidence. Provider and model version are always shown." },
+  { step: "03", title: "Events merge", body: "Near-duplicate reports cluster by time and space into a single urban event." },
+  { step: "04", title: "Evidence fuses", body: "Rainfall, drains, pumps, jurisdiction and recurrence history enrich each event." },
+  { step: "05", title: "Risk is scored", body: "A transparent 7-factor rule model returns 0-100 with the contribution of every factor." },
+  { step: "06", title: "Agencies routed", body: "The accountable owner is assigned through explainable rules, with an escalation path." },
+  { step: "07", title: "Field verifies", body: "Crews close the loop with photos and depth readings. Recurrence reopens the event." },
 ] as const;
 
 const GALLERY = [
   {
     title: "Overflowing storm drain",
-    caption: "Drain overflow · classified DRAIN_OVERFLOW",
+    klass: "DRAIN_OVERFLOW",
+    avif: "/img/drain-overflow.avif",
     webp: "/img/drain-overflow.webp",
     png: "/img/drain-overflow.png",
     alt: "Storm drain overflowing onto a street during heavy rain (synthetic demo image)",
   },
   {
     title: "Waterlogged street",
-    caption: "Standing water · classified WATERLOGGING",
+    klass: "WATERLOGGING",
+    avif: "/img/street-flood.avif",
     webp: "/img/street-flood.webp",
     png: "/img/street-flood.png",
     alt: "Street covered with standing rain water (synthetic demo image)",
   },
   {
     title: "Flooded underpass",
-    caption: "Underpass ponding · classified WATERLOGGING",
+    klass: "WATERLOGGING",
+    avif: "/img/ito-underpass.avif",
     webp: "/img/ito-underpass.webp",
     png: "/img/ito-underpass.png",
     alt: "Road underpass flooded with standing water (synthetic demo image)",
   },
 ] as const;
 
-const VIEWS: { id: ViewId; label: string; body: string; icon: typeof Droplets; group: string }[] = [
-  { id: "command", label: "Command Center", body: "Live KPIs, ops map, rainfall context and the event queue on one screen.", icon: Droplets, group: "Operations" },
-  { id: "map", label: "Waterlogging Map", body: "Every event on a keyless map. Filter by risk, status, category and time.", icon: MapPin, group: "Operations" },
-  { id: "event", label: "Event Dossier", body: "The full evidence chain for one event, from first report to field closure.", icon: FileSearch, group: "Operations" },
-  { id: "investigate", label: "Investigation Tools", body: "Classification, duplicate clustering and risk advisory with full provenance.", icon: Activity, group: "Evidence flow" },
-  { id: "responsibility", label: "Responsibility", body: "Which agency owns which asset, and the routing chain that decided it.", icon: Network, group: "Evidence flow" },
-  { id: "verify", label: "Field Verification", body: "Close the loop from routed action to verified ground truth.", icon: ClipboardCheck, group: "Evidence flow" },
-  { id: "report", label: "Citizen Report", body: "A five-step guided report with a tracking reference you can follow.", icon: Flag, group: "Evidence flow" },
-  { id: "analytics", label: "Research & Analytics", body: "Does multi-source evidence beat complaint counting? Measured, not asserted.", icon: BarChart3, group: "Research" },
-  { id: "health", label: "Data & Model Health", body: "Provenance, missingness, model runs and endpoint checks in plain language.", icon: Activity, group: "Research" },
+const VIEWS: { id: ViewId; label: string; body: string; group: Group }[] = [
+  { id: "command", label: "Command Center", body: "Live KPIs, ops map, rainfall context and the event queue on one screen.", group: "Operations" },
+  { id: "map", label: "Waterlogging Map", body: "Every event on a keyless map. Filter by risk, status, category and time.", group: "Operations" },
+  { id: "event", label: "Event Dossier", body: "The full evidence chain for one event, from first report to field closure.", group: "Operations" },
+  { id: "investigate", label: "Investigation Tools", body: "Classification, duplicate clustering and risk advisory with full provenance.", group: "Evidence flow" },
+  { id: "responsibility", label: "Responsibility", body: "Which agency owns which asset, and the routing chain that decided it.", group: "Evidence flow" },
+  { id: "verify", label: "Field Verification", body: "Close the loop from routed action to verified ground truth.", group: "Evidence flow" },
+  { id: "report", label: "Citizen Report", body: "A five-step guided report with a tracking reference you can follow.", group: "Evidence flow" },
+  { id: "analytics", label: "Research & Analytics", body: "Does multi-source evidence beat complaint counting? Measured, not asserted.", group: "Research" },
+  { id: "health", label: "Data & Model Health", body: "Provenance, missingness, model runs and endpoint checks in plain language.", group: "Research" },
 ];
+
+const EVALUATION_NOTES = [
+  "Every metric is computed in the browser from the committed dataset",
+  "Precision, recall, F1, AUC and spatial hit rate, reported as-is",
+  "Routing accuracy published with its mismatches, not hidden",
+  "Synthetic demo evaluation, labelled everywhere it appears",
+];
+
+/** Section eyebrow: one aqua rule, one mono label. Used by every section. */
+function SectionLabel({ children }: { children: ReactNode }) {
+  return (
+    <>
+      <span className="signal-rule" aria-hidden />
+      <p className="mt-3.5 micro-label">{children}</p>
+    </>
+  );
+}
 
 export function LandingView() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const reduce = useReducedMotion();
 
   const go = (view: ViewId) => {
     setMenuOpen(false);
@@ -81,7 +118,7 @@ export function LandingView() {
   return (
     <div className="relative min-h-[100dvh] overflow-x-hidden bg-background">
       {/* ---------------- site header ---------------- */}
-      <header className="sticky top-0 z-40 border-b border-hairline bg-ink-950/85 backdrop-blur-xl supports-[backdrop-filter]:bg-ink-950/70">
+      <header className="sticky top-0 z-40 border-b border-hairline bg-ink-950/92 backdrop-blur-md supports-[backdrop-filter]:bg-ink-950/80">
         <div className="content-wrap flex h-16 items-center gap-3 px-4 sm:px-6">
           <button
             onClick={() => go("landing")}
@@ -113,16 +150,14 @@ export function LandingView() {
           <div className="ml-auto flex items-center gap-2 lg:ml-0">
             <button
               onClick={() => go("command")}
-              className="hidden h-9 items-center gap-1.5 rounded-lg border border-hairline bg-ink-900 px-3.5 text-[0.8rem] font-semibold text-foreground transition-colors hover:border-aqua/40 hover:bg-ink-850 sm:inline-flex"
+              className="hidden h-9 items-center rounded-lg border border-hairline bg-ink-900 px-3.5 text-[0.8rem] font-semibold text-foreground transition-colors hover:border-aqua/40 hover:bg-ink-850 sm:inline-flex"
             >
               Open console
-              <ArrowRight className="size-3.5 text-aqua" aria-hidden />
             </button>
             <button
               onClick={() => go("report")}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-aqua px-3.5 text-[0.8rem] font-semibold text-ink-950 transition-colors hover:bg-aqua-dim"
+              className="inline-flex h-9 items-center rounded-lg bg-aqua px-3.5 text-[0.8rem] font-semibold text-ink-950 transition-colors hover:bg-aqua-dim"
             >
-              <Flag className="size-3.5" aria-hidden />
               Report
             </button>
             <button
@@ -143,9 +178,8 @@ export function LandingView() {
                 <li key={v.id}>
                   <button
                     onClick={() => go(v.id)}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm text-slate-700 transition-colors hover:bg-ink-850 hover:text-foreground"
+                    className="flex w-full items-center rounded-lg px-3 py-2.5 text-left text-sm text-slate-700 transition-colors hover:bg-ink-850 hover:text-foreground"
                   >
-                    <v.icon className="size-4 shrink-0 text-slate-500" aria-hidden />
                     {v.label}
                   </button>
                 </li>
@@ -156,65 +190,61 @@ export function LandingView() {
       </header>
 
       {/* ---------------- hero ---------------- */}
-      <section className="relative">
-        <div className="ink-atmosphere" aria-hidden />
-        <div className="ink-grid" aria-hidden />
+      <section className="border-b border-hairline">
+        <div className="content-wrap grid items-start gap-12 px-4 pb-16 pt-14 sm:px-6 sm:pb-20 sm:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
+          <div>
+            <Reveal>
+              <p className="flex items-center gap-2 micro-label !text-aqua-dim">
+                <PulseDot size={6} color="bg-aqua" />
+                Research prototype · Delhi pilot
+              </p>
+            </Reveal>
 
-        <div className="content-wrap relative px-4 pb-16 pt-14 sm:px-6 sm:pb-24 sm:pt-20">
-          <div className="grid items-start gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
-            <div>
-              <Reveal>
-                <span className="inline-flex items-center gap-2 rounded-full border border-aqua/25 bg-aqua/[0.07] px-3 py-1.5 micro-label !text-[0.58rem] !text-aqua-dim">
-                  <PulseDot size={6} color="bg-aqua" />
-                  Research prototype · Delhi pilot
-                </span>
-              </Reveal>
+            <Reveal delay={0.06}>
+              <h1 className="mt-6 font-display text-[2.6rem] font-bold leading-[1.03] tracking-[-0.03em] text-foreground sm:text-6xl lg:text-[4.1rem]">
+                Every flooded street in Delhi,{" "}
+                <span className="text-aqua-dim">scored and routed</span> before the water rises.
+              </h1>
+            </Reveal>
 
-              <Reveal delay={0.06}>
-                <h1 className="mt-6 font-display text-[2.6rem] font-bold leading-[1.03] tracking-[-0.03em] text-foreground sm:text-6xl lg:text-[4.1rem]">
-                  Every flooded street in Delhi,{" "}
-                  <span className="text-aqua-gradient">scored and routed</span> before the water rises.
-                </h1>
-              </Reveal>
+            <Reveal delay={0.12}>
+              <p className="mt-6 max-w-xl text-[1.02rem] leading-relaxed text-slate-600 sm:text-lg">
+                JalSetu turns scattered citizen complaints, rainfall gauges, drainage
+                assets and field reports into explainable urban events, routes each one
+                to the agency that can actually fix it, and verifies the fix on the
+                ground.
+              </p>
+            </Reveal>
 
-              <Reveal delay={0.12}>
-                <p className="mt-6 max-w-xl text-[1.02rem] leading-relaxed text-slate-600 sm:text-lg">
-                  JalSetu turns scattered citizen complaints, rainfall gauges, drainage
-                  assets and field reports into explainable urban events — then routes
-                  each one to the agency that can actually fix it, and verifies the fix
-                  on the ground.
-                </p>
-              </Reveal>
+            <Reveal delay={0.18}>
+              <div className="mt-8 flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => go("command")}
+                  className="inline-flex h-12 items-center gap-2 rounded-xl bg-aqua px-6 text-[0.92rem] font-semibold text-ink-950 transition-colors hover:bg-aqua-dim"
+                >
+                  Open the command center
+                  <ArrowRight className="size-4" aria-hidden />
+                </button>
+                <button
+                  onClick={() => go("map")}
+                  className="inline-flex h-12 items-center gap-2 rounded-xl border border-hairline bg-ink-900 px-6 text-[0.92rem] font-semibold text-foreground transition-colors hover:border-aqua/40 hover:bg-ink-850"
+                >
+                  <MapPin className="size-4 text-aqua" aria-hidden />
+                  Explore the map
+                </button>
+              </div>
+            </Reveal>
 
-              <Reveal delay={0.18}>
-                <div className="mt-8 flex flex-wrap items-center gap-3">
-                  <button
-                    onClick={() => go("command")}
-                    className="group inline-flex h-12 items-center gap-2 rounded-xl bg-aqua px-6 text-[0.92rem] font-semibold text-ink-950 transition-all hover:bg-aqua-dim hover:shadow-[0_0_28px_-6px_rgba(45,212,191,0.5)]"
-                  >
-                    Open the command center
-                    <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
-                  </button>
-                  <button
-                    onClick={() => go("map")}
-                    className="inline-flex h-12 items-center gap-2 rounded-xl border border-hairline bg-ink-900/70 px-6 text-[0.92rem] font-semibold text-foreground backdrop-blur transition-colors hover:border-aqua/40 hover:bg-ink-850"
-                  >
-                    <MapPin className="size-4 text-aqua" aria-hidden />
-                    Explore the map
-                  </button>
-                </div>
-              </Reveal>
-
-              <Reveal delay={0.24}>
-                <p className="mt-5 flex items-center gap-2 text-[0.72rem] text-slate-500">
-                  <ShieldCheck className="size-3.5 shrink-0 text-emerald-500" aria-hidden />
-                  Fully static demo · no backend, no API keys, no tracking
-                </p>
-              </Reveal>
-            </div>
-
-            <HeroConsole />
+            <Reveal delay={0.24}>
+              <p className="mt-6 data-mono text-[0.68rem] leading-relaxed text-slate-500">
+                static demo · no backend · no API keys · no tracking
+              </p>
+            </Reveal>
           </div>
+
+          <Reveal delay={0.16}>
+            <LiveReadout />
+          </Reveal>
         </div>
       </section>
 
@@ -224,53 +254,32 @@ export function LandingView() {
       {/* ---------------- the problem ---------------- */}
       <section className="content-wrap px-4 py-16 sm:px-6 sm:py-24">
         <Reveal>
-          <p className="micro-label !text-aqua-dim">The problem</p>
-          <h2 className="mt-3 max-w-3xl font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.6rem]">
-            Waterlogging is not a data problem. It is a{" "}
-            <span className="text-slate-500">coordination</span> problem.
+          <SectionLabel>The problem</SectionLabel>
+          <h2 className="mt-4 max-w-3xl font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.6rem]">
+            Three failures keep the same drains under water every monsoon.
           </h2>
         </Reveal>
 
-        <Stagger className="mt-10 grid gap-4 md:grid-cols-3">
-          {[
-            {
-              icon: AlertTriangle,
-              title: "Complaints are not incidents",
-              body: "Counting reports measures who has a phone, not where the water is. Busy junctions drown out the drains that actually back up every monsoon.",
-            },
-            {
-              icon: Building2,
-              title: "Ownership is ambiguous",
-              body: "A blocked drain, a low road, a failing pump and an encroachment sit with different agencies. Without an explicit chain, an event simply floats.",
-            },
-            {
-              icon: Clock3,
-              title: "Closure is unverified",
-              body: "If nobody checks the ground, a cleared ticket and an unfixed street look identical. Recurrence is the only honest audit, and it rarely happens.",
-            },
-          ].map((c) => (
-            <StaggerItem key={c.title}>
-              <SpotlightCard
-                className="panel card-hover h-full rounded-2xl p-6"
-                spotlightColor="rgba(45, 212, 191, 0.07)"
-              >
-                <span className="grid size-11 place-items-center rounded-xl border border-amber-500/25 bg-amber-500/10 text-amber-500">
-                  <c.icon className="size-5" aria-hidden />
-                </span>
-                <h3 className="mt-4 font-display text-[1.05rem] font-semibold text-foreground">{c.title}</h3>
-                <p className="mt-2 text-[0.88rem] leading-relaxed text-slate-600">{c.body}</p>
-              </SpotlightCard>
+        <Stagger className="mt-10 border-t border-hairline">
+          {PROBLEMS.map((c, i) => (
+            <StaggerItem
+              key={c.title}
+              className="grid gap-x-6 gap-y-2 border-b border-hairline py-6 sm:grid-cols-[3rem_17rem_1fr] sm:py-7"
+            >
+              <span className="data-mono text-[0.72rem] text-aqua/70">{String(i + 1).padStart(2, "0")}</span>
+              <h3 className="font-display text-[1.05rem] font-semibold text-foreground">{c.title}</h3>
+              <p className="text-[0.9rem] leading-relaxed text-slate-600">{c.body}</p>
             </StaggerItem>
           ))}
         </Stagger>
       </section>
 
       {/* ---------------- pipeline ---------------- */}
-      <section className="relative border-y border-hairline bg-ink-900/40">
+      <section className="border-y border-hairline bg-ink-900/40">
         <div className="content-wrap px-4 py-16 sm:px-6 sm:py-24">
           <Reveal>
-            <p className="micro-label !text-aqua-dim">How it works</p>
-            <h2 className="mt-3 max-w-2xl font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.4rem]">
+            <SectionLabel>How it works</SectionLabel>
+            <h2 className="mt-4 max-w-2xl font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.4rem]">
               Seven steps from a doorstep complaint to a verified fix.
             </h2>
             <p className="mt-4 max-w-xl text-[0.95rem] leading-relaxed text-slate-600">
@@ -280,33 +289,25 @@ export function LandingView() {
             </p>
           </Reveal>
 
-          <Stagger className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-4">
+          <Stagger className="mt-12 grid gap-px overflow-hidden rounded-xl border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-4">
             {PIPELINE.map((p) => (
               <StaggerItem key={p.step} className="bg-ink-900 p-6">
-                <div className="flex items-center gap-3">
-                  <span className="grid size-9 place-items-center rounded-lg border border-aqua/25 bg-aqua/10 text-aqua">
-                    <p.icon className="size-4" aria-hidden />
-                  </span>
-                  <span className="data-mono text-[0.7rem] text-slate-500">{p.step}</span>
-                </div>
-                <h3 className="mt-4 font-display text-[0.98rem] font-semibold text-foreground">{p.title}</h3>
+                <span className="data-mono text-[0.72rem] text-aqua">{p.step}</span>
+                <h3 className="mt-3 font-display text-[0.98rem] font-semibold text-foreground">{p.title}</h3>
                 <p className="mt-1.5 text-[0.84rem] leading-relaxed text-slate-600">{p.body}</p>
               </StaggerItem>
             ))}
             <StaggerItem className="flex flex-col justify-center bg-ink-900 p-6">
-              <p className="font-display text-[0.98rem] font-semibold text-foreground">
-                Then it loops.
-              </p>
+              <p className="font-display text-[0.98rem] font-semibold text-foreground">Then it loops.</p>
               <p className="mt-1.5 text-[0.84rem] leading-relaxed text-slate-600">
                 A verified closure that floods again reopens the same event with its
                 full history intact.
               </p>
               <button
                 onClick={() => go("map")}
-                className="mt-4 inline-flex items-center gap-1.5 self-start text-[0.82rem] font-semibold text-aqua transition-colors hover:text-aqua-dim"
+                className="mt-4 self-start text-[0.82rem] font-semibold text-aqua transition-colors hover:text-aqua-dim"
               >
                 See it on the map
-                <ArrowRight className="size-3.5" aria-hidden />
               </button>
             </StaggerItem>
           </Stagger>
@@ -316,154 +317,160 @@ export function LandingView() {
       {/* ---------------- capabilities ---------------- */}
       <section className="content-wrap px-4 py-16 sm:px-6 sm:py-24">
         <Reveal>
-          <p className="micro-label !text-aqua-dim">The console</p>
-          <h2 className="mt-3 max-w-2xl font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.4rem]">
+          <SectionLabel>The console</SectionLabel>
+          <h2 className="mt-4 max-w-2xl font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.4rem]">
             Nine views, one shared truth.
           </h2>
         </Reveal>
 
-        {(["Operations", "Evidence flow", "Research"] as const).map((group) => (
-          <div key={group} className="mt-10">
-            <p className="micro-label">{group}</p>
-            <Stagger className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {VIEWS.filter((v) => v.group === group).map((v) => (
-                <StaggerItem key={v.id}>
-                  <button
-                    onClick={() => go(v.id)}
-                    className="panel card-hover group flex h-full w-full flex-col rounded-xl p-5 text-left"
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <v.icon className="size-4 shrink-0 text-aqua" aria-hidden />
-                      <span className="font-display text-[0.92rem] font-semibold text-foreground">{v.label}</span>
-                      <ArrowRight className="ml-auto size-3.5 shrink-0 text-slate-500 transition-all group-hover:translate-x-0.5 group-hover:text-aqua" aria-hidden />
-                    </span>
-                    <span className="mt-2 text-[0.83rem] leading-relaxed text-slate-600">{v.body}</span>
-                  </button>
-                </StaggerItem>
-              ))}
-            </Stagger>
-          </div>
-        ))}
-      </section>
-
-      {/* ---------------- field evidence gallery ---------------- */}
-      <section className="content-wrap px-4 py-16 sm:px-6 sm:py-24">
-        <Reveal>
-          <p className="micro-label !text-aqua-dim">Field evidence</p>
-          <h2 className="mt-3 max-w-2xl font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.4rem]">
-            What the classifier actually sees.
-          </h2>
-          <p className="mt-4 max-w-xl text-[0.95rem] leading-relaxed text-slate-600">
-            Report photos arrive as evidence and are sorted into the same
-            categories the console uses. These are illustrative synthetic
-            images from the demo dataset — no real citizens or streets.
-          </p>
-        </Reveal>
-
-        <Stagger className="mt-10 grid gap-4 sm:grid-cols-3">
-          {GALLERY.map((g) => (
-            <StaggerItem key={g.webp}>
-              <figure className="group panel h-full overflow-hidden rounded-2xl">
-                <div className="relative aspect-16/9 overflow-hidden bg-ink-850">
-                  <picture>
-                    <source srcSet={assetSrcSet(`${g.webp} 560w`)} type="image/webp" sizes="(min-width: 640px) 33vw, 100vw" />
-                    <img
-                      src={assetPath(g.png)}
-                      alt={g.alt}
-                      width={560}
-                      height={320}
-                      loading="lazy"
-                      decoding="async"
-                      className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none";
-                      }}
-                    />
-                  </picture>
-                  <div className="absolute inset-0 bg-linear-to-t from-ink-950/75 via-ink-950/10 to-transparent" aria-hidden />
-                  <span className="micro-label absolute bottom-2.5 left-3 !text-[0.5rem] text-aqua-dim">
-                    synthetic · demo
-                  </span>
-                </div>
-                <figcaption className="px-4 py-3">
-                  <span className="block text-[0.86rem] font-semibold text-foreground">{g.title}</span>
-                  <span className="mt-0.5 block text-[0.72rem] text-slate-500">{g.caption}</span>
-                </figcaption>
-              </figure>
-            </StaggerItem>
+        <div className="mt-10 grid gap-x-12 gap-y-10 lg:grid-cols-3">
+          {GROUPS.map((group) => (
+            <div key={group}>
+              <p className="border-b border-hairline pb-2.5 micro-label">{group}</p>
+              <Stagger className="mt-1">
+                {VIEWS.filter((v) => v.group === group).map((v) => (
+                  <StaggerItem key={v.id}>
+                    <button
+                      onClick={() => go(v.id)}
+                      className="group block w-full border-b border-hairline py-3.5 text-left"
+                    >
+                      <span className="flex items-baseline justify-between gap-3">
+                        <span className="font-display text-[0.94rem] font-semibold text-foreground transition-colors group-hover:text-aqua-dim">
+                          {v.label}
+                        </span>
+                        <span className="data-mono shrink-0 text-[0.62rem] text-slate-500 opacity-0 transition-opacity group-hover:opacity-100">
+                          open
+                        </span>
+                      </span>
+                      <span className="mt-1 block text-[0.82rem] leading-relaxed text-slate-600">{v.body}</span>
+                    </button>
+                  </StaggerItem>
+                ))}
+              </Stagger>
+            </div>
           ))}
-        </Stagger>
-      </section>
-
-      {/* ---------------- evidence ---------------- */}
-      <section className="relative border-y border-hairline bg-ink-900/40">
-        <div className="content-wrap grid gap-12 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-          <Reveal>
-            <p className="micro-label !text-aqua-dim">Does it actually work?</p>
-            <h2 className="mt-3 font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.4rem]">
-              We measured it instead of claiming it.
-            </h2>
-            <p className="mt-4 text-[0.95rem] leading-relaxed text-slate-600">
-              The console scores hotspots two ways against the same seeded ground
-              truth: the current common practice of ranking by complaint frequency,
-              and the proposed evidence-integrated ranking. Same candidates, same
-              labels — so any difference belongs to the scoring function.
-            </p>
-            <ul className="mt-6 space-y-2.5">
-              {[
-                "Every metric is computed in the browser from the committed dataset",
-                "Precision, recall, F1, AUC and spatial hit rate, reported as-is",
-                "Routing accuracy published with its mismatches, not hidden",
-                "Synthetic demo evaluation, labelled everywhere it appears",
-              ].map((t) => (
-                <li key={t} className="flex items-start gap-2.5 text-[0.88rem] text-slate-600">
-                  <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" aria-hidden />
-                  {t}
-                </li>
-              ))}
-            </ul>
-            <button
-              onClick={() => go("analytics")}
-              className="group mt-7 inline-flex h-11 items-center gap-2 rounded-xl border border-hairline bg-ink-900 px-5 text-[0.88rem] font-semibold text-foreground transition-colors hover:border-aqua/40 hover:bg-ink-850"
-            >
-              Read the evaluation
-              <ArrowRight className="size-4 text-aqua transition-transform group-hover:translate-x-0.5" aria-hidden />
-            </button>
-          </Reveal>
-
-          <Reveal delay={0.1}>
-            <EvidenceCard />
-          </Reveal>
         </div>
       </section>
 
-      {/* ---------------- final CTA ---------------- */}
-      <section className="relative">
-        <div className="ink-atmosphere" aria-hidden />
-        <div className="content-wrap relative px-4 py-20 text-center sm:px-6 sm:py-28">
+      {/* ---------------- field evidence gallery ---------------- */}
+      <section className="border-y border-hairline bg-ink-900/40">
+        <div className="content-wrap px-4 py-16 sm:px-6 sm:py-24">
           <Reveal>
-            <h2 className="mx-auto max-w-3xl font-display text-3xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-5xl">
-              See standing water on your street right now?
+            <SectionLabel>Field evidence</SectionLabel>
+            <h2 className="mt-4 max-w-2xl font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.4rem]">
+              What the classifier actually sees.
             </h2>
-            <p className="mx-auto mt-5 max-w-xl text-[1rem] leading-relaxed text-slate-600">
-              File a report in under a minute, then follow it as it is classified,
-              merged, routed and verified. No account needed.
+            <p className="mt-4 max-w-xl text-[0.95rem] leading-relaxed text-slate-600">
+              Report photos arrive as evidence and are sorted into the same
+              categories the console uses. These are illustrative synthetic
+              images from the demo dataset. No real citizens or streets.
             </p>
-            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-              <button
-                onClick={() => go("report")}
-                className="group inline-flex h-12 items-center gap-2 rounded-xl bg-aqua px-6 text-[0.92rem] font-semibold text-ink-950 transition-all hover:bg-aqua-dim hover:shadow-[0_0_28px_-6px_rgba(45,212,191,0.5)]"
-              >
-                <Flag className="size-4" aria-hidden />
-                Report waterlogging
-              </button>
-              <button
-                onClick={() => go("command")}
-                className="inline-flex h-12 items-center gap-2 rounded-xl border border-hairline bg-ink-900/70 px-6 text-[0.92rem] font-semibold text-foreground backdrop-blur transition-colors hover:border-aqua/40 hover:bg-ink-850"
-              >
-                Open the command center
-                <ArrowRight className="size-4 text-aqua" aria-hidden />
-              </button>
+          </Reveal>
+
+          <Stagger className="mt-10 grid gap-5 sm:grid-cols-3">
+            {GALLERY.map((g) => (
+              <StaggerItem key={g.webp}>
+                <figure className="panel h-full overflow-hidden rounded-xl">
+                  <div className="relative aspect-16/9 overflow-hidden border-b border-hairline bg-ink-850">
+                    <picture>
+                      <source srcSet={assetSrcSet(`${g.avif} 560w`)} type="image/avif" sizes="(min-width: 640px) 33vw, 100vw" />
+                      <source srcSet={assetSrcSet(`${g.webp} 560w`)} type="image/webp" sizes="(min-width: 640px) 33vw, 100vw" />
+                      <img
+                        src={assetPath(g.png)}
+                        alt={g.alt}
+                        width={560}
+                        height={320}
+                        loading="lazy"
+                        decoding="async"
+                        className="size-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    </picture>
+                  </div>
+                  <figcaption className="px-4 py-3.5">
+                    <span className="block text-[0.88rem] font-semibold text-foreground">{g.title}</span>
+                    <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.7rem] text-slate-500">
+                      <span className="data-mono text-[0.66rem] text-aqua-dim">{g.klass}</span>
+                      <span aria-hidden>·</span>
+                      <span>synthetic demo</span>
+                    </span>
+                  </figcaption>
+                </figure>
+              </StaggerItem>
+            ))}
+          </Stagger>
+        </div>
+      </section>
+
+      {/* ---------------- evidence ---------------- */}
+      <section className="content-wrap grid gap-12 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+        <Reveal>
+          <SectionLabel>Does it actually work?</SectionLabel>
+          <h2 className="mt-4 font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.4rem]">
+            We measured it instead of claiming it.
+          </h2>
+          <p className="mt-4 text-[0.95rem] leading-relaxed text-slate-600">
+            The console scores hotspots two ways against the same seeded ground
+            truth: the current common practice of ranking by complaint frequency,
+            and the proposed evidence-integrated ranking. Same candidates, same
+            labels, so any difference belongs to the scoring function.
+          </p>
+
+          <dl className="mt-7 border-t border-hairline">
+            {EVALUATION_NOTES.map((note, i) => (
+              <div key={note} className="flex gap-4 border-b border-hairline py-3">
+                <dt className="data-mono shrink-0 text-[0.68rem] text-aqua/70">{String(i + 1).padStart(2, "0")}</dt>
+                <dd className="text-[0.88rem] leading-relaxed text-slate-600">{note}</dd>
+              </div>
+            ))}
+          </dl>
+
+          <button
+            onClick={() => go("analytics")}
+            className="mt-7 inline-flex h-11 items-center gap-2 rounded-xl border border-hairline bg-ink-900 px-5 text-[0.88rem] font-semibold text-foreground transition-colors hover:border-aqua/40 hover:bg-ink-850"
+          >
+            Read the evaluation
+            <ArrowRight className="size-4 text-aqua" aria-hidden />
+          </button>
+        </Reveal>
+
+        <Reveal delay={0.1}>
+          <EvidenceCard />
+        </Reveal>
+      </section>
+
+      {/* ---------------- final CTA ---------------- */}
+      <section className="border-y border-hairline bg-ink-900/40">
+        <div className="content-wrap px-4 py-16 sm:px-6 sm:py-20">
+          <Reveal>
+            <div className="grid gap-8 lg:grid-cols-[1.2fr_1fr] lg:items-end">
+              <div>
+                <h2 className="max-w-2xl font-display text-3xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-[2.6rem]">
+                  See standing water on your street right now?
+                </h2>
+                <p className="mt-4 max-w-xl text-[1rem] leading-relaxed text-slate-600">
+                  File a report in under a minute, then follow it as it is classified,
+                  merged, routed and verified. No account needed.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+                <button
+                  onClick={() => go("report")}
+                  className="inline-flex h-12 items-center gap-2 rounded-xl bg-aqua px-6 text-[0.92rem] font-semibold text-ink-950 transition-colors hover:bg-aqua-dim"
+                >
+                  <Flag className="size-4" aria-hidden />
+                  Report waterlogging
+                </button>
+                <button
+                  onClick={() => go("command")}
+                  className="inline-flex h-12 items-center gap-2 rounded-xl border border-hairline bg-ink-900 px-6 text-[0.92rem] font-semibold text-foreground transition-colors hover:border-aqua/40 hover:bg-ink-850"
+                >
+                  Open the console
+                  <ArrowRight className="size-4 text-aqua" aria-hidden />
+                </button>
+              </div>
             </div>
           </Reveal>
         </div>
@@ -475,10 +482,14 @@ export function LandingView() {
   );
 }
 
-/* ------------------------------------------------------------------ hero card */
+/* ------------------------------------------------------------------ readout */
 
-function HeroConsole() {
-  const reduce = useReducedMotion();
+/**
+ * Live readout — the product's actual output, not a picture of it: current
+ * counts from the same endpoint the console uses, and the highest-scoring
+ * events right now, ranked by the real risk score with its band colour.
+ */
+function LiveReadout() {
   const { data } = useQuery({
     queryKey: ["overview"],
     queryFn: () => apiGet<OverviewResponse>("/api/overview").then((r) => r.data),
@@ -486,69 +497,74 @@ function HeroConsole() {
   });
 
   const bands = [
-    { label: "Active events", value: data?.counts.activeEvents, tint: "bg-aqua" },
-    { label: "High risk", value: data?.counts.highRisk, tint: "bg-red-500" },
-    { label: "In the field", value: data?.counts.inField, tint: "bg-emerald-500" },
-    { label: "Rain 24h", value: data ? Math.round(data.rainfall.pilot24hMm) : null, suffix: "mm", tint: "bg-blue-600" },
+    { label: "Active events", value: data?.counts.activeEvents },
+    { label: "High risk", value: data?.counts.highRisk },
+    { label: "In the field", value: data?.counts.inField },
+    { label: "Rain 24h", value: data ? Math.round(data.rainfall.pilot24hMm) : null, suffix: "mm" },
   ];
 
+  const ranked = [...(data?.events ?? [])]
+    .filter((e) => e.status !== "VERIFIED" && e.status !== "CLOSED")
+    .sort((a, b) => b.riskScore - a.riskScore)
+    .slice(0, 4);
+
   return (
-    <motion.div
-      initial={reduce ? { opacity: 0 } : { opacity: 0, y: 22, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.7, delay: 0.2, ease: [0.21, 0.47, 0.32, 0.98] }}
-      className="relative"
-    >
-      <div
-        className="pointer-events-none absolute -inset-6 rounded-[2rem] opacity-70 blur-2xl"
-        style={{ background: "radial-gradient(60% 50% at 50% 0%, rgba(45,212,191,0.18), transparent 70%)" }}
-        aria-hidden
-      />
-      <div className="panel relative overflow-hidden rounded-2xl">
-        <div className="flex items-center gap-2 hairline-b px-4 py-3">
-          <span className="flex gap-1.5" aria-hidden>
-            <span className="size-2.5 rounded-full bg-red-500/70" />
-            <span className="size-2.5 rounded-full bg-amber-500/70" />
-            <span className="size-2.5 rounded-full bg-emerald-500/70" />
-          </span>
-          <span className="ml-1 micro-label !text-[0.55rem]">delhi pilot · live</span>
-          <span className="ml-auto flex items-center gap-1.5 micro-label !text-[0.55rem] !text-aqua-dim">
-            <PulseDot size={5} color="bg-aqua" />
-            streaming
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-px bg-hairline">
-          {bands.map((b) => (
-            <div key={b.label} className="bg-ink-900 px-4 py-4">
-              <p className="micro-label !text-[0.53rem]">{b.label}</p>
-              <p className="mt-1.5 flex items-baseline gap-1 font-display text-2xl font-bold text-foreground">
-                {b.value == null ? <span className="inline-block h-7 w-12 rounded shimmer" /> : <CountUp value={b.value} />}
-                {b.suffix && <span className="text-[0.7rem] font-medium text-slate-500">{b.suffix}</span>}
-              </p>
-              <span className={cn("mt-2 block h-1 w-full overflow-hidden rounded-full bg-ink-800", b.tint)} style={{ opacity: 0.25 }} />
-            </div>
-          ))}
-        </div>
-
-        <div className="hairline-t px-4 py-3.5">
-          <p className="micro-label !text-[0.53rem]">risk distribution</p>
-          <div className="mt-2.5 space-y-2.5">
-            {[
-              { band: "Critical", cls: "bg-red-500", w: 18 },
-              { band: "High", cls: "bg-orange-500", w: 34 },
-              { band: "Moderate", cls: "bg-amber-500", w: 62 },
-              { band: "Low", cls: "bg-slate-500", w: 88 },
-            ].map((r, i) => (
-              <div key={r.band} className="flex items-center gap-3">
-                <span className="w-16 shrink-0 text-[0.68rem] text-slate-500">{r.band}</span>
-                <AnimatedProgress value={r.w} className="h-1.5 flex-1 bg-ink-800" fillClassName={r.cls} delay={0.3 + i * 0.09} />
-              </div>
-            ))}
-          </div>
-        </div>
+    <div className="panel overflow-hidden rounded-xl">
+      <div className="flex items-center gap-2.5 border-b border-hairline px-4 py-3">
+        <PulseDot size={6} color="bg-aqua" />
+        <span className="micro-label !text-[0.55rem] !text-aqua-dim">Delhi pilot · live readout</span>
+        <span className="ml-auto data-mono text-[0.55rem] text-slate-500">/api/overview</span>
       </div>
-    </motion.div>
+
+      <div className="grid grid-cols-2 gap-px bg-hairline">
+        {bands.map((b) => (
+          <div key={b.label} className="bg-ink-900 px-4 py-4">
+            <p className="micro-label !text-[0.53rem]">{b.label}</p>
+            <p className="mt-1.5 flex items-baseline gap-1 font-display text-2xl font-bold text-foreground">
+              {b.value == null ? (
+                <span className="inline-block h-7 w-12 rounded shimmer" />
+              ) : (
+                <CountUp value={b.value} />
+              )}
+              {b.suffix && <span className="text-[0.7rem] font-medium text-slate-500">{b.suffix}</span>}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="border-t border-hairline px-4 py-3.5">
+        <p className="micro-label !text-[0.53rem]">Highest risk right now</p>
+
+        <ul className="mt-3 space-y-3">
+          {data == null &&
+            [0, 1, 2].map((i) => <li key={i} className="h-8 rounded shimmer" />)}
+
+          {data != null && ranked.length === 0 && (
+            <li className="text-[0.78rem] text-slate-500">No open events in the current snapshot.</li>
+          )}
+
+          {ranked.map((e) => (
+            <li key={e.id}>
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="truncate text-[0.8rem] text-slate-700">{e.title}</span>
+                <span className="data-mono shrink-0 text-[0.72rem] text-slate-500">{e.riskScore}</span>
+              </div>
+              <AnimatedProgress
+                value={e.riskScore}
+                className="mt-1.5 h-1 bg-ink-800"
+                fillClassName={RISK_META[e.riskBand]?.bar ?? "bg-slate-400"}
+              />
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="border-t border-hairline px-4 py-2.5">
+        <p className="data-mono text-[0.56rem] leading-relaxed text-slate-500">
+          {data ? `${data.dataLabel} · snapshot ${data.generatedAt.slice(0, 10)}` : "loading dataset"}
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -567,21 +583,24 @@ function LiveBand() {
   });
 
   const stats = [
-    { value: overview?.counts.totalEvents, label: "Urban events modelled", suffix: "" },
-    { value: overview?.counts.activeEvents, label: "Active right now", suffix: "" },
-    { value: data?.computed.length, label: "Hotspots computed", suffix: "" },
-    { value: overview?.responseByAgency.length, label: "Agencies in the loop", suffix: "" },
-    { value: overview?.pilot.jurisdictions.length, label: "Pilot jurisdictions", suffix: "" },
+    { value: overview?.counts.totalEvents, label: "Urban events modelled" },
+    { value: overview?.counts.activeEvents, label: "Active right now" },
+    { value: data?.computed.length, label: "Hotspots computed" },
+    { value: overview?.responseByAgency.length, label: "Agencies in the loop" },
+    { value: overview?.pilot.jurisdictions.length, label: "Pilot jurisdictions" },
   ];
 
   return (
-    <section className="border-y border-hairline bg-ink-900/30" aria-label="Pilot at a glance">
-      <div className="content-wrap grid grid-cols-2 gap-px bg-hairline px-0 sm:grid-cols-3 lg:grid-cols-5">
+    <section className="border-b border-hairline bg-ink-900/30" aria-label="Pilot at a glance">
+      <div className="content-wrap grid grid-cols-2 gap-px bg-hairline sm:grid-cols-3 lg:grid-cols-5">
         {stats.map((s, i) => (
           <Reveal key={s.label} delay={i * 0.05} className="bg-ink-900 px-5 py-7 text-center">
             <p className="font-display text-3xl font-bold text-foreground">
-              {s.value == null ? <span className="inline-block h-8 w-10 rounded shimmer align-middle" /> : <CountUp value={s.value} />}
-              {s.suffix}
+              {s.value == null ? (
+                <span className="inline-block h-8 w-10 rounded shimmer align-middle" />
+              ) : (
+                <CountUp value={s.value} />
+              )}
             </p>
             <p className="mt-1.5 text-[0.72rem] leading-tight text-slate-500">{s.label}</p>
           </Reveal>
@@ -606,13 +625,13 @@ function EvidenceCard() {
   });
 
   const rows = [
-    { key: "F1 score", base: baseline.data?.metrics.f1, prop: proposed.data?.metrics.f1, better: "higher" as const },
-    { key: "AUC", base: baseline.data?.metrics.auc, prop: proposed.data?.metrics.auc, better: "higher" as const },
+    { key: "F1 score", base: baseline.data?.metrics.f1, prop: proposed.data?.metrics.f1 },
+    { key: "AUC", base: baseline.data?.metrics.auc, prop: proposed.data?.metrics.auc },
   ];
 
   return (
-    <div className="panel rounded-2xl p-6 sm:p-7">
-      <div className="flex items-center justify-between gap-3">
+    <div className="panel rounded-xl p-6 sm:p-7">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="font-display text-[0.95rem] font-semibold text-foreground">Hotspot detection</p>
           <p className="mt-0.5 text-[0.74rem] text-slate-500">Complaint counting vs. evidence fusion</p>
@@ -624,15 +643,15 @@ function EvidenceCard() {
 
       <div className="mt-6 space-y-5">
         {rows.map((r) => {
-          const gain =
-            r.base != null && r.prop != null ? Math.round((r.prop - r.base) * 1000) / 10 : null;
+          const gain = r.base != null && r.prop != null ? Math.round((r.prop - r.base) * 1000) / 10 : null;
           return (
             <div key={r.key}>
               <div className="flex items-baseline justify-between gap-3">
                 <span className="text-[0.82rem] font-medium text-slate-700">{r.key}</span>
                 <span className="data-mono text-[0.78rem] text-slate-500">
-                  {r.base != null ? r.base.toFixed(3) : "—"} <span className="px-1 text-slate-400">→</span>{" "}
-                  <span className="text-aqua">{r.prop != null ? r.prop.toFixed(3) : "—"}</span>
+                  {r.base != null ? r.base.toFixed(3) : "n/a"}{" "}
+                  <span className="px-1 text-slate-400">→</span>{" "}
+                  <span className="text-aqua">{r.prop != null ? r.prop.toFixed(3) : "n/a"}</span>
                 </span>
               </div>
               <div className="mt-2 space-y-1.5">
@@ -667,11 +686,7 @@ function MeterRow({ label, value, cls }: { label: string; value?: number; cls: s
   return (
     <div className="flex items-center gap-3">
       <span className="w-16 shrink-0 text-[0.66rem] text-slate-500">{label}</span>
-      <AnimatedProgress
-        value={(value ?? 0) * 100}
-        className="h-2 flex-1 bg-ink-800"
-        fillClassName={cls}
-      />
+      <AnimatedProgress value={(value ?? 0) * 100} className="h-2 flex-1 bg-ink-800" fillClassName={cls} />
     </div>
   );
 }
@@ -721,7 +736,8 @@ function LandingFooter({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
           </p>
           <p className="mt-4 flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/[0.07] px-3 py-2.5 text-[0.72rem] leading-relaxed text-amber-600">
             <AlertTriangle className="mt-px size-3.5 shrink-0" aria-hidden />
-            Synthetic demonstration data. Not a deployed government system.
+            Synthetic demonstration data. Not a deployed government system and not
+            an emergency service.
           </p>
         </div>
 
@@ -744,6 +760,30 @@ function LandingFooter({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
         ))}
       </div>
 
+      {/* Data handling, stated plainly: this prototype has no server side. */}
+      <div className="border-t border-hairline">
+        <div className="content-wrap grid gap-3 px-4 py-5 sm:px-6 lg:grid-cols-2">
+          <div>
+            <p className="micro-label !text-[0.55rem]">Data &amp; privacy</p>
+            <p className="mt-1.5 text-[0.72rem] leading-relaxed text-slate-500">
+              No backend, no accounts, no analytics and no cookies. A report you file
+              is computed and held in this browser tab only, and is cleared when you
+              close or reload it. The datasets shipped with this prototype are
+              synthetic.
+            </p>
+          </div>
+          <div>
+            <p className="micro-label !text-[0.55rem]">Terms of use</p>
+            <p className="mt-1.5 text-[0.72rem] leading-relaxed text-slate-500">
+              Provided as-is for research and demonstration, without warranty. Risk
+              scores, routing and metrics are illustrative outputs of a prototype and
+              must not drive operational decisions. In an emergency, contact the
+              appropriate local authority.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="border-t border-hairline">
         <div className="content-wrap flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-5 text-[0.7rem] text-slate-500 sm:px-6">
           <span>© 2026 JalSetu Research Prototype</span>
@@ -756,9 +796,8 @@ function LandingFooter({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
             className="inline-flex items-center gap-1.5 rounded px-1 py-1 transition-colors hover:text-aqua"
           >
             <FileText className="size-3" aria-hidden />
-            For AI assistants
+            Machine-readable summary
           </a>
-          <span className="ml-auto data-mono hidden lg:inline">No backend · no API keys · no tracking</span>
         </div>
       </div>
     </footer>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { apiGet, apiPost, ApiClientError, type EventSummary } from "@/lib/client/api";
@@ -10,7 +10,7 @@ import {
   ConfidenceChip, ProviderChip, SourceBadge,
 } from "@/components/app/shared/domain";
 import {
-  CountUp, Reveal, Stagger, StaggerItem, AnimatedProgress, HoverLift, Shine, PulseDot,
+  CountUp, Reveal, Stagger, StaggerItem, AnimatedProgress, HoverLift, PulseDot,
 } from "@/components/motion/kit";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -368,11 +368,10 @@ function ClassifyInput({ classify }: { classify: ClassifyMutation }) {
                 lng: lng.trim() && Number.isFinite(lngNum) ? lngNum : undefined,
               })
             }
-            className="group relative w-full overflow-hidden rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim shadow-sm"
+            className="w-full rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim"
           >
             <Tags className={cn("size-3.5", pending && "animate-pulse")} aria-hidden />
             {pending ? "Classifying…" : "Classify text"}
-            <Shine />
           </Button>
           <p className="text-[0.6rem] text-muted-foreground/70 leading-relaxed">
             Only Delhi locations are accepted: latitude 28.3 to 28.9, longitude 76.8 to 77.6. Anything outside Delhi is rejected.
@@ -428,11 +427,10 @@ function ReportQueue({ pending, onClassify }: { pending: boolean; onClassify: (r
                 variant="outline"
                 disabled={pending}
                 onClick={() => onClassify(r)}
-                className="ml-auto group relative h-7 overflow-hidden rounded-lg bg-aqua border-aqua text-ink-950 hover:bg-aqua-dim hover:text-ink-950 text-[0.65rem] shadow-sm"
+                className="ml-auto h-7 rounded-lg bg-aqua border-aqua text-ink-950 hover:bg-aqua-dim hover:text-ink-950 text-[0.65rem]"
               >
                 <Tags className={cn("size-3", pending && "animate-pulse")} aria-hidden />
                 {r.classification ? "Re-run" : "Classify"}
-                <Shine />
               </Button>
             </div>
           </StaggerItem>
@@ -664,7 +662,6 @@ function ClusterInput({ cluster, radius, setRadius }: { cluster: ClusterMutation
       >
         <GitMerge className={cn("size-3.5", cluster.isPending && "animate-pulse")} aria-hidden />
         {cluster.isPending ? "Clustering…" : "Run clustering"}
-        <Shine />
       </Button>
       <p className="text-[0.6rem] text-muted-foreground/70 leading-relaxed">
         Looks at all reports from the last 72 hours. It uses a fixed, deterministic method with no network call, so the same inputs always produce the same groups.
@@ -785,10 +782,17 @@ function RiskInput({ risk }: { risk: RiskMutation }) {
   });
 
   const events = eventsQ.data ?? [];
-  const q = search.trim().toLowerCase();
-  const filtered = q
-    ? events.filter((e) => e.code.toLowerCase().includes(q) || e.title.toLowerCase().includes(q))
-    : events;
+  // The picker list is the expensive part of this panel (it re-renders up to 40
+  // rows), so filter against a deferred copy and memoise the result.
+  const deferredSearch = useDeferredValue(search);
+  const q = deferredSearch.trim().toLowerCase();
+  const filtered = useMemo(
+    () =>
+      q
+        ? events.filter((e) => e.code.toLowerCase().includes(q) || e.title.toLowerCase().includes(q))
+        : events,
+    [events, q]
+  );
   const selectedEvent = events.find((e) => e.id === selected) ?? null;
 
   return (
@@ -858,7 +862,6 @@ function RiskInput({ risk }: { risk: RiskMutation }) {
       >
         <Gauge className={cn("size-3.5", risk.isPending && "animate-pulse")} aria-hidden />
         {risk.isPending ? "Assessing…" : "Assess risk"}
-        <Shine />
       </Button>
       <p className="text-[0.6rem] text-muted-foreground/70 leading-relaxed">
         Re-scores the incident with the transparent 7-factor risk engine and generates a structured advisory (a written second opinion) from the active provider. The result is saved to the event dossier.

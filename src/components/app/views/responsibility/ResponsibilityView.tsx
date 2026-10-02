@@ -349,6 +349,7 @@ function ChainInspector() {
     queryKey: ["responsibility", selected],
     queryFn: () => apiGet<ResponsibilityResponse>(`/api/events/${selected}/responsibility`).then((r) => r.data),
     enabled: selected !== "",
+    staleTime: 120_000,
   });
 
   const events = eventsQ.data ?? [];

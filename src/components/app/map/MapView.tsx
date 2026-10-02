@@ -6,7 +6,11 @@ import { useQuery } from "@tanstack/react-query";
 import { apiGet, type EventSummary, type HotspotResponse, type JurisdictionResponse, type AssetResponse, type WeatherResponse } from "@/lib/client/api";
 import { LoadingRows, RiskBadge, SeverityTicks, StatusBadge, TimeAgo, ConfidenceChip } from "../shared/domain";
 import { MapLegend } from "./MapLegend";
-import { MapData, MapCanvas } from "./MapCanvas";
+// Type-only import on purpose: importing MapCanvas at runtime would pull
+// maplibre-gl (and its stylesheet) into every view that shows a map card or
+// renders this module, defeating the dynamic import below. The engine only
+// loads when a map actually mounts.
+import type { MapData } from "./MapCanvas";
 import { MapLocateControl } from "./MapLocateControl";
 import { X } from "lucide-react";
 import { navigate } from "@/lib/client/store";
@@ -162,4 +166,3 @@ export function MapWithOverlays({ className, compact, initialZoom, initialCenter
 
 export { MapLegend };
 export type { MapData };
-void MapCanvas;

@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * JalSetu motion kit - OriginKit-style animated primitives built on framer-motion.
- * Restrained, purposeful motion: entrance reveals, count-ups, spotlight cards,
- * staggered lists, shine sweeps, pulsing live indicators, animated progress.
+ * JalSetu motion kit - animated primitives built on framer-motion.
+ * Restrained, purposeful motion only: entrance reveals, count-ups, staggered
+ * lists, a pulsing live indicator and animated progress bars.
  * Every component respects prefers-reduced-motion (no transforms, opacity only).
  */
 
@@ -12,10 +12,9 @@ import {
   useReducedMotion,
   useMotionValue,
   useSpring,
-  useMotionTemplate,
   type Variants,
 } from "framer-motion";
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const EASE = [0.21, 0.47, 0.32, 0.98] as const;
@@ -119,49 +118,6 @@ function format(v: number, decimals: number, prefix?: string, suffix?: string) {
   return `${prefix ?? ""}${rounded}${suffix ?? ""}`;
 }
 
-/* ------------------------------------------------------------ SpotlightCard */
-/** Card with a mouse-following spotlight highlight (OriginKit spotlight). */
-export function SpotlightCard({
-  children,
-  className,
-  spotlightColor = "rgba(37, 99, 235, 0.07)",
-}: {
-  children: ReactNode;
-  className?: string;
-  spotlightColor?: string;
-}) {
-  const reduce = useReducedMotion();
-  const ref = useRef<HTMLDivElement>(null);
-  const mx = useMotionValue(-300);
-  const my = useMotionValue(-300);
-  const background = useMotionTemplate`radial-gradient(280px circle at ${mx}px ${my}px, ${spotlightColor}, transparent 72%)`;
-
-  return (
-    <div
-      ref={ref}
-      className={cn("relative", className)}
-      onMouseMove={(e) => {
-        if (reduce) return;
-        const rect = ref.current?.getBoundingClientRect();
-        if (!rect) return;
-        mx.set(e.clientX - rect.left);
-        my.set(e.clientY - rect.top);
-      }}
-      onMouseLeave={() => {
-        mx.set(-300);
-        my.set(-300);
-      }}
-    >
-      {children}
-      <motion.div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-[inherit]"
-        style={{ background }}
-      />
-    </div>
-  );
-}
-
 /* --------------------------------------------------------------- PulseDot */
 /** Pulsing live-status dot (radar ping). */
 export function PulseDot({
@@ -214,21 +170,6 @@ export function AnimatedProgress({
         transition={{ duration: 0.9, delay, ease: EASE }}
       />
     </div>
-  );
-}
-
-/* -------------------------------------------------------------------- Shine */
-/** OriginKit shine sweep overlay - place inside a group with overflow-hidden. */
-export function Shine({ className }: { className?: string }) {
-  return (
-    <span
-      aria-hidden
-      className={cn(
-        "pointer-events-none absolute inset-0 -translate-x-[130%] bg-gradient-to-r from-transparent via-white/30 to-transparent",
-        "transition-transform duration-700 ease-out group-hover:translate-x-[130%]",
-        className
-      )}
-    />
   );
 }
 

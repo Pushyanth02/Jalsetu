@@ -6,7 +6,7 @@ import { apiGet, type OverviewResponse, type EventSummary } from "@/lib/client/a
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X, Search, MapPin, Bell, ChevronDown, FileSearch, Map as MapIcon } from "lucide-react";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useDeferredValue, useMemo } from "react";
 import { NAV_ITEMS, BrandLockupLight } from "./NavRail";
 import { RiskBadge, StatusBadge, TimeAgo } from "@/components/app/shared/domain";
 import { PulseDot } from "@/components/motion/kit";
@@ -36,7 +36,7 @@ export function TopBar() {
   }
 
   return (
-    <header className="sticky top-0 z-30 bg-ink-950/90 backdrop-blur-xl supports-[backdrop-filter]:bg-ink-950/75 border-b border-hairline shadow-[0_1px_0_rgba(45,212,191,0.10),0_8px_24px_-12px_rgba(0,0,0,0.9)]">
+    <header className="sticky top-0 z-30 bg-ink-950/92 backdrop-blur-md supports-[backdrop-filter]:bg-ink-950/80 border-b border-hairline shadow-[0_1px_0_rgba(45,212,191,0.12)]">
       <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 lg:px-5 h-14 sm:h-16">
         <button
           type="button"
@@ -99,7 +99,7 @@ export function TopBar() {
           {ai && (
             <span
               className="hidden xl:inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 micro-label !text-[0.58rem] text-amber-400 whitespace-nowrap"
-              title={ai.available ? `Classifier: ${ai.modelId} (${ai.configuredBy})` : "Remote model unavailable — deterministic fallback active"}
+              title={ai.available ? `Classifier: ${ai.modelId} (${ai.configuredBy})` : "Remote model unavailable, deterministic fallback active"}
             >
               <PulseDot size={6} color={ai.available ? "bg-emerald-500" : "bg-amber-500"} />
               <span className="hidden 2xl:inline">{ai.provider === "GLM" ? "GLM online" : ai.provider === "MOCK" ? "deterministic" : ai.provider.toLowerCase()}</span>
@@ -196,7 +196,7 @@ export function TopBar() {
                               aria-current={active ? "page" : undefined}
                               className={cn(
                                 "flex w-full items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-left touch-target transition-colors",
-                                active ? "text-aqua bg-aqua/10 shadow-[inset_2px_0_0_0_var(--aqua)]" : "text-slate-400 hover:text-slate-100 hover:bg-white/[0.05] active:bg-white/[0.09]"
+                                active ? "text-aqua bg-ink-850" : "text-slate-500 hover:bg-ink-850 hover:text-foreground active:bg-ink-800"
                               )}
                             >
                               <item.icon className={cn("size-4 shrink-0", active ? "text-aqua" : "text-slate-500")} aria-hidden />
@@ -264,9 +264,17 @@ function GlobalSearch({ autoFocus, onSelect }: { autoFocus?: boolean; onSelect?:
     };
   }, []);
 
-  const matches = (q.length >= 2 ? (events ?? []) : [])
-    .filter((e) => `${e.code} ${e.title} ${e.locationText}`.toLowerCase().includes(q.toLowerCase()))
-    .slice(0, 7);
+  // Keystrokes stay responsive: the input value updates immediately and the
+  // result list is recomputed against a deferred copy, so typing never waits
+  // on the filter pass (and the list is only recomputed when it changes).
+  const deferredQ = useDeferredValue(q);
+  const matches = useMemo(() => {
+    const needle = deferredQ.trim().toLowerCase();
+    if (needle.length < 2) return [];
+    return (events ?? [])
+      .filter((e) => `${e.code} ${e.title} ${e.locationText}`.toLowerCase().includes(needle))
+      .slice(0, 7);
+  }, [events, deferredQ]);
 
   return (
     <div ref={wrapRef} className="relative flex-1 min-w-0 w-full">

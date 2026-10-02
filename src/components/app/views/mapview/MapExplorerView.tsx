@@ -9,9 +9,9 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SlidersHorizontal, Users, CloudRain, GitBranch, MapPin, Droplets, Landmark, X } from "lucide-react";
-import { Reveal, Stagger, StaggerItem, CountUp, PulseDot } from "@/components/motion/kit";
+import { Reveal, CountUp, PulseDot } from "@/components/motion/kit";
 
 // WATERLOGGING MAP - full-bleed dark ops map with white filter rail on
 // desktop and a drag-handle bottom sheet on mobile (<1024px). Spatial
@@ -29,6 +29,10 @@ const RISK_BANDS = ["ALL", "LOW", "MODERATE", "HIGH", "CRITICAL"] as const;
 const STATUSES = ["ALL", "DETECTED", "TRIAGED", "ASSIGNED", "IN_PROGRESS", "VERIFIED", "CLOSED", "REOPENED"] as const;
 const CATEGORIES = ["ALL", "WATERLOGGING", "DRAIN_OVERFLOW", "SEWER_BACKUP", "POTHOLE", "DEBRIS_BLOCKAGE"] as const;
 
+/** Rows rendered per page in the event list. The map still receives every
+ *  matching event; only the list is paged, so DOM size stays bounded. */
+const LIST_PAGE = 40;
+
 const CATEGORY_LABELS: Record<(typeof CATEGORIES)[number], string> = {
   ALL: "All Categories",
   WATERLOGGING: "Waterlogging",
@@ -43,6 +47,11 @@ export function MapExplorerView() {
   const setFilters = useUi((s) => s.setFilters);
   const { eventsQ, hotspotsQ, jurisdictionsQ, assetsQ, weatherQ } = useMapData();
   const [sheetOpen, setSheetOpen] = useState(false);
+  // Paging state is keyed by the filter signature, so a filter change collapses
+  // the list back to the first screen without needing an effect.
+  const filterKey = `${filters.status}|${filters.riskBand}|${filters.category}|${filters.hours}|${filters.jurisdictionId}`;
+  const [page, setPage] = useState({ key: filterKey, count: LIST_PAGE });
+  const visibleCount = page.key === filterKey ? page.count : LIST_PAGE;
 
   // spatial selection via map jurisdiction click
   useEffect(() => {
@@ -54,6 +63,10 @@ export function MapExplorerView() {
     window.addEventListener("varuna:jurisdiction-click", onJurisdiction);
     return () => window.removeEventListener("varuna:jurisdiction-click", onJurisdiction);
   }, [jurisdictionsQ.data, setFilters]);
+
+  const allEvents = useMemo(() => eventsQ.data ?? [], [eventsQ.data]);
+  const shownEvents = allEvents.slice(0, visibleCount);
+  const remaining = allEvents.length - shownEvents.length;
 
   const selectedJurisdiction = jurisdictionsQ.data?.find((j) => j.id === filters.jurisdictionId);
   const activeFilterCount =
@@ -169,16 +182,24 @@ export function MapExplorerView() {
           <div className="h-64 lg:h-56 shrink-0 hairline-t bg-ink-900 overflow-y-auto cv-auto">
             {eventsQ.isLoading ? (
               <LoadingRows rows={4} className="p-3.5" />
-            ) : eventsQ.data && eventsQ.data.length > 0 ? (
-              <ul>
-                <Stagger>
-                  {eventsQ.data.map((e) => (
-                    <StaggerItem key={e.id} className="last:*:border-0">
-                      <EventRow event={e} />
-                    </StaggerItem>
+            ) : allEvents.length > 0 ? (
+              <>
+                <ul>
+                  {shownEvents.map((e) => (
+                    <EventRow key={e.id} event={e} />
                   ))}
-                </Stagger>
-              </ul>
+                </ul>
+                {remaining > 0 && (
+                  <div className="p-3">
+                    <button
+                      onClick={() => setPage({ key: filterKey, count: visibleCount + LIST_PAGE })}
+                      className="w-full rounded-lg border border-border px-3 py-2 micro-label !text-[0.58rem] text-slate-600 transition-colors hover:bg-ink-850 hover:text-slate-900"
+                    >
+                      show more · {remaining} remaining
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
               <EmptyState
                 title="No Events Match These Filters"

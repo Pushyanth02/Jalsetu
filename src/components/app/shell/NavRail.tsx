@@ -182,6 +182,7 @@ function WeatherWidget() {
     <div className="shrink-0 border-t border-hairline p-4">
       <div className="relative overflow-hidden rounded-xl h-24 bg-sb-850">
         <picture>
+          <source srcSet={assetSrcSet("/img/weather-delhi.avif 480w")} type="image/avif" sizes="280px" />
           <source srcSet={assetSrcSet("/img/weather-delhi.webp 480w")} type="image/webp" sizes="280px" />
           <img
             src={assetPath("/img/weather-delhi.png")}
@@ -246,7 +247,7 @@ export function MobileNav() {
   return (
     <nav
       aria-label="Primary mobile"
-      className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-ink-950/95 backdrop-blur supports-backdrop-filter:bg-ink-950/80 border-t border-hairline shadow-[0_-8px_28px_-12px_rgba(0,0,0,0.95)] safe-pb"
+      className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-ink-950/95 backdrop-blur-md supports-backdrop-filter:bg-ink-950/80 border-t border-hairline safe-pb"
     >
       <ul className="grid grid-cols-5 items-end max-w-130 mx-auto" role="list">
         {left.slice(0, 2).map((item) => (
@@ -259,7 +260,7 @@ export function MobileNav() {
             aria-label="Report a waterlogging issue"
             aria-current={view === "report" ? "page" : undefined}
             className={cn(
-              "relative -mt-5 grid size-14 place-items-center rounded-full bg-aqua text-ink-950 shadow-lg shadow-aqua/30 transition-all touch-target",
+              "relative -mt-5 grid size-14 place-items-center rounded-full bg-aqua text-ink-950 shadow-lg shadow-ink-950/60 transition-all touch-target",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aqua",
               view === "report" && "ring-2 ring-aqua ring-offset-2 ring-offset-ink-950"
             )}

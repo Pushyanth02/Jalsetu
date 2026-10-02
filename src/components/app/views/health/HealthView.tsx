@@ -15,8 +15,8 @@ import { cn } from "@/lib/utils";
 import { PALETTE } from "@/lib/palette";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import {
-  Activity, Database, Cpu, RefreshCw, Gauge, HeartPulse, History, Server,
-  ShieldCheck, AlertTriangle, BookOpen,
+  Activity, Database, Cpu, RefreshCw, Gauge, History, Server,
+  AlertTriangle, BookOpen,
 } from "lucide-react";
 
 // DATA & MODEL HEALTH - source freshness, provider state, run log,
@@ -221,9 +221,6 @@ export function HealthView() {
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="font-display text-lg font-bold tracking-tight text-slate-900 leading-tight">Data &amp; Model Health</h1>
-              <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 micro-label !text-[0.58rem] text-water">
-                <HeartPulse className="size-3" aria-hidden /> telemetry
-              </span>
             </div>
             <p className="text-[0.7rem] text-muted-foreground mt-0.5">
               A quick health check of every data source and model behind this dashboard.
@@ -265,23 +262,20 @@ export function HealthView() {
             ) : hb ? (
               <>
                 <StatCard
-                  icon={<Database className="size-5" aria-hidden />}
-                  tint="bg-blue-50 text-water"
+                  tone={hb.db.reachable ? "ok" : "warn"}
                   value={<CountUp value={hb.db.events} />}
                   label="Database events"
                   sub={hb.db.reachable ? `${hb.db.reports} reports · ${hb.db.observations} obs` : "db unreachable"}
                 />
                 <StatCard
-                  icon={<Gauge className="size-5" aria-hidden />}
-                  tint={hb.latencyMs > 5000 ? "bg-amber-50 text-sev-moderate" : "bg-blue-50 text-water"}
+                  tone={hb.latencyMs > 5000 ? "warn" : "plain"}
                   value={<CountUp value={hb.latencyMs} suffix=" ms" />}
                   label="API latency"
                   sub="time for the server to answer one health check"
                 />
                 {dh && (
                   <StatCard
-                    icon={<ShieldCheck className="size-5" aria-hidden />}
-                    tint={dh.overall === "OK" ? "bg-emerald-50 text-verified" : "bg-amber-50 text-sev-moderate"}
+                    tone={dh.overall === "OK" ? "ok" : "warn"}
                     value={
                       <span className={dh.overall === "OK" ? "text-verified" : "text-sev-moderate"}>
                         {dh.overall === "OK" ? "OK" : "EMPTY"}
@@ -292,8 +286,7 @@ export function HealthView() {
                   />
                 )}
                 <StatCard
-                  icon={<Cpu className="size-5" aria-hidden />}
-                  tint={hb.ai.available ? "bg-emerald-50 text-verified" : "bg-amber-50 text-sev-moderate"}
+                  tone={hb.ai.available ? "ok" : "warn"}
                   value={
                     <span className={cn("inline-flex items-center gap-2", hb.ai.available ? "text-verified" : "text-sev-moderate")}>
                       {hb.ai.available && <PulseDot color="bg-emerald-500" size={8} />}
@@ -751,9 +744,10 @@ export function HealthView() {
 
 // --- local primitives -----------------------------------------------------------
 
-function StatCard({ icon, tint, value, label, sub }: {
-  icon: ReactNode;
-  tint: string;
+// Status is carried by a dot plus the label, so no decorative icon tile is
+// needed on these tiles: the number is the thing worth looking at.
+function StatCard({ tone = "plain", value, label, sub }: {
+  tone?: "ok" | "warn" | "plain";
   value: ReactNode;
   label: string;
   sub?: ReactNode;
@@ -761,10 +755,18 @@ function StatCard({ icon, tint, value, label, sub }: {
   return (
     <HoverLift className="h-full">
       <div className="panel rounded-xl h-full p-4">
-        <span className={cn("grid size-10 place-items-center rounded-lg shrink-0", tint)}>{icon}</span>
+        <span className="flex items-center gap-2">
+          <span
+            aria-hidden
+            className={cn(
+              "size-1.5 shrink-0 rounded-full",
+              tone === "ok" ? "bg-verified" : tone === "warn" ? "bg-sev-moderate" : "bg-water-dim"
+            )}
+          />
+          <span className="micro-label !text-[0.55rem]">{label}</span>
+        </span>
         <p className="mt-3 font-display text-2xl font-bold tabular-nums text-slate-900 leading-none">{value}</p>
-        <p className="mt-1.5 text-[0.72rem] font-medium text-slate-500 leading-snug">{label}</p>
-        {sub && <p className="mt-1 data-mono text-[0.6rem] text-slate-400 leading-relaxed">{sub}</p>}
+        {sub && <p className="mt-2 data-mono text-[0.6rem] text-slate-400 leading-relaxed">{sub}</p>}
       </div>
     </HoverLift>
   );

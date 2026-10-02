@@ -87,6 +87,7 @@ export function EventDetailView() {
     queryKey: ["event", eventId],
     queryFn: () => apiGet<EventDetailResponse>(`/api/events/${eventId}`).then((r) => r.data),
     enabled: !!eventId,
+    staleTime: 60_000,
   });
 
   const invalidate = () => {
@@ -476,7 +477,7 @@ function EvidenceTab({ d, onMutated }: { d: D; onMutated: () => void }) {
                         <img
                           src={ev.content.startsWith("data:") ? ev.content : assetPath(ev.content)}
                           alt={ev.caption ?? `${ev.kind} evidence`}
-                          className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          className="size-full object-cover"
                           loading="lazy"
                           onError={(el) => {
                             el.currentTarget.style.display = "none";

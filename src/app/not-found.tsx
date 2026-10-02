@@ -37,7 +37,7 @@ export default function NotFound() {
     <div className="min-h-[100dvh] flex flex-col bg-background">
       <header className="hairline-b bg-ink-900">
         <div className="px-4 sm:px-6 h-16 flex items-center gap-3">
-          <span className="grid size-9 place-items-center rounded-[10px] bg-gradient-to-b from-aqua-dim to-aqua-deep shrink-0" aria-hidden>
+          <span className="grid size-9 place-items-center rounded-[10px] bg-aqua shrink-0" aria-hidden>
             <svg viewBox="0 0 24 24" className="size-5" fill="none" aria-hidden>
               <path d="M12 3c2.6 3.6 4.7 6 4.7 8.4a4.7 4.7 0 1 1-9.4 0C7.3 9 9.4 6.6 12 3z" className="fill-ink-950" />
             </svg>
@@ -57,7 +57,7 @@ export default function NotFound() {
       <main className="flex-1 grid place-items-center px-4 py-10">
         <div className="w-full max-w-xl">
           <div className="panel rounded-xl p-6 sm:p-8 text-center">
-            <div className="mx-auto size-12 grid place-items-center rounded-xl bg-aqua/10 text-aqua aqua-glow">
+            <div className="mx-auto size-12 grid place-items-center rounded-xl border border-aqua/25 bg-aqua/10 text-aqua">
               <MapPinOff className="size-6" aria-hidden />
             </div>
             <h1 className="mt-4 font-display text-xl font-bold tracking-tight text-slate-100">

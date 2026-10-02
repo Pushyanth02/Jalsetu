@@ -7,7 +7,7 @@ import { distanceM } from "@/lib/geo";
 import {
   LoadingRows, ErrorNote, Panel, EmptyState, TimeAgo, SourceBadge,
 } from "@/components/app/shared/domain";
-import { Reveal, Stagger, StaggerItem, CountUp, HoverLift, SpotlightCard, AnimatedProgress } from "@/components/motion/kit";
+import { Reveal, Stagger, StaggerItem, CountUp, HoverLift, AnimatedProgress } from "@/components/motion/kit";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
@@ -707,7 +707,7 @@ function ApproachCard({ tone, label, name, body, metrics }: {
   const proposed = tone === "proposed";
   return (
     <HoverLift className="h-full">
-      <SpotlightCard className="rounded-xl h-full">
+      <div className="rounded-xl h-full">
         <div className={cn("panel rounded-xl h-full p-4 sm:p-5", proposed && "border-water/30")}>
           <div className="flex items-start gap-3">
             <span
@@ -731,7 +731,7 @@ function ApproachCard({ tone, label, name, body, metrics }: {
             <MetricStat label="Hit Rate" value={metrics.spatialHitRate} accent={proposed} />
           </div>
         </div>
-      </SpotlightCard>
+      </div>
     </HoverLift>
   );
 }

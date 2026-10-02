@@ -23,8 +23,8 @@ export function ViewBreadcrumb() {
               e.preventDefault();
               goHome();
             }}
-            className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1.5 hover:text-aqua hover:bg-white/[0.06] active:bg-white/[0.1] transition-colors touch-target"
-            aria-label="Home — JalSetu landing page"
+            className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1.5 transition-colors hover:bg-ink-850 hover:text-aqua active:bg-ink-800 touch-target"
+            aria-label="Home, JalSetu landing page"
           >
             <Home className="size-3.5 shrink-0" aria-hidden />
             <span className="hidden sm:inline font-medium">Home</span>

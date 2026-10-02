@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { navigate, useUi } from "@/lib/client/store";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { AnimatedProgress, CountUp, HoverLift, PulseDot, Reveal, Shine, Stagger, StaggerItem } from "@/components/motion/kit";
+import { AnimatedProgress, CountUp, HoverLift, PulseDot, Reveal, Stagger, StaggerItem } from "@/components/motion/kit";
 import {
   AlertTriangle, Camera, Check, ChevronLeft, ChevronRight, Copy, FileCheck, Flag, LocateFixed, MapPin, Search, X,
 } from "lucide-react";
@@ -574,14 +574,12 @@ function ReportWizard() {
             {step < 3 ? `${step + 1} of 4` : "Final Check"}
           </span>
           {step < 3 ? (
-            <Button type="button" size="sm" className="group relative overflow-hidden rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim" onClick={next}>
+            <Button type="button" size="sm" className="rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim" onClick={next}>
               {attempted && !stepValid ? "Fix to continue" : "Continue"} <ChevronRight className="size-3.5" aria-hidden />
-              <Shine />
             </Button>
           ) : (
-            <Button type="button" size="sm" className="group relative overflow-hidden rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim" disabled={submit.isPending} onClick={next}>
+            <Button type="button" size="sm" className="rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim" disabled={submit.isPending} onClick={next}>
               {submit.isPending ? "Submitting…" : "Submit report"}
-              <Shine />
             </Button>
           )}
         </div>
@@ -977,9 +975,8 @@ function StepReview(p: {
       </p>
       {p.submitError && <ErrorNote message={p.submitError} />}
       <div className="flex justify-end">
-        <Button size="sm" className="group relative overflow-hidden rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim" disabled={p.submitPending} onClick={p.onSubmit}>
+        <Button size="sm" className="rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim" disabled={p.submitPending} onClick={p.onSubmit}>
           {p.submitPending ? "Submitting…" : "Submit report"}
-          <Shine />
         </Button>
       </div>
     </div>

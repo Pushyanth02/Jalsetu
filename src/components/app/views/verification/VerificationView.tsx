@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useToast } from "@/hooks/use-toast";
 import { navigate } from "@/lib/client/store";
 import { cn } from "@/lib/utils";
-import { CountUp, HoverLift, PulseDot, Reveal, Shine, Stagger, StaggerItem } from "@/components/motion/kit";
+import { CountUp, HoverLift, PulseDot, Reveal, Stagger, StaggerItem } from "@/components/motion/kit";
 import { Camera, Check, ChevronRight, ClipboardCheck, RefreshCw, RotateCcw, Search, X } from "lucide-react";
 
 // FIELD VERIFICATION - workflow board. Events grouped by verification stage
@@ -306,6 +306,7 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
     queryKey: ["event", eventId],
     queryFn: () => apiGet<VerifyEventDetail>(`/api/events/${eventId}`).then((r) => r.data),
     enabled: !!eventId,
+    staleTime: 60_000,
   });
 
   const ev = detailQ.data?.event ?? null;
@@ -649,9 +650,8 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                           <p className="text-[0.62rem] text-slate-500">
                             Next expected: <span className="text-water">{(nextStage ?? "CLOSED").toLowerCase().replace(/_/g, " ")}</span>. Steps must be recorded in order (checked by the server).
                           </p>
-                          <Button size="sm" className="group relative overflow-hidden rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim h-8" disabled={verify.isPending} onClick={submitStage}>
+                          <Button size="sm" className="rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim h-8" disabled={verify.isPending} onClick={submitStage}>
                             {verify.isPending ? "Recording…" : "Record stage"}
-                            <Shine />
                           </Button>
                         </div>
                       </div>
