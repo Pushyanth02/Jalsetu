@@ -12,7 +12,7 @@ import { useViewSeo } from "@/lib/client/seo";
 
 const ViewSkeleton = () => (
   <div className="flex-1 min-h-0 flex flex-col gap-0" aria-busy="true" aria-label="Loading view">
-    <div className="hairline-b bg-white px-4 sm:px-6 py-3.5">
+    <div className="hairline-b bg-ink-900 px-4 sm:px-6 py-3.5">
       <div className="h-5 w-48 max-w-[60vw] rounded-lg shimmer" />
       <div className="mt-2 h-3 w-72 max-w-[80vw] rounded shimmer" />
     </div>
@@ -26,6 +26,7 @@ const ViewSkeleton = () => (
   </div>
 );
 
+const LandingView = dynamic(() => import("../views/landing/LandingView").then((m) => m.LandingView), { ssr: false, loading: ViewSkeleton });
 const CommandCenterView = dynamic(() => import("../views/command/CommandCenterView").then((m) => m.CommandCenterView), { ssr: false, loading: ViewSkeleton });
 const MapExplorerView = dynamic(() => import("../views/mapview/MapExplorerView").then((m) => m.MapExplorerView), { ssr: false, loading: ViewSkeleton });
 const EventDetailView = dynamic(() => import("../views/event/EventDetailView").then((m) => m.EventDetailView), { ssr: false, loading: ViewSkeleton });
@@ -42,6 +43,16 @@ export function AppRoot() {
   const eventId = useUi((s) => s.eventId);
   const reduce = useReducedMotion();
   useViewSeo(view, eventId);
+
+  // The landing page is the public face and carries its own header/footer, so
+  // it renders without the ops shell. Everything else runs inside the console.
+  if (view === "landing") {
+    return (
+      <div className="min-h-[100dvh] bg-background">
+        <LandingView />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -84,16 +95,16 @@ function AppFooter() {
     staleTime: 300_000,
   });
   return (
-    <footer className="mt-auto hairline-t bg-white">
+    <footer className="mt-auto hairline-t bg-ink-900">
       <div className="px-3 sm:px-4 lg:px-6 py-3 flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-2 text-[0.65rem] text-muted-foreground">
         <span className="hidden sm:flex items-center gap-2">
           <BrandLockupLight compact />
         </span>
         <span className="sm:hidden flex items-center gap-2">
           <img src={assetPath("/img/jalsetu-mark.svg")} alt="" width={22} height={22} className="size-5.5 rounded-md shrink-0" aria-hidden />
-          <span className="font-display font-bold text-slate-900 text-xs">JalSetu</span>
+          <span className="font-display font-bold text-slate-100 text-xs">JalSetu</span>
         </span>
-        <span className="hidden md:inline text-slate-600 font-medium">Urban Event Intelligence · Delhi pilot</span>
+        <span className="hidden md:inline text-slate-400 font-medium">Urban Event Intelligence · Delhi pilot</span>
         <span className="text-slate-400 hidden xs:inline text-[0.62rem] leading-tight">Research prototype · synthetic demo data · not a deployed government system</span>
         <span className="xs:hidden text-slate-400 text-[0.62rem]">Synthetic demo · not live</span>
         {data && (
@@ -108,7 +119,7 @@ function AppFooter() {
         <FooterLink href="#/verify" label="Field Verification" />
         <FooterLink href="#/analytics" label="Research & Analytics" />
         <FooterLink href="#/health" label="Data & Model Health" />
-        <span className="hidden sm:inline text-slate-300" aria-hidden>·</span>
+        <span className="hidden sm:inline text-slate-600" aria-hidden>·</span>
         <FooterLink href={assetPath("/llms.txt")} label="For AI Assistants" external />
         <FooterLink href={assetPath("/sitemap.xml")} label="Sitemap" external />
       </nav>
@@ -121,7 +132,7 @@ function FooterLink({ href, label, external }: { href: string; label: string; ex
     <a
       href={href}
       {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-      className="rounded-lg px-2 py-1.5 -mx-1 text-slate-500 hover:text-water hover:bg-slate-100 active:bg-slate-200 transition-colors touch-target inline-flex items-center"
+      className="rounded-lg px-2 py-1.5 -mx-1 text-slate-400 hover:text-aqua hover:bg-white/[0.06] active:bg-white/[0.1] transition-colors touch-target inline-flex items-center"
     >
       {label}
     </a>

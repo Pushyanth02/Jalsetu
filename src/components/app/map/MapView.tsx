@@ -6,7 +6,11 @@ import { useQuery } from "@tanstack/react-query";
 import { apiGet, type EventSummary, type HotspotResponse, type JurisdictionResponse, type AssetResponse, type WeatherResponse } from "@/lib/client/api";
 import { LoadingRows, RiskBadge, SeverityTicks, StatusBadge, TimeAgo, ConfidenceChip } from "../shared/domain";
 import { MapLegend } from "./MapLegend";
-import { MapData, MapCanvas } from "./MapCanvas";
+// Type-only import on purpose: importing MapCanvas at runtime would pull
+// maplibre-gl (and its stylesheet) into every view that shows a map card or
+// renders this module, defeating the dynamic import below. The engine only
+// loads when a map actually mounts.
+import type { MapData } from "./MapCanvas";
 import { MapLocateControl } from "./MapLocateControl";
 import { X } from "lucide-react";
 import { navigate } from "@/lib/client/store";
@@ -111,7 +115,7 @@ export function MapSelectionCard({ events }: { events: EventSummary[] }) {
       <div className="mt-3 flex gap-2">
         <button
           onClick={() => navigate("event", ev.code)}
-          className="flex-1 rounded-lg bg-water text-white micro-label !text-[0.62rem] font-semibold !tracking-[0.12em] py-2 hover:bg-water-dim transition-colors"
+          className="flex-1 rounded-lg bg-aqua text-ink-950 micro-label !text-[0.62rem] font-semibold !tracking-[0.12em] py-2 hover:bg-aqua-dim transition-colors"
         >
           Open full dossier
         </button>
@@ -162,4 +166,3 @@ export function MapWithOverlays({ className, compact, initialZoom, initialCenter
 
 export { MapLegend };
 export type { MapData };
-void MapCanvas;

@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { AnimatedProgress } from "@/components/motion/kit";
 
 // Domain display primitives: severity, status, risk, provenance, time.
-// Light command-center theme: white cards, pill badges, soft shadows.
+// Monsoon ink: indigo surfaces, aqua signal, warm severity ramp.
 // Colour is never the only signal (label text + symbols always present).
 
 export const STATUS_ORDER = ["DETECTED", "TRIAGED", "ASSIGNED", "IN_PROGRESS", "VERIFIED", "CLOSED", "REOPENED"] as const;
@@ -65,7 +65,7 @@ export function RiskMeter({ score, band, className }: { score: number; band: str
 }
 
 export function SeverityTicks({ severity, className }: { severity: number; className?: string }) {
-  const color = severity >= 4 ? "bg-red-500" : severity === 3 ? "bg-orange-500" : severity === 2 ? "bg-amber-500" : "bg-slate-400";
+  const color = severity >= 4 ? "bg-red-500" : severity === 3 ? "bg-orange-500" : severity === 2 ? "bg-amber-500" : "bg-slate-500";
   return (
     <span className={cn("inline-flex items-center gap-[3px]", className)} role="img" aria-label={`Severity ${severity} of 4`}>
       {[1, 2, 3, 4].map((i) => (
@@ -147,8 +147,8 @@ export function Panel({ title, actions, children, className, bodyClassName, dens
     <section className={cn("panel rounded-xl flex flex-col min-h-0", className)} aria-label={typeof title === "string" ? title : undefined}>
       {(title || actions) && (
         <header className="flex items-center justify-between gap-3 hairline-b px-4 py-3 shrink-0">
-          <h2 className="flex items-center gap-2 text-[0.82rem] font-semibold text-slate-800 leading-none">
-            {icon && <span className="text-water-dim [&>svg]:size-4" aria-hidden>{icon}</span>}
+          <h2 className="flex items-center gap-2 text-[0.82rem] font-semibold text-slate-200 leading-none">
+            {icon && <span className="text-aqua-dim [&>svg]:size-4" aria-hidden>{icon}</span>}
             {title}
           </h2>
           {actions && <div className="flex items-center gap-2">{actions}</div>}
@@ -162,8 +162,8 @@ export function Panel({ title, actions, children, className, bodyClassName, dens
 export function EmptyState({ icon, title, hint, action }: { icon?: ReactNode; title: string; hint?: string; action?: ReactNode }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 py-10 px-6 text-center min-h-40">
-      {icon && <div className="text-slate-300 [&>svg]:size-8" aria-hidden>{icon}</div>}
-      <p className="text-sm font-medium text-slate-500">{title}</p>
+      {icon && <div className="text-slate-500 [&>svg]:size-8" aria-hidden>{icon}</div>}
+      <p className="text-sm font-medium text-slate-300">{title}</p>
       {hint && <p className="text-xs text-muted-foreground/80 max-w-sm">{hint}</p>}
       {action}
     </div>
@@ -190,9 +190,9 @@ export function ErrorNote({ message, onRetry, className }: { message: string; on
       className={cn("flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm", className)}
     >
       <span className="text-sev-critical" aria-hidden>⚠</span>
-      <span className="text-red-700 flex-1">{message}</span>
+      <span className="text-red-500 flex-1">{message}</span>
       {onRetry && (
-        <button onClick={onRetry} className="micro-label !text-[0.6rem] text-water hover:text-water-dim transition-colors">
+        <button onClick={onRetry} className="micro-label !text-[0.6rem] text-aqua hover:text-aqua-dim transition-colors">
           retry
         </button>
       )}

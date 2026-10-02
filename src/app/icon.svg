@@ -1,12 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#16213f"/>
+      <stop offset="1" stop-color="#05080f"/>
+    </linearGradient>
     <linearGradient id="drop" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#60a5fa"/>
-      <stop offset="1" stop-color="#2563eb"/>
+      <stop offset="0" stop-color="#6fe6d6"/>
+      <stop offset="1" stop-color="#17a892"/>
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="14" fill="url(#drop)"/>
-  <path d="M32 13c6.8 9.6 12.5 15.9 12.5 22.2a12.5 12.5 0 1 1-25 0C19.5 28.9 25.2 22.6 32 13z" fill="#ffffff"/>
-  <path d="M25.8 36.2a6.8 6.8 0 0 0 4.4 9.2" stroke="#bfdbfe" stroke-width="3.2" stroke-linecap="round" fill="none"/>
-  <circle cx="38.5" cy="41.5" r="1.8" fill="#bfdbfe"/>
+  <rect width="64" height="64" rx="14" fill="url(#tile)"/>
+  <rect x="0.75" y="0.75" width="62.5" height="62.5" rx="13.25" fill="none" stroke="#2dd4bf" stroke-opacity="0.35" stroke-width="1.5"/>
+  <path d="M32 13c6.8 9.6 12.5 15.9 12.5 22.2a12.5 12.5 0 1 1-25 0C19.5 28.9 25.2 22.6 32 13z" fill="url(#drop)"/>
+  <path d="M25.8 36.2a6.8 6.8 0 0 0 4.4 9.2" stroke="#04211e" stroke-opacity="0.55" stroke-width="3.2" stroke-linecap="round" fill="none"/>
+  <circle cx="38.5" cy="41.5" r="1.8" fill="#04211e" fill-opacity="0.55"/>
 </svg>

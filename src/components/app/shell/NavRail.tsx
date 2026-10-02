@@ -23,7 +23,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "command", label: "Command Center", shortLabel: "Command", icon: LayoutDashboard, group: "ops" },
   { id: "map", label: "Waterlogging Map", shortLabel: "Map", icon: MapIcon, group: "ops" },
   { id: "event", label: "Urban Events", shortLabel: "Events", icon: FileSearch, group: "ops" },
-  { id: "investigate", label: "AI Investigation", shortLabel: "Investigate", icon: Activity, group: "flow" },
+  { id: "investigate", label: "Investigation Tools", shortLabel: "Investigate", icon: Activity, group: "flow" },
   { id: "responsibility", label: "Responsibility", shortLabel: "Links", icon: Network, group: "flow" },
   { id: "verify", label: "Field Verification", shortLabel: "Verify", icon: ClipboardCheck, group: "flow" },
   { id: "report", label: "Citizen Report", shortLabel: "Report", icon: Flag, group: "flow" },
@@ -56,7 +56,7 @@ export function BrandLockup({ compact = false }: { compact?: boolean }) {
   );
 }
 
-/** Light variant for footer / mobile header (dark text) */
+/** Text variant for the dark surfaces it now sits on (header / footer) */
 export function BrandLockupLight({ compact = false }: { compact?: boolean }) {
   return (
     <span className="flex items-center gap-2.5">
@@ -70,7 +70,7 @@ export function BrandLockupLight({ compact = false }: { compact?: boolean }) {
         className="shrink-0 rounded-xl size-7 object-contain"
       />
       <span className="min-w-0 text-left">
-        <span className="block font-display text-sm font-bold leading-none text-slate-900">JalSetu</span>
+        <span className="block font-display text-sm font-bold leading-none text-slate-100">JalSetu</span>
         {!compact && (
           <span className="hidden xs:block mt-0.5 text-[0.6rem] leading-tight text-slate-500 truncate">Delhi Waterlogging Intelligence</span>
         )}
@@ -98,13 +98,13 @@ export function NavRail() {
   return (
     <nav
       aria-label="Primary"
-      className="hidden lg:flex w-60 xl:w-66 shrink-0 flex-col bg-sb-900 border-r border-sidebar-border"
+      className="hidden lg:flex w-60 xl:w-66 shrink-0 flex-col bg-sb-900 border-r border-hairline"
     >
-      <div className="px-5 pt-5 pb-4 border-b border-sidebar-border shrink-0">
+      <div className="px-5 pt-5 pb-4 border-b border-hairline shrink-0">
         <button
-          onClick={() => navigate("command")}
-          className="w-full text-left rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/50"
-          aria-label="JalSetu home — Command Center"
+          onClick={() => navigate("landing")}
+          className="w-full text-left rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aqua/60"
+          aria-label="JalSetu home"
         >
           <BrandLockup />
         </button>
@@ -113,7 +113,7 @@ export function NavRail() {
       <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-4 space-y-5">
         {groups.map((g) => (
           <div key={g.key}>
-            <p className="px-3 pb-2 micro-label text-[0.56rem]! text-white/40! tracking-[0.14em]">{g.label}</p>
+            <p className="px-3 pb-2 micro-label text-[0.56rem]! text-aqua/60! tracking-[0.14em]">{g.label}</p>
             <ul className="space-y-0.5" role="list">
               {NAV_ITEMS.filter((n) => n.group === g.key).map((item) => {
                 const active = view === item.id;
@@ -128,7 +128,7 @@ export function NavRail() {
                       className={cn(
                         "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 xl:py-2 text-[0.84rem] font-medium transition-colors text-left touch-target",
                         active
-                          ? "text-white bg-white/8 ring-1 ring-white/10"
+                          ? "text-aqua bg-aqua/10 ring-1 ring-aqua/25"
                           : "text-white/60 hover:text-white hover:bg-white/6",
                         disabled && "opacity-35 cursor-not-allowed hover:bg-transparent hover:text-white/60"
                       )}
@@ -179,9 +179,10 @@ function WeatherWidget() {
   const dateLabel = now.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase();
 
   return (
-    <div className="shrink-0 border-t border-sidebar-border p-4">
+    <div className="shrink-0 border-t border-hairline p-4">
       <div className="relative overflow-hidden rounded-xl h-24 bg-sb-850">
         <picture>
+          <source srcSet={assetSrcSet("/img/weather-delhi.avif 480w")} type="image/avif" sizes="280px" />
           <source srcSet={assetSrcSet("/img/weather-delhi.webp 480w")} type="image/webp" sizes="280px" />
           <img
             src={assetPath("/img/weather-delhi.png")}
@@ -204,9 +205,9 @@ function WeatherWidget() {
               <span className="font-display text-2xl font-bold text-white tabular-nums">
                 {data ? <CountUp value={mm} decimals={mm % 1 ? 1 : 0} /> : mm}
               </span>
-              <span className="text-[0.6rem] font-medium text-slate-300">mm/24h</span>
+              <span className="text-[0.6rem] font-medium text-white/55">mm/24h</span>
             </p>
-            <p className="mt-1 flex items-center gap-1.5 text-[0.65rem] text-slate-300">
+            <p className="mt-1 flex items-center gap-1.5 text-[0.65rem] text-white/70">
               <Umbrella className="size-3 text-water-dim shrink-0" aria-hidden />
               <span className="truncate">{condition} · pilot gauges</span>
             </p>
@@ -246,7 +247,7 @@ export function MobileNav() {
   return (
     <nav
       aria-label="Primary mobile"
-      className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/98 backdrop-blur supports-backdrop-filter:bg-white/90 border-t border-border shadow-[0_-4px_24px_rgba(15,23,42,0.08)] safe-pb"
+      className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-ink-950/95 backdrop-blur-md supports-backdrop-filter:bg-ink-950/80 border-t border-hairline safe-pb"
     >
       <ul className="grid grid-cols-5 items-end max-w-130 mx-auto" role="list">
         {left.slice(0, 2).map((item) => (
@@ -259,9 +260,9 @@ export function MobileNav() {
             aria-label="Report a waterlogging issue"
             aria-current={view === "report" ? "page" : undefined}
             className={cn(
-              "relative -mt-5 grid size-14 place-items-center rounded-full bg-water text-white shadow-lg shadow-water/30 transition-all touch-target",
-              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-water",
-              view === "report" && "ring-2 ring-water ring-offset-2 ring-offset-white"
+              "relative -mt-5 grid size-14 place-items-center rounded-full bg-aqua text-ink-950 shadow-lg shadow-ink-950/60 transition-all touch-target",
+              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aqua",
+              view === "report" && "ring-2 ring-aqua ring-offset-2 ring-offset-ink-950"
             )}
           >
             <Plus className="size-6" aria-hidden />
@@ -287,8 +288,8 @@ function MobileNavItem({ item, active }: { item: NavItem; active: boolean }) {
         aria-label={item.label}
         className={cn(
           "flex w-full flex-col items-center justify-center gap-1 py-2.5 touch-target transition-colors",
-          "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-water rounded-lg",
-          active ? "text-water" : "text-slate-400 hover:text-slate-600"
+          "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-aqua rounded-lg",
+          active ? "text-aqua" : "text-slate-400 hover:text-slate-100"
         )}
       >
         <item.icon className="size-5 shrink-0" aria-hidden />

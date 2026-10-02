@@ -7,6 +7,7 @@ import { create } from "zustand";
 // navigation is client-side with hash deep-links (#/events/UE-2026-0001).
 
 export type ViewId =
+  | "landing"
   | "command"
   | "map"
   | "event"
@@ -53,7 +54,7 @@ interface UiState {
 }
 
 export const useUi = create<UiState>((set) => ({
-  view: "command",
+  view: "landing",
   eventId: null,
   selectedEventId: null,
   mapFocus: null,
@@ -82,17 +83,18 @@ export const useUi = create<UiState>((set) => ({
 
 export function parseHash(hash: string): { view: ViewId; eventId: string | null } {
   const clean = hash.replace(/^#\/?/, "");
-  if (!clean || clean === "command") return { view: "command", eventId: null };
+  if (!clean) return { view: "landing", eventId: null };
   const [head, param] = clean.split("/");
-  const views: ViewId[] = ["command", "map", "event", "investigate", "responsibility", "verify", "report", "analytics", "health"];
+  const views: ViewId[] = ["landing", "command", "map", "event", "investigate", "responsibility", "verify", "report", "analytics", "health"];
   if (head === "events" && param) return { view: "event", eventId: param };
   if (views.includes(head as ViewId)) return { view: head as ViewId, eventId: param ?? null };
-  return { view: "command", eventId: null };
+  return { view: "landing", eventId: null };
 }
 
 export function hashFor(view: ViewId, eventId?: string | null): string {
   if (view === "event" && eventId) return `#/events/${eventId}`;
-  return `#/${view === "command" ? "" : view}`;
+  // The bare hash is the landing page; the ops console lives at #/command.
+  return `#/${view === "landing" ? "" : view}`;
 }
 
 /** Syncs the store to the URL hash (back button works). */

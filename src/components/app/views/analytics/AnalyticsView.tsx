@@ -7,11 +7,12 @@ import { distanceM } from "@/lib/geo";
 import {
   LoadingRows, ErrorNote, Panel, EmptyState, TimeAgo, SourceBadge,
 } from "@/components/app/shared/domain";
-import { Reveal, Stagger, StaggerItem, CountUp, HoverLift, SpotlightCard, AnimatedProgress } from "@/components/motion/kit";
+import { Reveal, Stagger, StaggerItem, CountUp, HoverLift, AnimatedProgress } from "@/components/motion/kit";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { cn } from "@/lib/utils";
+import { PALETTE } from "@/lib/palette";
 import {
   FlaskConical, GitMerge, Network, Clock, CheckCircle2, RotateCcw,
   BookOpen, MapPin, RefreshCw, ArrowRight, Scale, BarChart3, Database,
@@ -69,26 +70,27 @@ interface ProposedData extends AnalyticsData {
   comparison: { baseline: Metrics; proposed: Metrics; note: string };
 }
 
-// chart + UI colour constants (locked light palette, single blue accent)
-const BLUE = "#2563eb";      // proposed / primary series (blue-600)
-const SLATE_BAR = "#94a3b8"; // baseline series (slate-400)
-const GRID_STROKE = "#e2e8f0";
-const TICK = { fill: "#94a3b8", fontSize: 9, fontFamily: "var(--font-plex-mono)" };
+// chart + UI colour constants (locked Monsoon ink palette: aqua signal on indigo)
+const BLUE = PALETTE.aqua;          // proposed / primary series
+const SLATE_BAR = PALETTE.textFaint; // baseline series (muted indigo)
+const GRID_STROKE = PALETTE.hairline;
+const TICK = { fill: PALETTE.textDim, fontSize: 9, fontFamily: "var(--font-plex-mono)" };
 const TOOLTIP_STYLE = {
-  background: "#ffffff",
-  border: "1px solid #e2e8f0",
+  background: PALETTE.popover,
+  border: `1px solid ${PALETTE.input}`,
   borderRadius: 8,
   fontSize: 11,
   fontFamily: "var(--font-plex-mono)",
-  boxShadow: "0 4px 12px rgba(15,23,42,0.08)",
+  color: PALETTE.foreground,
+  boxShadow: "0 8px 24px -8px rgba(0,0,0,0.9)",
 };
-const LABEL_STYLE = { color: "#64748b" };
-const CURSOR_FILL = { fill: "rgba(37, 99, 235, 0.05)" };
+const LABEL_STYLE = { color: PALETTE.textMuted };
+const CURSOR_FILL = { fill: `${PALETTE.aqua}0f` };
 
 const MATCH_RADIUS_M = 250;
 
 // API strings may carry em/en dashes; the UI voice uses hyphens only.
-const clean = (s: string) => s.replace(/-/g, "-").replace(/-/g, "-");
+const clean = (s: string) => s.replace(/[\u2010-\u2015\u2212]/g, "-");
 
 const FALLBACK_LABEL =
   "SYNTHETIC DEMO EVALUATION - computed on seeded pilot data with known ground truth. NOT measured real-world performance.";
@@ -171,7 +173,7 @@ export function AnalyticsView() {
       </div>
 
       {/* header strip */}
-      <div className="hairline-b bg-white px-4 sm:px-6 py-3.5 mt-3.5">
+      <div className="hairline-b bg-ink-900 px-4 sm:px-6 py-3.5 mt-3.5">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
@@ -705,7 +707,7 @@ function ApproachCard({ tone, label, name, body, metrics }: {
   const proposed = tone === "proposed";
   return (
     <HoverLift className="h-full">
-      <SpotlightCard className="rounded-xl h-full">
+      <div className="rounded-xl h-full">
         <div className={cn("panel rounded-xl h-full p-4 sm:p-5", proposed && "border-water/30")}>
           <div className="flex items-start gap-3">
             <span
@@ -729,7 +731,7 @@ function ApproachCard({ tone, label, name, body, metrics }: {
             <MetricStat label="Hit Rate" value={metrics.spatialHitRate} accent={proposed} />
           </div>
         </div>
-      </SpotlightCard>
+      </div>
     </HoverLift>
   );
 }

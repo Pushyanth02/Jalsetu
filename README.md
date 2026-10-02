@@ -1,7 +1,7 @@
 # JalSetu — Delhi Waterlogging Intelligence
 
 A research-grade demo of a cross-agency waterlogging intelligence system: citizen
-reports → AI classification → risk-scored urban events → agency routing → field
+reports → rule-based classification → risk-scored urban events → agency routing → field
 verification → learning, shown across 9 interactive views.
 
 [![CI](https://github.com/Pushyanth02/Jalsetu/actions/workflows/ci.yml/badge.svg)](https://github.com/Pushyanth02/Jalsetu/actions/workflows/ci.yml)
@@ -23,8 +23,8 @@ One single-page app, 9 hash-routed views, deep-linkable (e.g. `#/events/UE-2026-
 | --- | --- |
 | **Command Center** (`#/`) | KPIs, live ops map, rainfall context, alerts, event queue |
 | **Waterlogging Map** (`#/map`) | Every event on a keyless MapLibre GL map (Esri World Dark Gray Canvas tiles + OpenStreetMap labels), severity markers, clusters, filters, hotspots, "Locate Me" |
-| **Event Dossier** (`#/events/:id`) | The full evidence chain for one event: evidence, AI investigation, risk factors, response, audit trail |
-| **Investigate** (`#/investigate`) | AI tools with full provenance: classification, duplicate clustering, risk advisory |
+| **Event Dossier** (`#/events/:id`) | The full evidence chain for one event: evidence, investigation, risk factors, response, audit trail |
+| **Investigate** (`#/investigate`) | Deterministic tools with full provenance: classification, duplicate clustering, risk advisory |
 | **Responsibility** (`#/responsibility`) | Cross-agency register: who owns which asset and who was routed where |
 | **Verification** (`#/verify`) | Field-verification board closing the loop from routed action to ground truth |
 | **Report Wizard** (`#/report`) | Five-step citizen report: location → issue → evidence → review → submit, with a tracking reference |
@@ -43,8 +43,8 @@ The deployed app is a **fully static export**:
   deployment — there just is no server.
 - Mutations (filing a report, verifying an event, …) run **client-side**.
   They are deterministic and **reset on reload** — refresh for a clean demo.
-- AI classification runs through the **deterministic mock provider** in static
-  mode. No model calls, no keys, no network. Every synthetic/AI artefact is
+- Classification runs through the **deterministic rule provider** in static
+  mode. No model calls, no keys, no network. Every synthetic/model artefact is
   labelled in the UI: `SYNTHETIC_DEMO`, `MOCK`, "deterministic".
 - The map needs **no key**: MapLibre GL with free Esri/OSM tile services.
 

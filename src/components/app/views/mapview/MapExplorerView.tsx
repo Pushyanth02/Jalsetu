@@ -9,9 +9,9 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SlidersHorizontal, Users, CloudRain, GitBranch, MapPin, Droplets, Landmark, X } from "lucide-react";
-import { Reveal, Stagger, StaggerItem, CountUp, PulseDot } from "@/components/motion/kit";
+import { Reveal, CountUp, PulseDot } from "@/components/motion/kit";
 
 // WATERLOGGING MAP - full-bleed dark ops map with white filter rail on
 // desktop and a drag-handle bottom sheet on mobile (<1024px). Spatial
@@ -29,6 +29,10 @@ const RISK_BANDS = ["ALL", "LOW", "MODERATE", "HIGH", "CRITICAL"] as const;
 const STATUSES = ["ALL", "DETECTED", "TRIAGED", "ASSIGNED", "IN_PROGRESS", "VERIFIED", "CLOSED", "REOPENED"] as const;
 const CATEGORIES = ["ALL", "WATERLOGGING", "DRAIN_OVERFLOW", "SEWER_BACKUP", "POTHOLE", "DEBRIS_BLOCKAGE"] as const;
 
+/** Rows rendered per page in the event list. The map still receives every
+ *  matching event; only the list is paged, so DOM size stays bounded. */
+const LIST_PAGE = 40;
+
 const CATEGORY_LABELS: Record<(typeof CATEGORIES)[number], string> = {
   ALL: "All Categories",
   WATERLOGGING: "Waterlogging",
@@ -43,6 +47,11 @@ export function MapExplorerView() {
   const setFilters = useUi((s) => s.setFilters);
   const { eventsQ, hotspotsQ, jurisdictionsQ, assetsQ, weatherQ } = useMapData();
   const [sheetOpen, setSheetOpen] = useState(false);
+  // Paging state is keyed by the filter signature, so a filter change collapses
+  // the list back to the first screen without needing an effect.
+  const filterKey = `${filters.status}|${filters.riskBand}|${filters.category}|${filters.hours}|${filters.jurisdictionId}`;
+  const [page, setPage] = useState({ key: filterKey, count: LIST_PAGE });
+  const visibleCount = page.key === filterKey ? page.count : LIST_PAGE;
 
   // spatial selection via map jurisdiction click
   useEffect(() => {
@@ -55,6 +64,10 @@ export function MapExplorerView() {
     return () => window.removeEventListener("varuna:jurisdiction-click", onJurisdiction);
   }, [jurisdictionsQ.data, setFilters]);
 
+  const allEvents = useMemo(() => eventsQ.data ?? [], [eventsQ.data]);
+  const shownEvents = allEvents.slice(0, visibleCount);
+  const remaining = allEvents.length - shownEvents.length;
+
   const selectedJurisdiction = jurisdictionsQ.data?.find((j) => j.id === filters.jurisdictionId);
   const activeFilterCount =
     (filters.status !== "ALL" ? 1 : 0) +
@@ -66,7 +79,7 @@ export function MapExplorerView() {
   return (
     <div className="flex flex-1 min-h-0 flex-col">
       {/* page header */}
-      <Reveal className="hairline-b bg-white px-4 sm:px-6 py-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+      <Reveal className="hairline-b bg-ink-900 px-4 sm:px-6 py-3 flex flex-wrap items-center gap-x-4 gap-y-2">
         <div>
           <h1 className="font-display text-lg font-bold tracking-tight text-slate-900 leading-tight">Map Explorer</h1>
           <p className="text-[0.7rem] text-muted-foreground mt-0.5">
@@ -88,11 +101,11 @@ export function MapExplorerView() {
       </Reveal>
 
       {/* mobile: filters open the bottom sheet (44px touch target) */}
-      <div className="lg:hidden hairline-b bg-white px-4 py-2 flex items-center gap-2">
+      <div className="lg:hidden hairline-b bg-ink-900 px-4 py-2 flex items-center gap-2">
         <button
           type="button"
           onClick={() => setSheetOpen(true)}
-          className="min-h-11 flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-ink-850 transition-colors"
+          className="min-h-11 flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-ink-900 px-3 text-xs font-semibold text-slate-200 hover:bg-ink-800 transition-colors"
           aria-label="Open filters and layers"
           aria-expanded={sheetOpen}
         >
@@ -107,7 +120,7 @@ export function MapExplorerView() {
         <button
           type="button"
           onClick={() => navigate("report")}
-          className="min-h-11 rounded-lg bg-water px-4 text-xs font-semibold text-white hover:bg-water-dim transition-colors"
+          className="min-h-11 rounded-lg bg-aqua px-4 text-xs font-semibold text-ink-950 hover:bg-aqua-dim transition-colors"
         >
           Report
         </button>
@@ -117,7 +130,7 @@ export function MapExplorerView() {
         {/* desktop filter rail */}
         <Reveal
           delay={0.06}
-          className="hidden lg:flex lg:w-72 shrink-0 hairline-r bg-white flex-col overflow-y-auto"
+          className="hidden lg:flex lg:w-72 shrink-0 hairline-r bg-ink-900 flex-col overflow-y-auto"
         >
           <FilterRailContent
             filters={filters}
@@ -166,19 +179,27 @@ export function MapExplorerView() {
             )}
           </Reveal>
 
-          <div className="h-64 lg:h-56 shrink-0 hairline-t bg-white overflow-y-auto cv-auto">
+          <div className="h-64 lg:h-56 shrink-0 hairline-t bg-ink-900 overflow-y-auto cv-auto">
             {eventsQ.isLoading ? (
               <LoadingRows rows={4} className="p-3.5" />
-            ) : eventsQ.data && eventsQ.data.length > 0 ? (
-              <ul>
-                <Stagger>
-                  {eventsQ.data.map((e) => (
-                    <StaggerItem key={e.id} className="last:*:border-0">
-                      <EventRow event={e} />
-                    </StaggerItem>
+            ) : allEvents.length > 0 ? (
+              <>
+                <ul>
+                  {shownEvents.map((e) => (
+                    <EventRow key={e.id} event={e} />
                   ))}
-                </Stagger>
-              </ul>
+                </ul>
+                {remaining > 0 && (
+                  <div className="p-3">
+                    <button
+                      onClick={() => setPage({ key: filterKey, count: visibleCount + LIST_PAGE })}
+                      className="w-full rounded-lg border border-border px-3 py-2 micro-label !text-[0.58rem] text-slate-600 transition-colors hover:bg-ink-850 hover:text-slate-900"
+                    >
+                      show more · {remaining} remaining
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
               <EmptyState
                 title="No Events Match These Filters"
@@ -192,7 +213,7 @@ export function MapExplorerView() {
             )}
           </div>
 
-          <div className="shrink-0 hairline-t bg-white px-3 py-1.5 flex items-center gap-3">
+          <div className="shrink-0 hairline-t bg-ink-950/60 px-3 py-1.5 flex items-center gap-3">
             <span className="data-mono text-[0.62rem] text-muted-foreground flex items-center gap-1">
               <CountUp value={eventsQ.data?.length ?? 0} className="text-slate-700" /> events shown
               {eventsQ.dataUpdatedAt ? <span> · updated <TimeAgo iso={new Date(eventsQ.dataUpdatedAt).toISOString()} title={false} /></span> : null}
@@ -225,7 +246,7 @@ function FilterRailContent({
     <div className="p-4 space-y-4">
       <FilterGroup label="Time Window">
         <Select value={String(filters.hours)} onValueChange={(v) => setFilters({ hours: v === "ALL" ? "ALL" : Number(v) })}>
-          <SelectTrigger aria-label="Time window" className="h-11 lg:h-8 text-xs bg-white border-border"><SelectValue /></SelectTrigger>
+          <SelectTrigger aria-label="Time window" className="h-11 lg:h-8 text-xs bg-ink-850 border-border"><SelectValue /></SelectTrigger>
           <SelectContent>
             {TIME_WINDOWS.map((t) => (
               <SelectItem key={t.value} value={t.value} className="text-xs">{t.label}</SelectItem>
@@ -303,7 +324,7 @@ function FilterRailContent({
           <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-2">
             <MapPin className="size-3 text-water shrink-0" aria-hidden />
             <span className="text-xs text-water flex-1 leading-tight font-medium">{selectedJurisdiction.name}</span>
-            <button onClick={() => setFilters({ jurisdictionId: "ALL" })} aria-label="Clear jurisdiction filter" className="rounded-lg p-1 text-slate-400 hover:text-slate-700 hover:bg-white transition-colors">
+            <button onClick={() => setFilters({ jurisdictionId: "ALL" })} aria-label="Clear jurisdiction filter" className="rounded-lg p-1 text-slate-400 hover:text-aqua hover:bg-white/[0.06] transition-colors">
               <X className="size-3.5" />
             </button>
           </div>
@@ -344,7 +365,7 @@ function FilterRailContent({
         <button
           type="button"
           onClick={onDone}
-          className="w-full min-h-11 rounded-lg bg-water text-white text-xs font-semibold hover:bg-water-dim transition-colors"
+          className="w-full min-h-11 rounded-lg bg-aqua text-ink-950 text-xs font-semibold hover:bg-aqua-dim transition-colors"
         >
           Show {filters.category === "ALL" ? "All" : CATEGORY_LABELS[filters.category as keyof typeof CATEGORY_LABELS]} Events
         </button>

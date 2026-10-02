@@ -9,9 +9,10 @@ import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip } from "rec
 import { AlertTriangle, ChevronRight, Umbrella, CheckCircle2, Layers, Radio, Droplets, TrendingUp, TrendingDown, Minus, ClipboardCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { CountUp, SpotlightCard, Stagger, StaggerItem, Reveal, PulseDot, HoverLift } from "@/components/motion/kit";
-import { useState } from "react";
+import { CountUp, Stagger, StaggerItem, Reveal, PulseDot, HoverLift } from "@/components/motion/kit";
+import { memo, useState } from "react";
 import { assetPath } from "@/lib/client/assets";
+import { PALETTE } from "@/lib/palette";
 
 // COMMAND CENTER - replicates the reference design: KPI stat cards, live
 // operations map with floating layers panel, recent reports + operational
@@ -43,7 +44,7 @@ export function CommandCenterView() {
   return (
     <div className="flex flex-col min-h-0 flex-1">
       {/* page header */}
-      <div className="hairline-b bg-white">
+      <div className="hairline-b bg-ink-900">
         <div className="px-4 sm:px-6 py-3.5 flex flex-wrap items-center gap-x-4 gap-y-2">
           <div>
             <h1 className="font-display text-lg font-bold tracking-tight text-slate-900 leading-tight">Command Center</h1>
@@ -195,7 +196,7 @@ function KpiCard({ label, value, delta, icon, tint, to, filterRisk, hint }: {
   const reduce = useReducedMotion();
   return (
     <HoverLift>
-      <SpotlightCard className="rounded-xl">
+      <div className="rounded-xl">
         <button
           onClick={() => {
             if (filterRisk) setFilters({ riskBand: filterRisk as "HIGH" });
@@ -218,7 +219,7 @@ function KpiCard({ label, value, delta, icon, tint, to, filterRisk, hint }: {
           </motion.span>
           <span className="block mt-1.5 text-[0.72rem] font-medium text-slate-500 leading-snug">{label}</span>
         </button>
-      </SpotlightCard>
+      </div>
     </HoverLift>
   );
 }
@@ -368,10 +369,15 @@ interface ReportRow {
   classificationConfidence?: number;
 }
 
-function getReportThumbnail(category: string, description: string): { webp: string; png: string; label: string } {
+// AVIF first, WebP second, PNG last: the browser picks the smallest format it
+// can decode, and the PNG only ever downloads on an ancient engine.
+type Thumb = { avif: string; webp: string; png: string; label: string };
+
+function getReportThumbnail(category: string, description: string): Thumb {
   const desc = description.toLowerCase();
   if (category === "POTHOLE" || desc.includes("pothole") || desc.includes("crater") || desc.includes("broken road")) {
     return {
+      avif: assetPath("/img/pothole.avif"),
       webp: assetPath("/img/pothole.webp"),
       png: assetPath("/img/pothole.png"),
       label: "pothole water accumulation",
@@ -379,6 +385,7 @@ function getReportThumbnail(category: string, description: string): { webp: stri
   }
   if (category === "DRAIN_OVERFLOW" || desc.includes("drain") || desc.includes("overflow") || desc.includes("nalah") || desc.includes("nala")) {
     return {
+      avif: assetPath("/img/drain-overflow.avif"),
       webp: assetPath("/img/drain-overflow.webp"),
       png: assetPath("/img/drain-overflow.png"),
       label: "overflowing storm drain",
@@ -386,6 +393,7 @@ function getReportThumbnail(category: string, description: string): { webp: stri
   }
   if (category === "SEWER_BACKUP" || desc.includes("sewer") || desc.includes("manhole") || desc.includes("backup")) {
     return {
+      avif: assetPath("/img/sewer-backup.avif"),
       webp: assetPath("/img/sewer-backup.webp"),
       png: assetPath("/img/sewer-backup.png"),
       label: "sewer manhole overflow",
@@ -393,12 +401,14 @@ function getReportThumbnail(category: string, description: string): { webp: stri
   }
   if (category === "UNDERPASS" || desc.includes("underpass") || desc.includes("subway") || desc.includes("ito") || desc.includes("minto")) {
     return {
+      avif: assetPath("/img/ito-underpass.avif"),
       webp: assetPath("/img/ito-underpass.webp"),
       png: assetPath("/img/ito-underpass.png"),
       label: "flooded underpass",
     };
   }
   return {
+    avif: assetPath("/img/street-flood.avif"),
     webp: assetPath("/img/street-flood.webp"),
     png: assetPath("/img/street-flood.png"),
     label: "waterlogged street",
@@ -447,6 +457,7 @@ function RecentReportsPanel() {
                       >
                         <div className="relative h-11 w-14 rounded-lg overflow-hidden shrink-0 ring-1 ring-border bg-slate-200">
                           <picture>
+                            <source srcSet={thumb.avif} type="image/avif" />
                             <source srcSet={thumb.webp} type="image/webp" />
                             <img
                               src={thumb.png}
@@ -597,7 +608,10 @@ function ActiveEventQueue({ eventsQ, total }: { eventsQ: { data?: EventSummary[]
   );
 }
 
-export function EventRow({ event }: { event: EventSummary }) {
+// Memoised: this row is rendered up to 200 times in a list, and `event` comes
+// straight from the query cache, so its identity is stable across re-renders
+// that only change unrelated parent state.
+export const EventRow = memo(function EventRow({ event }: { event: EventSummary }) {
   const openEvent = useUi((s) => s.openEvent);
   return (
     <li className="hairline-r hairline-b last:border-0">
@@ -627,7 +641,7 @@ export function EventRow({ event }: { event: EventSummary }) {
       </button>
     </li>
   );
-}
+});
 
 /* ------------------------------------------------------------ rainfall */
 
@@ -656,19 +670,19 @@ function RainfallStrip({ weatherQ, nearest }: { weatherQ: { data?: WeatherRespon
               <AreaChart data={series} margin={{ top: 4, right: 8, left: 8, bottom: 0 }}>
                 <defs>
                   <linearGradient id="rainFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor={PALETTE.aqua} stopOpacity={0.35} />
+                    <stop offset="100%" stopColor={PALETTE.aqua} stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="label" tick={false} axisLine={false} tickLine={false} />
-                <YAxis width={28} tick={{ fill: "#94a3b8", fontSize: 9, fontFamily: "var(--font-plex-mono)" }} axisLine={false} tickLine={false} />
+                <YAxis width={28} tick={{ fill: PALETTE.textDim, fontSize: 9, fontFamily: "var(--font-plex-mono)" }} axisLine={false} tickLine={false} />
                 <Tooltip
-                  contentStyle={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 11, fontFamily: "var(--font-plex-mono)", boxShadow: "0 4px 12px rgba(15,23,42,0.08)" }}
-                  labelStyle={{ color: "#64748b" }}
-                  itemStyle={{ color: "#2563eb" }}
+                  contentStyle={{ background: PALETTE.popover, border: `1px solid ${PALETTE.input}`, borderRadius: 8, fontSize: 11, fontFamily: "var(--font-plex-mono)", color: PALETTE.foreground, boxShadow: "0 8px 24px -8px rgba(0,0,0,0.9)" }}
+                  labelStyle={{ color: PALETTE.textMuted }}
+                  itemStyle={{ color: PALETTE.aqua }}
                   formatter={(v: number) => [`${v} mm`, "avg 3h rain"]}
                 />
-                <Area type="monotone" dataKey="mm" stroke="#2563eb" strokeWidth={1.8} fill="url(#rainFill)" animationDuration={900} />
+                <Area type="monotone" dataKey="mm" stroke={PALETTE.aqua} strokeWidth={1.8} fill="url(#rainFill)" animationDuration={900} />
               </AreaChart>
             </ResponsiveContainer>
           </div>

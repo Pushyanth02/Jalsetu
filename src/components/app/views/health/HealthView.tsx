@@ -12,10 +12,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { BarChart, Bar, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { cn } from "@/lib/utils";
+import { PALETTE } from "@/lib/palette";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import {
-  Activity, Database, BrainCircuit, RefreshCw, Gauge, HeartPulse, History, Server,
-  ShieldCheck, AlertTriangle, BookOpen,
+  Activity, Database, Cpu, RefreshCw, Gauge, History, Server,
+  AlertTriangle, BookOpen,
 } from "lucide-react";
 
 // DATA & MODEL HEALTH - source freshness, provider state, run log,
@@ -97,22 +98,23 @@ interface HealthResponse {
   dataLabel: string;
 }
 
-const BLUE = "#3b82f6";  // at/above confidence flag threshold (blue-500)
-const AMBER = "#f59e0b"; // below confidence flag threshold (amber-500)
-const GRID_STROKE = "#e2e8f0";
-const TICK = { fill: "#94a3b8", fontSize: 9, fontFamily: "var(--font-plex-mono)" };
+const BLUE = PALETTE.aqua;   // at/above confidence flag threshold
+const AMBER = PALETTE.sevModerate; // below confidence flag threshold
+const GRID_STROKE = PALETTE.hairline;
+const TICK = { fill: PALETTE.textDim, fontSize: 9, fontFamily: "var(--font-plex-mono)" };
 const TOOLTIP_STYLE = {
-  background: "#ffffff",
-  border: "1px solid #e2e8f0",
+  background: PALETTE.popover,
+  border: `1px solid ${PALETTE.input}`,
   borderRadius: 8,
   fontSize: 11,
   fontFamily: "var(--font-plex-mono)",
-  boxShadow: "0 4px 12px rgba(15,23,42,0.08)",
+  color: PALETTE.foreground,
+  boxShadow: "0 8px 24px -8px rgba(0,0,0,0.9)",
 };
-const LABEL_STYLE = { color: "#64748b" };
-const CURSOR_FILL = { fill: "rgba(37, 99, 235, 0.05)" };
+const LABEL_STYLE = { color: PALETTE.textMuted };
+const CURSOR_FILL = { fill: `${PALETTE.aqua}0f` };
 
-const clean = (s: string) => s.replace(/-/g, "-").replace(/-/g, "-");
+const clean = (s: string) => s.replace(/[\u2010-\u2015\u2212]/g, "-");
 
 // client-side endpoint probes (same-origin relative paths)
 const ENDPOINTS = ["/api/health", "/api/data-health", "/api/model-health", "/api/events?limit=1", "/api/weather", "/api/hotspots"];
@@ -151,7 +153,7 @@ const GLOSSARY: { term: string; definition: string }[] = [
   { term: "Ground Truth", definition: "Independently known problem sites used to check whether the system's guesses are right." },
   { term: "Baseline", definition: "The old approach: reacting only to how often complaints arrive from an area." },
   { term: "Proposed System", definition: "The new approach: combining complaints, rainfall, drains and infrastructure into one signal." },
-  { term: "AI Classification", definition: "The model reading each report and tagging its category, severity and confidence." },
+  { term: "Classification", definition: "The deterministic rules reading each report and tagging its category, severity and confidence." },
   { term: "Synthetic Demo Data", definition: "Realistic but generated data for safe testing. It is never real citizen data." },
 ];
 
@@ -214,17 +216,14 @@ export function HealthView() {
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* header strip */}
-      <div className="hairline-b bg-white px-4 sm:px-6 py-3.5">
+      <div className="hairline-b bg-ink-900 px-4 sm:px-6 py-3.5">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="font-display text-lg font-bold tracking-tight text-slate-900 leading-tight">Data &amp; Model Health</h1>
-              <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 micro-label !text-[0.58rem] text-water">
-                <HeartPulse className="size-3" aria-hidden /> telemetry
-              </span>
             </div>
             <p className="text-[0.7rem] text-muted-foreground mt-0.5">
-              A quick health check of every data source and AI model behind this dashboard.
+              A quick health check of every data source and model behind this dashboard.
             </p>
           </div>
           <button
@@ -263,23 +262,20 @@ export function HealthView() {
             ) : hb ? (
               <>
                 <StatCard
-                  icon={<Database className="size-5" aria-hidden />}
-                  tint="bg-blue-50 text-water"
+                  tone={hb.db.reachable ? "ok" : "warn"}
                   value={<CountUp value={hb.db.events} />}
                   label="Database events"
                   sub={hb.db.reachable ? `${hb.db.reports} reports · ${hb.db.observations} obs` : "db unreachable"}
                 />
                 <StatCard
-                  icon={<Gauge className="size-5" aria-hidden />}
-                  tint={hb.latencyMs > 5000 ? "bg-amber-50 text-sev-moderate" : "bg-blue-50 text-water"}
+                  tone={hb.latencyMs > 5000 ? "warn" : "plain"}
                   value={<CountUp value={hb.latencyMs} suffix=" ms" />}
                   label="API latency"
                   sub="time for the server to answer one health check"
                 />
                 {dh && (
                   <StatCard
-                    icon={<ShieldCheck className="size-5" aria-hidden />}
-                    tint={dh.overall === "OK" ? "bg-emerald-50 text-verified" : "bg-amber-50 text-sev-moderate"}
+                    tone={dh.overall === "OK" ? "ok" : "warn"}
                     value={
                       <span className={dh.overall === "OK" ? "text-verified" : "text-sev-moderate"}>
                         {dh.overall === "OK" ? "OK" : "EMPTY"}
@@ -290,15 +286,14 @@ export function HealthView() {
                   />
                 )}
                 <StatCard
-                  icon={<BrainCircuit className="size-5" aria-hidden />}
-                  tint={hb.ai.available ? "bg-emerald-50 text-verified" : "bg-amber-50 text-sev-moderate"}
+                  tone={hb.ai.available ? "ok" : "warn"}
                   value={
                     <span className={cn("inline-flex items-center gap-2", hb.ai.available ? "text-verified" : "text-sev-moderate")}>
                       {hb.ai.available && <PulseDot color="bg-emerald-500" size={8} />}
                       {hb.ai.available ? "available" : "fallback"}
                     </span>
                   }
-                  label="AI provider"
+                  label="Classifier"
                   sub={hb.ai.provider}
                 />
               </>
@@ -338,7 +333,7 @@ export function HealthView() {
                     </span>
                   )}
                   {hb.ai.fallback && (
-                    <span className="micro-label !text-[0.55rem] text-slate-500" title="Used when the AI provider is unavailable">
+                    <span className="micro-label !text-[0.55rem] text-slate-500" title="Used when the remote model is unavailable">
                       fallback: {clean(hb.ai.fallback)}
                     </span>
                   )}
@@ -432,7 +427,7 @@ export function HealthView() {
         <Reveal delay={0.15}>
           <Panel
             title="Model & Provider"
-            icon={<BrainCircuit />}
+            icon={<Cpu />}
             actions={
               <button onClick={() => modelQ.refetch()} className="micro-label !text-[0.58rem] text-water hover:text-water-dim transition-colors">
                 refetch
@@ -497,7 +492,7 @@ export function HealthView() {
 
                 <div className="rounded-xl border border-border bg-ink-850/50 px-3.5 py-3">
                   <p className="micro-label !text-[0.55rem] text-slate-500 mb-2">Model Runs · Last 25</p>
-                  <div className="flex flex-wrap divide-x divide-border rounded-lg border border-border bg-white">
+                  <div className="flex flex-wrap divide-x divide-border rounded-lg border border-border bg-ink-900">
                     <Segment label="Total" value={<CountUp value={mh.runsSummary.total} />} tone="plain" border={false} />
                     <Segment label="Succeeded" value={<CountUp value={mh.runsSummary.succeeded} />} tone="teal" border={false} />
                     <Segment label="Failed" value={<CountUp value={mh.runsSummary.failed} />} tone={mh.runsSummary.failed > 0 ? "red" : "plain"} border={false} />
@@ -535,7 +530,7 @@ export function HealthView() {
             ) : modelQ.isError ? (
               <ErrorNote message={(modelQ.error as Error).message} onRetry={() => modelQ.refetch()} className="m-4" />
             ) : !mh ? null : mh.runs.length === 0 ? (
-              <EmptyState title="No Model Runs Recorded" hint="Runs appear here after the AI reads new reports or an event's risk is recalculated." />
+              <EmptyState title="No Model Runs Recorded" hint="Runs appear here after the classifier reads new reports or an event's risk is recalculated." />
             ) : (
               <ScrollArea className="max-h-96">
                 <Table>
@@ -636,7 +631,7 @@ export function HealthView() {
                   </span>
                 </div>
                 <p className="micro-label !text-[0.55rem] text-slate-400 !tracking-[0.08em] normal-case leading-relaxed">
-                  When the AI is less than {mh.confidenceDistribution.lowConfidenceFlag} sure about a report, it is flagged for a
+                  When the classifier is less than {mh.confidenceDistribution.lowConfidenceFlag} sure about a report, it is flagged for a
                   human to double-check (see the confidence chips in the event list). The 0.4-0.6 bucket sits across the
                   threshold, so its colour is only a guide.
                 </p>
@@ -718,7 +713,7 @@ export function HealthView() {
               </div>
             )}
             <p className="micro-label !text-[0.55rem] text-slate-400 !tracking-[0.08em] normal-case leading-relaxed px-4 py-2.5 hairline-t">
-              Response times are measured from this browser. The /api/health check also contacts the AI provider, so it can
+              Response times are measured from this browser. The /api/health check also contacts the classifier provider, so it can
               take a few seconds.
             </p>
           </Panel>
@@ -732,7 +727,7 @@ export function HealthView() {
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {GLOSSARY.map((g) => (
-                <div key={g.term} className="rounded-xl border border-border bg-white px-3.5 py-2.5 shadow-xs">
+                <div key={g.term} className="rounded-xl border border-border bg-ink-900 px-3.5 py-2.5 shadow-xs">
                   <p className="text-xs leading-relaxed">
                     <span className="font-bold text-slate-800">{g.term}: </span>
                     <span className="text-[0.68rem] text-slate-500">{g.definition}</span>
@@ -749,9 +744,10 @@ export function HealthView() {
 
 // --- local primitives -----------------------------------------------------------
 
-function StatCard({ icon, tint, value, label, sub }: {
-  icon: ReactNode;
-  tint: string;
+// Status is carried by a dot plus the label, so no decorative icon tile is
+// needed on these tiles: the number is the thing worth looking at.
+function StatCard({ tone = "plain", value, label, sub }: {
+  tone?: "ok" | "warn" | "plain";
   value: ReactNode;
   label: string;
   sub?: ReactNode;
@@ -759,10 +755,18 @@ function StatCard({ icon, tint, value, label, sub }: {
   return (
     <HoverLift className="h-full">
       <div className="panel rounded-xl h-full p-4">
-        <span className={cn("grid size-10 place-items-center rounded-lg shrink-0", tint)}>{icon}</span>
+        <span className="flex items-center gap-2">
+          <span
+            aria-hidden
+            className={cn(
+              "size-1.5 shrink-0 rounded-full",
+              tone === "ok" ? "bg-verified" : tone === "warn" ? "bg-sev-moderate" : "bg-water-dim"
+            )}
+          />
+          <span className="micro-label !text-[0.55rem]">{label}</span>
+        </span>
         <p className="mt-3 font-display text-2xl font-bold tabular-nums text-slate-900 leading-none">{value}</p>
-        <p className="mt-1.5 text-[0.72rem] font-medium text-slate-500 leading-snug">{label}</p>
-        {sub && <p className="mt-1 data-mono text-[0.6rem] text-slate-400 leading-relaxed">{sub}</p>}
+        {sub && <p className="mt-2 data-mono text-[0.6rem] text-slate-400 leading-relaxed">{sub}</p>}
       </div>
     </HoverLift>
   );

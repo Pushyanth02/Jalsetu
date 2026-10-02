@@ -1,6 +1,7 @@
 "use client";
 
 import type { EventSummary } from "@/lib/client/api";
+import { PALETTE, RISK_HEX, STATUS_HEX, severityHex } from "@/lib/palette";
 
 /**
  * Shared map utilities used by BOTH map engines (Google Maps + MapLibre
@@ -15,11 +16,8 @@ import type { EventSummary } from "@/lib/client/api";
 // --- severity + status colors --------------------------------------------------
 
 export function severityFill(sev: number, status: string): string {
-  if (status === "VERIFIED" || status === "CLOSED") return "#64748b";
-  if (sev >= 4) return "#dc2626";
-  if (sev === 3) return "#ea580c";
-  if (sev === 2) return "#d97706";
-  return "#64748b";
+  if (status === "VERIFIED" || status === "CLOSED") return PALETTE.textFaint;
+  return severityHex(sev);
 }
 
 /** Beginner-friendly status wording (demystifies ops vocabulary). */
@@ -33,29 +31,12 @@ export const STATUS_PLAIN: Record<string, string> = {
   REOPENED: "Reopened After Closure",
 };
 
-const STATUS_HEX: Record<string, string> = {
-  DETECTED: "#2563eb",
-  TRIAGED: "#64748b",
-  ASSIGNED: "#d97706",
-  IN_PROGRESS: "#ea580c",
-  VERIFIED: "#059669",
-  CLOSED: "#64748b",
-  REOPENED: "#dc2626",
-};
-
 /** Plain-language explanation of what a risk band means for a commuter. */
 export const RISK_PLAIN: Record<string, string> = {
   LOW: "Minor ponding. Walking and two-wheelers may slow down. No detour needed right now.",
   MODERATE: "Standing water deep enough to trouble cars. Allow extra travel time and avoid the lowest stretch of the road.",
   HIGH: "Deep water on the road. Cars can stall and underpasses may close. Plan a different route.",
   CRITICAL: "Severe flooding. This stretch is unsafe for all vehicles. Avoid the area until crews clear it.",
-};
-
-const RISK_HEX: Record<string, string> = {
-  LOW: "#64748b",
-  MODERATE: "#d97706",
-  HIGH: "#ea580c",
-  CRITICAL: "#dc2626",
 };
 
 // --- time + distance helpers ---------------------------------------------------
@@ -129,16 +110,16 @@ function escapeHtml(s: string): string {
  * container, so both Google InfoWindows and MapLibre Popups behave the same.
  */
 export function eventPopupHTML(e: EventSummary, now = Date.now()): string {
-  const statusHex = STATUS_HEX[e.status] ?? "#64748b";
+  const statusHex = STATUS_HEX[e.status] ?? PALETTE.textFaint;
   const statusPlain = STATUS_PLAIN[e.status] ?? e.status.toLowerCase().replace(/_/g, " ");
-  const riskHex = RISK_HEX[e.riskBand] ?? "#64748b";
+  const riskHex = RISK_HEX[e.riskBand] ?? PALETTE.textFaint;
   const riskPlain = RISK_PLAIN[e.riskBand] ?? "";
   const updated = e.lastActivityAt ? timeAgoText(e.lastActivityAt, now) : "unknown";
 
   return `
 <div class="w-[264px] p-3.5 font-sans" role="dialog" aria-label="Event ${escapeHtml(e.code)} summary">
   <div class="flex items-center gap-1.5 flex-wrap">
-    <span class="data-mono text-[0.7rem] font-semibold" style="color:#2563eb">${escapeHtml(e.code)}</span>
+    <span class="data-mono text-[0.7rem] font-semibold" style="color:${PALETTE.aqua}">${escapeHtml(e.code)}</span>
     <span class="rounded-full px-2 py-0.5 text-[0.58rem] font-semibold tracking-wide uppercase" style="color:${statusHex};background:${statusHex}14;border:1px solid ${statusHex}33">${statusPlain}</span>
     <span class="rounded-full px-2 py-0.5 text-[0.58rem] font-semibold tracking-wide uppercase" style="color:${riskHex};background:${riskHex}14;border:1px solid ${riskHex}33">${e.riskBand} RISK</span>
   </div>
@@ -147,7 +128,7 @@ export function eventPopupHTML(e: EventSummary, now = Date.now()): string {
   <p class="mt-2 text-[0.66rem] leading-relaxed text-slate-600"><span class="font-semibold text-slate-700">What this means:</span> ${riskPlain}</p>
   <p class="mt-2 text-[0.62rem] text-slate-500 leading-snug">${e.reportCount} citizen report${e.reportCount === 1 ? "" : "s"} · updated ${updated}</p>
   <div class="mt-3 flex gap-2">
-    <button type="button" data-open-event="${escapeHtml(e.code)}" class="flex-1 rounded-lg text-white text-[0.65rem] font-semibold tracking-wide py-2" style="background:#2563eb">Open Full Dossier</button>
+    <button type="button" data-open-event="${escapeHtml(e.code)}" class="flex-1 rounded-lg text-[0.65rem] font-semibold tracking-wide py-2" style="background:${PALETTE.aqua};color:${PALETTE.canvas}">Open Full Dossier</button>
     <button type="button" data-zoom-event="${escapeHtml(e.code)}" class="rounded-lg border border-slate-200 text-slate-600 px-3 py-2 text-[0.65rem] font-medium" title="Zoom to this location">Zoom</button>
   </div>
 </div>`.trim();

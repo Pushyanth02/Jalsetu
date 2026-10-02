@@ -11,6 +11,11 @@ import type { ViewId } from "./store";
  */
 
 export const VIEW_SEO: Record<ViewId, { title: string; description: string }> = {
+  landing: {
+    title: "Delhi Waterlogging Intelligence",
+    description:
+      "JalSetu turns citizen waterlogging reports, rainfall, GIS and infrastructure data into explainable, risk-scored urban events for a Delhi pilot. Explore the live demo: command centre, map, event dossiers, investigation tools and field verification.",
+  },
   command: {
     title: "Command Center",
     description:
@@ -24,12 +29,12 @@ export const VIEW_SEO: Record<ViewId, { title: string; description: string }> = 
   event: {
     title: "Urban Event Dossier",
     description:
-      "Full evidence dossier for one urban event: citizen reports, rainfall, infrastructure, AI classification, risk factors, responsibility chain and verification trail.",
+      "Full evidence dossier for one urban event: citizen reports, rainfall, infrastructure, rule-based classification, risk factors, responsibility chain and verification trail.",
   },
   investigate: {
-    title: "AI Investigation Tools",
+    title: "Investigation Tools",
     description:
-      "Classify new reports, cluster duplicates and score risk with the AI provider. Confidence, model version and fallback state are always shown honestly.",
+      "Classify new reports, cluster duplicates and score risk with deterministic rules. Confidence, model version and fallback state are always shown honestly.",
   },
   responsibility: {
     title: "Responsibility Register",
@@ -54,7 +59,7 @@ export const VIEW_SEO: Record<ViewId, { title: string; description: string }> = 
   health: {
     title: "Data & Model Health",
     description:
-      "Source freshness, AI provider state, model run log and API checks for the Delhi waterlogging intelligence prototype, with a plain-language glossary.",
+      "Source freshness, classifier state, model run log and API checks for the Delhi waterlogging intelligence prototype, with a plain-language glossary.",
   },
 };
 

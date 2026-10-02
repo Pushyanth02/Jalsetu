@@ -12,11 +12,102 @@
 }
 
 /* ============================================================
-   JALSETU — design tokens (light command-center theme)
-   Dark charcoal sidebar, light content (#f6f8fb), white cards,
-   blue accent, soft shadows, 12px radius. Map stays dark.
-   Responsive tokens scale typography + spacing on small screens.
+   JALSETU — "MONSOON INK" design system
+   Deep indigo night + aqua signal. A monsoon command room:
+   near-black indigo canvas, layered indigo surfaces, aqua as the
+   single signal colour (actions, live state, focus), warm amber →
+   rose ramp for severity. Type is Inter (display) + IBM Plex Mono
+   (data), unchanged.
+
+   The default Tailwind ramps below are RE-INVERTED on purpose.
+   Every view already speaks in `bg-white`, `text-slate-900`,
+   `bg-blue-50`, `border-slate-200`; remapping the ramp itself
+   re-skins the whole product from this one file, and keeps light
+   and dark semantics in the same place forever.
    ============================================================ */
+
+@theme {
+  /* --- neutrals: slate becomes the indigo surface ramp ---------- */
+  --color-slate-50: #070c1c;
+  --color-slate-100: #0c1329;
+  --color-slate-200: #141d38;
+  --color-slate-300: #1e2a4d;
+  --color-slate-400: #5b6893;
+  --color-slate-500: #7a88b8;
+  --color-slate-600: #8794c2;
+  --color-slate-700: #aab5d8;
+  --color-slate-800: #ccd4ec;
+  --color-slate-900: #e9eeff;
+  --color-slate-950: #ffffff;
+
+  /* --- blue becomes aqua: the one signal colour ------------------ */
+  --color-blue-50: #04211e;
+  --color-blue-100: #062e29;
+  --color-blue-200: #0a443c;
+  --color-blue-300: #0d5f53;
+  --color-blue-400: #12836f;
+  --color-blue-500: #17a892;
+  --color-blue-600: #2dd4bf;
+  --color-blue-700: #6fe6d6;
+  --color-blue-800: #a5f0e5;
+  --color-blue-900: #ccf8f1;
+
+  /* --- severity ramp: deep tint → vivid → light text ------------- */
+  --color-amber-50: #2a1c05;
+  --color-amber-100: #3a2707;
+  --color-amber-200: #5c3f0d;
+  --color-amber-300: #8a6212;
+  --color-amber-400: #d99a1c;
+  --color-amber-500: #f5a524;
+  --color-amber-600: #fbbf4d;
+  --color-amber-700: #fcd88a;
+  --color-amber-800: #fde9bd;
+  --color-amber-900: #fef6e3;
+
+  --color-orange-50: #2b1405;
+  --color-orange-100: #3d1d07;
+  --color-orange-200: #5f2f0c;
+  --color-orange-300: #8c4611;
+  --color-orange-400: #d96a1a;
+  --color-orange-500: #fb8f3c;
+  --color-orange-600: #fdaa63;
+  --color-orange-700: #fdc794;
+  --color-orange-800: #fde4c9;
+  --color-orange-900: #fef3e8;
+
+  --color-red-50: #2c0a14;
+  --color-red-100: #3f0f1c;
+  --color-red-200: #611524;
+  --color-red-300: #8f1c31;
+  --color-red-400: #c2203f;
+  --color-red-500: #ff4d6a;
+  --color-red-600: #ff7a8f;
+  --color-red-700: #ffa8b6;
+  --color-red-800: #ffcbd3;
+  --color-red-900: #ffe6ea;
+
+  --color-emerald-50: #04241a;
+  --color-emerald-100: #06362a;
+  --color-emerald-200: #0a4a38;
+  --color-emerald-300: #0e6b50;
+  --color-emerald-400: #10916a;
+  --color-emerald-500: #14b88a;
+  --color-emerald-600: #34d3a4;
+  --color-emerald-700: #7ce7c2;
+  --color-emerald-800: #b3f1db;
+  --color-emerald-900: #dcfaef;
+
+  --color-green-50: #04241a;
+  --color-green-100: #06362a;
+  --color-green-200: #0a4a38;
+  --color-green-300: #0e6b50;
+  --color-green-400: #10916a;
+  --color-green-500: #14b88a;
+  --color-green-600: #34d3a4;
+  --color-green-700: #7ce7c2;
+  --color-green-800: #b3f1db;
+  --color-green-900: #dcfaef;
+}
 
 @theme inline {
   --color-background: var(--background);
@@ -52,21 +143,22 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) - 6px);
-  --radius-md: calc(var(--radius) - 4px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
 
   --color-sev-low: var(--sev-low);
   --color-sev-moderate: var(--sev-moderate);
   --color-sev-high: var(--sev-high);
   --color-sev-critical: var(--sev-critical);
+  --color-aqua: var(--aqua);
+  --color-aqua-dim: var(--aqua-dim);
+  --color-aqua-deep: var(--aqua-deep);
   --color-water: var(--water);
   --color-water-dim: var(--water-dim);
   --color-ink-950: var(--ink-950);
   --color-ink-900: var(--ink-900);
   --color-ink-850: var(--ink-850);
   --color-ink-800: var(--ink-800);
+  --color-ink-700: var(--ink-700);
+  --color-ink-600: var(--ink-600);
   --color-hairline: var(--hairline);
   --color-verified: var(--verified);
 
@@ -74,58 +166,11 @@
   --color-sb-850: var(--sb-850);
   --color-sb-800: var(--sb-800);
   --color-sb-750: var(--sb-750);
-}
 
-:root {
-  --radius: 0.75rem;
-  --ink-950: #f6f8fb;
-  --ink-900: #ffffff;
-  --ink-850: #f1f5f9;
-  --ink-800: #e2e8f0;
-  --hairline: #e2e8f0;
-  --water: #2563eb;
-  --water-dim: #3b82f6;
-  --sev-low: #64748b;
-  --sev-moderate: #d97706;
-  --sev-high: #ea580c;
-  --sev-critical: #dc2626;
-  --verified: #059669;
-  --sb-900: #111527;
-  --sb-850: #181e33;
-  --sb-800: #212942;
-  --sb-750: #2b3450;
-
-  --background: var(--ink-950);
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: var(--water);
-  --primary-foreground: #ffffff;
-  --secondary: var(--ink-850);
-  --secondary-foreground: #334155;
-  --muted: var(--ink-850);
-  --muted-foreground: #64748b;
-  --accent: var(--ink-850);
-  --accent-foreground: #0f172a;
-  --destructive: var(--sev-critical);
-  --border: #e2e8f0;
-  --input: #cbd5e1;
-  --ring: var(--water);
-  --chart-1: #2563eb;
-  --chart-2: #d97706;
-  --chart-3: #ea580c;
-  --chart-4: #dc2626;
-  --chart-5: #64748b;
-  --sidebar: var(--sb-900);
-  --sidebar-foreground: #e2e8f0;
-  --sidebar-primary: var(--water);
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: var(--sb-800);
-  --sidebar-accent-foreground: #f8fafc;
-  --sidebar-border: #232b47;
-  --sidebar-ring: var(--water);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 
   /* Fluid type scale — prevents mobile overflow */
   --text-fluid-xs: clamp(0.62rem, 0.58rem + 0.2vw, 0.7rem);
@@ -133,12 +178,79 @@
   --content-max: 1440px;
 }
 
+:root {
+  --radius: 0.75rem;
+
+  /* Surfaces — the indigo night stack, darkest to lightest */
+  --ink-950: #05080f; /* page canvas */
+  --ink-900: #0a1124; /* primary surface (cards, bars) */
+  --ink-850: #101a33; /* raised surface (rows, inputs, hovers) */
+  --ink-800: #16213f; /* highest surface (chips, active rows) */
+  --ink-700: #1e2b4f; /* strong border / track */
+  --ink-600: #2a3a63; /* decorative fill (skeleton, ticks) */
+  --hairline: #1a2440; /* the one border colour */
+
+  /* Aqua — the single signal colour. `--water` is the BRIGHT value so it
+     works as text/icon on deep indigo (contrast > 7:1). Filled buttons pair
+     it with `text-ink-950`, which is the intended pairing throughout. */
+  --aqua: #2dd4bf;
+  --aqua-dim: #6fe6d6;
+  --aqua-deep: #0a6e63;
+  --water: #2dd4bf;
+  --water-dim: #7defdb;
+
+  --sev-low: #8794c2;
+  --sev-moderate: #f5a524;
+  --sev-high: #fb8f3c;
+  --sev-critical: #ff4d6a;
+  --verified: #14b88a;
+
+  /* Sidebar sits deeper than the canvas so the rail reads as a well */
+  --sb-900: #03060d;
+  --sb-850: #080e1d;
+  --sb-800: #0e1730;
+  --sb-750: #16223f;
+
+  --background: var(--ink-950);
+  --foreground: #e9eeff;
+  --card: var(--ink-900);
+  --card-foreground: var(--foreground);
+  --popover: #0c142b;
+  --popover-foreground: var(--foreground);
+  --primary: var(--aqua);
+  /* Aqua fill, deep ink text — white on aqua would fail AA. */
+  --primary-foreground: var(--ink-950);
+  --secondary: var(--ink-850);
+  --secondary-foreground: #ccd4ec;
+  --muted: var(--ink-850);
+  --muted-foreground: #8794c2;
+  --accent: var(--ink-800);
+  --accent-foreground: #e9eeff;
+  --destructive: var(--sev-critical);
+  --border: var(--hairline);
+  --input: #26325a;
+  --ring: var(--aqua);
+  --chart-1: #2dd4bf;
+  --chart-2: #f5a524;
+  --chart-3: #fb8f3c;
+  --chart-4: #ff4d6a;
+  --chart-5: #8794c2;
+  --sidebar: var(--sb-900);
+  --sidebar-foreground: #ccd4ec;
+  --sidebar-primary: var(--aqua);
+  --sidebar-primary-foreground: var(--ink-950);
+  --sidebar-accent: var(--sb-800);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #131c36;
+  --sidebar-ring: var(--aqua);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   html {
-    color-scheme: light;
+    color-scheme: dark;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
     scroll-behavior: smooth;
@@ -152,7 +264,8 @@
     -moz-osx-font-smoothing: grayscale;
   }
   ::selection {
-    background: rgba(37, 99, 235, 0.18);
+    background: rgba(45, 212, 191, 0.28);
+    color: #e9eeff;
   }
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-ring;
@@ -185,7 +298,7 @@
     line-height: 1.4;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: #64748b;
+    color: #8794c2;
   }
   .data-mono {
     font-family: var(--font-plex-mono), monospace;
@@ -203,24 +316,27 @@
   .hairline-l {
     border-left: 1px solid var(--hairline);
   }
+  /* The workhorse surface: a flat indigo card. Depth comes from the step in
+     the ink ramp and the hairline border, not from gradients or drop shadows. */
   .panel {
-    background: #ffffff;
+    background: var(--ink-900);
     border: 1px solid var(--hairline);
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.04);
   }
   .card-hover {
-    transition: box-shadow 200ms ease, transform 200ms ease;
+    transition: border-color 160ms ease, background-color 160ms ease;
   }
   .card-hover:hover {
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.05);
+    border-color: #24406b;
+    background: var(--ink-850);
   }
   @media (hover: none) {
     .card-hover:hover {
-      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.04);
+      border-color: var(--hairline);
+      background: var(--ink-900);
     }
   }
   .shimmer {
-    background: linear-gradient(100deg, #eef2f7 40%, #f8fafc 50%, #eef2f7 60%);
+    background: linear-gradient(100deg, #0d152c 40%, #16213f 50%, #0d152c 60%);
     background-size: 200% 100%;
     animation: shimmer-slide 1.4s infinite linear;
   }
@@ -250,6 +366,18 @@
     min-height: 44px;
     min-width: 44px;
   }
+
+  /* --- Monsoon ink: signal accents -------------------------------- */
+  /* Deliberately no ambient orbs, no background grids and no gradient
+     headlines: the public pages read as a document, and depth here comes
+     from the ink ramp plus the single hairline border colour. */
+  /* The one decorative mark allowed: a short aqua rule under a section label. */
+  .signal-rule {
+    display: block;
+    width: 28px;
+    height: 2px;
+    background: var(--aqua);
+  }
 }
 
 @keyframes shimmer-slide {
@@ -257,57 +385,62 @@
   100% { background-position: -50% 0; }
 }
 
-/* --- scrollbars: thin, light ------------------------------------------------ */
+/* --- scrollbars: thin, indigo ---------------------------------------------- */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-color: #22304f transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #22304f;
   border-radius: 4px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #33456e;
 }
 
 /* --- map marker + popup primitives ----------------------------------------- */
+/* The basemap is dark, so map chrome now sits in the same indigo family as
+   the app instead of punching white holes in it. */
 
 .maplibregl-popup-content {
-  background: #ffffff !important;
-  color: #0f172a !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 10px !important;
+  background: #0c142b !important;
+  color: #e9eeff !important;
+  border: 1px solid #22304f !important;
+  border-radius: 12px !important;
   padding: 0 !important;
-  box-shadow: 0 10px 32px rgba(15, 23, 42, 0.22) !important;
+  box-shadow: 0 18px 44px rgba(2, 4, 10, 0.7) !important;
 }
 .maplibregl-popup-tip {
-  border-top-color: #ffffff !important;
-  border-bottom-color: #ffffff !important;
+  border-top-color: #0c142b !important;
+  border-bottom-color: #0c142b !important;
 }
 .maplibregl-ctrl-attrib {
-  background: rgba(17, 21, 39, 0.75) !important;
-  color: #94a3b8 !important;
+  background: rgba(5, 8, 15, 0.8) !important;
+  color: #6472a4 !important;
   font-size: 10px !important;
 }
 .maplibregl-ctrl-attrib a {
-  color: #a5b4cf !important;
+  color: #8794c2 !important;
 }
 .maplibregl-ctrl-group {
-  background: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 8px !important;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12) !important;
+  background: #0c142b !important;
+  border: 1px solid #22304f !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 14px rgba(2, 4, 10, 0.6) !important;
 }
 .maplibregl-ctrl-group button {
-  width: 28px !important;
-  height: 28px !important;
+  width: 30px !important;
+  height: 30px !important;
+}
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid #22304f !important;
 }
 .maplibregl-ctrl-group button span {
-  filter: none !important;
+  filter: invert(1) brightness(1.7) sepia(0.4) saturate(3) hue-rotate(120deg) !important;
 }
 
 .event-marker {
@@ -317,8 +450,8 @@
   width: 22px;
   height: 22px;
   border-radius: 999px;
-  border: 1.5px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 0 0 1.5px rgba(15, 23, 42, 0.35), 0 2px 8px rgba(8, 12, 28, 0.55);
+  border: 1.5px solid rgba(233, 238, 255, 0.85);
+  box-shadow: 0 0 0 1.5px rgba(5, 8, 15, 0.6), 0 2px 10px rgba(2, 4, 10, 0.7);
   transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
   background-clip: padding-box;
 }
@@ -329,20 +462,20 @@
 }
 .event-marker.is-selected {
   transform: scale(1.35);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.9), 0 2px 10px rgba(8, 12, 28, 0.6);
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.9), 0 2px 12px rgba(2, 4, 10, 0.7);
 }
 .cluster-marker {
   cursor: pointer;
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: rgba(33, 41, 66, 0.92);
-  border: 1px solid rgba(96, 122, 194, 0.75);
-  color: #f1f5f9;
+  background: rgba(14, 23, 48, 0.94);
+  border: 1px solid rgba(45, 212, 191, 0.5);
+  color: #ccd4ec;
   font-family: var(--font-plex-mono), monospace;
   font-size: 11px;
   font-variant-numeric: tabular-nums;
-  box-shadow: 0 2px 10px rgba(8, 12, 28, 0.5);
+  box-shadow: 0 0 18px -4px rgba(45, 212, 191, 0.4), 0 2px 10px rgba(2, 4, 10, 0.6);
   transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .cluster-marker:hover,
@@ -361,9 +494,9 @@
   width: 18px;
   height: 18px;
   border-radius: 999px;
-  background: radial-gradient(circle, #2563eb 0%, #2563eb 45%, rgba(37, 99, 235, 0.35) 55%, transparent 72%);
-  border: 2px solid #ffffff;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25), 0 2px 8px rgba(8, 12, 28, 0.5);
+  background: radial-gradient(circle, #2dd4bf 0%, #17a892 45%, rgba(45, 212, 191, 0.35) 55%, transparent 72%);
+  border: 2px solid #0a1124;
+  box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.3), 0 2px 8px rgba(2, 4, 10, 0.7);
   position: relative;
 }
 .user-dot::after {
@@ -371,7 +504,7 @@
   position: absolute;
   inset: -6px;
   border-radius: 999px;
-  border: 1.5px solid rgba(37, 99, 235, 0.55);
+  border: 1.5px solid rgba(45, 212, 191, 0.6);
   animation: user-dot-ping 2.2s ease-out infinite;
 }
 @keyframes user-dot-ping {
@@ -385,16 +518,16 @@
   transition: filter 150ms ease;
 }
 .maplibregl-popup button[data-open-event]:hover {
-  filter: brightness(1.08);
+  filter: brightness(1.15);
 }
 .maplibregl-popup-close-button {
   font-size: 16px;
-  color: #64748b;
+  color: #8794c2;
   padding: 4px 8px;
   line-height: 1;
 }
 .maplibregl-popup-close-button:hover {
-  color: #0f172a;
+  color: #e9eeff;
 }
 
 /* --- focus & a11y ---------------------------------------------------------- */
