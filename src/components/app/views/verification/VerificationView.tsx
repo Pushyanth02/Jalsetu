@@ -153,7 +153,7 @@ export function VerificationView() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="code, title, area, agency"
-                className="h-8 pl-8 w-44 sm:w-56 rounded-lg bg-ink-900 border-border text-xs"
+                className="h-11 sm:h-8 pl-8 w-44 sm:w-56 rounded-lg bg-ink-900 border-border text-xs"
                 maxLength={60}
               />
             </div>
@@ -161,7 +161,7 @@ export function VerificationView() {
               Filter by risk band
             </Label>
             <Select value={riskFilter} onValueChange={setRiskFilter}>
-              <SelectTrigger id="verify-risk" className="h-8 w-32 rounded-lg bg-ink-900 border-border text-xs" aria-label="Risk band filter">
+              <SelectTrigger id="verify-risk" className="h-11 sm:h-8 w-32 rounded-lg bg-ink-900 border-border text-xs" aria-label="Risk band filter">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -175,7 +175,7 @@ export function VerificationView() {
             <Button
               variant="outline"
               size="sm"
-              className="h-8 rounded-lg border-border text-slate-600 hover:bg-ink-850"
+              className="h-11 sm:h-8 rounded-lg border-border text-slate-600 hover:bg-ink-850"
               disabled={eventsQ.isFetching}
               onClick={() => eventsQ.refetch()}
               aria-label="Refresh events"
@@ -525,7 +525,7 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                           <Button
                             size="sm"
                             variant="outline"
-                            className="rounded-lg border-red-200 bg-red-50 text-sev-critical hover:bg-red-100 hover:text-sev-critical h-9 shrink-0"
+                            className="h-11 sm:h-9 rounded-lg border-red-200 bg-red-50 text-sev-critical hover:bg-red-100 hover:text-sev-critical shrink-0"
                             disabled={reopenReason.trim().length < 4 || reopen.isPending}
                             onClick={() => reopen.mutate(reopenReason.trim())}
                           >
@@ -541,7 +541,7 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                           <div className="space-y-1">
                             <Label className="text-[0.65rem]">Stage</Label>
                             <Select value={stage} onValueChange={setStage}>
-                              <SelectTrigger className="h-8 rounded-lg bg-ink-900 border-border text-xs" aria-label="Verification stage">
+                              <SelectTrigger className="h-11 sm:h-8 rounded-lg bg-ink-900 border-border text-xs" aria-label="Verification stage">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -558,7 +558,7 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                           <div className="space-y-1">
                             <Label className="text-[0.65rem]">Observed Severity</Label>
                             <Select value={observedSeverity} onValueChange={setObservedSeverity}>
-                              <SelectTrigger className="h-8 rounded-lg bg-ink-900 border-border text-xs" aria-label="Observed severity">
+                              <SelectTrigger className="h-11 sm:h-8 rounded-lg bg-ink-900 border-border text-xs" aria-label="Observed severity">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -580,7 +580,7 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                               value={depth}
                               onChange={(e) => setDepth(e.target.value.replace(/\D/g, ""))}
                               placeholder="e.g. 35"
-                              className="h-8 rounded-lg bg-ink-900 border-border data-mono text-xs"
+                              className="h-11 sm:h-8 rounded-lg bg-ink-900 border-border data-mono text-xs"
                               maxLength={3}
                             />
                           </div>
@@ -615,7 +615,7 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                               type="button"
                               variant="outline"
                               size="sm"
-                              className="rounded-lg border-border text-slate-600 hover:bg-ink-850 h-8"
+                              className="h-11 sm:h-8 rounded-lg border-border text-slate-600 hover:bg-ink-850"
                               disabled={photoBusy || verify.isPending}
                               onClick={() => fileRef.current?.click()}
                             >
@@ -650,7 +650,7 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                           <p className="text-[0.62rem] text-slate-500">
                             Next expected: <span className="text-water">{(nextStage ?? "CLOSED").toLowerCase().replace(/_/g, " ")}</span>. Steps must be recorded in order (checked by the server).
                           </p>
-                          <Button size="sm" className="rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim h-8" disabled={verify.isPending} onClick={submitStage}>
+                          <Button size="sm" className="h-11 sm:h-8 rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim" disabled={verify.isPending} onClick={submitStage}>
                             {verify.isPending ? "Recording…" : "Record stage"}
                           </Button>
                         </div>

@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, ArrowRight, FileText, Flag, MapPin, Menu, X } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { navigate, type ViewId } from "@/lib/client/store";
 import { assetPath, assetSrcSet } from "@/lib/client/assets";
 import { apiGet, type OverviewResponse, type HotspotResponse } from "@/lib/client/api";
@@ -110,6 +110,16 @@ function SectionLabel({ children }: { children: ReactNode }) {
 export function LandingView() {
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Escape closes the mobile menu (keyboard parity with pointer dismissal).
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
+
   const go = (view: ViewId) => {
     setMenuOpen(false);
     navigate(view);
@@ -156,7 +166,7 @@ export function LandingView() {
             </button>
             <button
               onClick={() => go("report")}
-              className="inline-flex h-9 items-center rounded-lg bg-aqua px-3.5 text-[0.8rem] font-semibold text-ink-950 transition-colors hover:bg-aqua-dim"
+              className="inline-flex h-11 items-center rounded-lg bg-aqua px-3.5 text-[0.8rem] font-semibold text-ink-950 transition-colors hover:bg-aqua-dim sm:h-9"
             >
               Report
             </button>
@@ -164,7 +174,8 @@ export function LandingView() {
               onClick={() => setMenuOpen((v) => !v)}
               aria-label={menuOpen ? "Close menu" : "Open menu"}
               aria-expanded={menuOpen}
-              className="grid size-9 place-items-center rounded-lg text-slate-600 transition-colors hover:bg-ink-850 hover:text-foreground lg:hidden"
+              aria-controls="landing-mobile-nav"
+              className="grid size-11 place-items-center rounded-lg text-slate-600 transition-colors hover:bg-ink-850 hover:text-foreground lg:hidden"
             >
               {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
             </button>
@@ -172,13 +183,13 @@ export function LandingView() {
         </div>
 
         {menuOpen && (
-          <nav aria-label="Mobile" className="border-t border-hairline bg-ink-900 px-4 py-3 lg:hidden">
+          <nav id="landing-mobile-nav" aria-label="Mobile" className="border-t border-hairline bg-ink-900 px-4 py-3 lg:hidden">
             <ul className="grid gap-1">
               {VIEWS.map((v) => (
                 <li key={v.id}>
                   <button
                     onClick={() => go(v.id)}
-                    className="flex w-full items-center rounded-lg px-3 py-2.5 text-left text-sm text-slate-700 transition-colors hover:bg-ink-850 hover:text-foreground"
+                    className="flex min-h-11 w-full items-center rounded-lg px-3 py-2.5 text-left text-sm text-slate-700 transition-colors hover:bg-ink-850 hover:text-foreground"
                   >
                     {v.label}
                   </button>

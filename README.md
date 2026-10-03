@@ -149,6 +149,9 @@ Safe-area insets are respected on notched phones (bottom bar + footer), and
 bar. Test with devtools device emulation at **320 px, 390 px, 768 px,
 1280 px and 1920 px** before shipping UI changes.
 
+See [`docs/wireframes.md`](docs/wireframes.md) for the per-breakpoint
+wireframes, DOM/focus order and the full accessibility checklist.
+
 ## Accessibility & Performance
 
 - WCAG-minded: visible focus states, ARIA on interactive widgets,
