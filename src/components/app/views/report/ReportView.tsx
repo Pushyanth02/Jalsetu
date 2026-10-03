@@ -193,11 +193,11 @@ function TrackReport() {
           value={ref}
           onChange={(e) => setRef(e.target.value.toUpperCase())}
           placeholder="e.g. CR-4F2K9"
-          className="h-9 rounded-lg bg-ink-900 border-border data-mono flex-1"
+          className="h-11 sm:h-9 rounded-lg bg-ink-900 border-border data-mono flex-1"
           maxLength={16}
           autoComplete="off"
         />
-        <Button type="submit" size="sm" variant="outline" className="rounded-lg border-border text-slate-600 hover:bg-ink-850 h-9" disabled={trackQ.isPending || !ref.trim()}>
+        <Button type="submit" size="sm" variant="outline" className="h-11 sm:h-9 rounded-lg border-border text-slate-600 hover:bg-ink-850" disabled={trackQ.isPending || !ref.trim()}>
           {trackQ.isPending ? "Looking up…" : "Track"}
         </Button>
       </form>
@@ -567,18 +567,18 @@ function ReportWizard() {
       {/* nav */}
       {!locked && (
         <div className="mt-5 pt-3 hairline-t flex items-center justify-between gap-2">
-          <Button type="button" variant="outline" size="sm" className="rounded-lg border-border text-slate-600 hover:bg-ink-850" disabled={step === 0} onClick={() => goTo(Math.max(0, step - 1))}>
+          <Button type="button" variant="outline" size="sm" className="h-11 sm:h-8 rounded-lg border-border text-slate-600 hover:bg-ink-850" disabled={step === 0} onClick={() => goTo(Math.max(0, step - 1))}>
             <ChevronLeft className="size-3.5" aria-hidden /> Back
           </Button>
           <span className="micro-label !text-[0.52rem] text-muted-foreground">
             {step < 3 ? `${step + 1} of 4` : "Final Check"}
           </span>
           {step < 3 ? (
-            <Button type="button" size="sm" className="rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim" onClick={next}>
+            <Button type="button" size="sm" className="h-11 sm:h-8 rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim" onClick={next}>
               {attempted && !stepValid ? "Fix to continue" : "Continue"} <ChevronRight className="size-3.5" aria-hidden />
             </Button>
           ) : (
-            <Button type="button" size="sm" className="rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim" disabled={submit.isPending} onClick={next}>
+            <Button type="button" size="sm" className="h-11 sm:h-8 rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim" disabled={submit.isPending} onClick={next}>
               {submit.isPending ? "Submitting…" : "Submit report"}
             </Button>
           )}
@@ -635,7 +635,7 @@ function StepLocation(p: {
             value={p.latText}
             onChange={(e) => p.onLat(e.target.value.replace(/[^\d.\-]/g, ""))}
             placeholder="28.6285"
-            className="h-9 rounded-lg bg-ink-900 border-border data-mono"
+            className="h-11 sm:h-9 rounded-lg bg-ink-900 border-border data-mono"
             aria-invalid={p.attempted && !p.latValid}
             aria-describedby="rep-lat-hint"
           />
@@ -657,7 +657,7 @@ function StepLocation(p: {
             value={p.lngText}
             onChange={(e) => p.onLng(e.target.value.replace(/[^\d.\-]/g, ""))}
             placeholder="77.2216"
-            className="h-9 rounded-lg bg-ink-900 border-border data-mono"
+            className="h-11 sm:h-9 rounded-lg bg-ink-900 border-border data-mono"
             aria-invalid={p.attempted && !p.lngValid}
             aria-describedby="rep-lng-hint"
           />
@@ -705,7 +705,7 @@ function StepLocation(p: {
             <p className="text-[0.62rem] text-sev-moderate">Pilot areas unavailable: {p.jurisdictionsError}</p>
           ) : (
             <Select value={p.jurisdictionId} onValueChange={p.onJurisdiction}>
-              <SelectTrigger className="h-9 rounded-lg bg-ink-900 border-border text-xs" aria-label="Pilot area">
+              <SelectTrigger className="h-11 sm:h-9 rounded-lg bg-ink-900 border-border text-xs" aria-label="Pilot area">
                 <SelectValue placeholder="Select a pilot area" />
               </SelectTrigger>
               <SelectContent>
@@ -731,7 +731,7 @@ function StepLocation(p: {
             value={p.addressText}
             onChange={(e) => p.onAddress(e.target.value)}
             placeholder="e.g. near Minto Road pump station"
-            className="h-9 rounded-lg bg-ink-900 border-border text-xs"
+            className="h-11 sm:h-9 rounded-lg bg-ink-900 border-border text-xs"
             maxLength={160}
           />
           <p className="text-[0.62rem] text-muted-foreground">Free text, up to 160 characters. Helps field teams locate the spot.</p>
@@ -909,7 +909,7 @@ function StepEvidence(props: StepEvidenceProps) {
           value={phone}
           onChange={(e) => onPhone(e.target.value)}
           placeholder="98XXXXXXXX or +91 98XXXXXXXX"
-          className="h-9 rounded-lg bg-ink-900 border-border data-mono"
+          className="h-11 sm:h-9 rounded-lg bg-ink-900 border-border data-mono"
           maxLength={16}
           aria-invalid={attempted && !phoneValid}
           aria-describedby="rep-phone-hint"
@@ -975,7 +975,7 @@ function StepReview(p: {
       </p>
       {p.submitError && <ErrorNote message={p.submitError} />}
       <div className="flex justify-end">
-        <Button size="sm" className="rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim" disabled={p.submitPending} onClick={p.onSubmit}>
+        <Button size="sm" className="h-11 sm:h-8 rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim" disabled={p.submitPending} onClick={p.onSubmit}>
           {p.submitPending ? "Submitting…" : "Submit report"}
         </Button>
       </div>
@@ -1098,7 +1098,7 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
           <span className="micro-label !text-[0.52rem] text-muted-foreground">Urban Event</span>
           <span className="data-mono text-sm font-semibold text-water">{outcome.event.code}</span>
           <span className="micro-label !text-[0.52rem] text-muted-foreground">Status {outcome.event.status.toLowerCase().replace(/_/g, " ")}</span>
-          <Button size="sm" className="ml-auto rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim" onClick={() => navigate("event", outcome.event.code)}>
+          <Button size="sm" className="ml-auto h-11 sm:h-8 rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim" onClick={() => navigate("event", outcome.event.code)}>
             Open event dossier <ChevronRight className="size-3.5" aria-hidden />
           </Button>
         </div>

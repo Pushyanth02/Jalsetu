@@ -5,10 +5,16 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 function Table({ className, ...props }: React.ComponentProps<"table">) {
+  // The container scrolls horizontally on narrow screens. Keyboard and
+  // screen-reader users need to be able to reach that scroll region, so it is
+  // a focusable, labelled region (WAI pattern for scrollable tables).
   return (
     <div
       data-slot="table-container"
-      className="relative w-full overflow-x-auto"
+      role="region"
+      aria-label="Table: scroll horizontally to see all columns"
+      tabIndex={0}
+      className="relative w-full overflow-x-auto rounded-[inherit] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring/60"
     >
       <table
         data-slot="table"

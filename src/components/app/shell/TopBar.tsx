@@ -10,6 +10,7 @@ import { useRef, useState, useEffect, useDeferredValue, useMemo } from "react";
 import { NAV_ITEMS, BrandLockupLight } from "./NavRail";
 import { RiskBadge, StatusBadge, TimeAgo } from "@/components/app/shared/domain";
 import { PulseDot } from "@/components/motion/kit";
+import { useModalA11y } from "@/hooks/use-modal-a11y";
 
 /** Responsive header — collapses gracefully: search + filters hide on narrow, drawer for nav */
 export function TopBar() {
@@ -22,6 +23,21 @@ export function TopBar() {
   const now = useClock();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const drawerRef = useRef<HTMLDivElement>(null);
+
+  // Focus trap + Escape + scroll lock + focus restore for the mobile drawer
+  // (Radix dialogs handle this themselves; this one is hand-rolled).
+  useModalA11y({ open: menuOpen, onClose: () => setMenuOpen(false), containerRef: drawerRef });
+
+  // Escape collapses the expanded mobile search bar.
+  useEffect(() => {
+    if (!searchOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSearchOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [searchOpen]);
 
   const label = NAV_ITEMS.find((n) => n.id === view)?.label ?? "Command Center";
   const ai = data?.ai;
@@ -162,12 +178,14 @@ export function TopBar() {
               onClick={() => setMenuOpen(false)}
             />
             <motion.div
+              ref={drawerRef}
               id="mobile-nav-drawer"
+              tabIndex={-1}
               initial={{ x: "-100%", opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: "-100%", opacity: 0 }}
               transition={{ type: "spring", stiffness: 380, damping: 32 }}
-              className="lg:hidden fixed left-0 top-14 sm:top-16 bottom-0 w-[84%] max-w-[320px] bg-ink-900 hairline-r shadow-2xl z-30 flex flex-col overflow-hidden"
+              className="lg:hidden fixed left-0 top-14 sm:top-16 bottom-0 w-[84%] max-w-[320px] bg-ink-900 hairline-r shadow-2xl z-30 flex flex-col overflow-hidden outline-none"
               role="dialog"
               aria-label="Navigation menu"
               aria-modal="true"
