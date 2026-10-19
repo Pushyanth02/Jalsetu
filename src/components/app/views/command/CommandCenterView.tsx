@@ -11,8 +11,9 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { CountUp, Stagger, StaggerItem, Reveal, PulseDot, HoverLift } from "@/components/motion/kit";
 import { BorderBeam } from "@/components/fx";
-import { memo, useState } from "react";
+import { memo, useState, useMemo } from "react";
 import { assetPath } from "@/lib/client/assets";
+import { sceneThumb } from "@/lib/client/media";
 import { PALETTE } from "@/lib/palette";
 
 // COMMAND CENTER - replicates the reference design: KPI stat cards, live
@@ -378,48 +379,17 @@ interface ReportRow {
 
 // AVIF first, WebP second, PNG last: the browser picks the smallest format it
 // can decode, and the PNG only ever downloads on an ancient engine.
+// Randomized + context-aware: category/keywords choose the scene, the report
+// id seeds the variant pick, reported severity picks ponding vs deep-water.
 type Thumb = { avif: string; webp: string; png: string; label: string };
 
-function getReportThumbnail(category: string, description: string): Thumb {
-  const desc = description.toLowerCase();
-  if (category === "POTHOLE" || desc.includes("pothole") || desc.includes("crater") || desc.includes("broken road")) {
-    return {
-      avif: assetPath("/img/pothole.avif"),
-      webp: assetPath("/img/pothole.webp"),
-      png: assetPath("/img/pothole.png"),
-      label: "pothole water accumulation",
-    };
-  }
-  if (category === "DRAIN_OVERFLOW" || desc.includes("drain") || desc.includes("overflow") || desc.includes("nalah") || desc.includes("nala")) {
-    return {
-      avif: assetPath("/img/drain-overflow.avif"),
-      webp: assetPath("/img/drain-overflow.webp"),
-      png: assetPath("/img/drain-overflow.png"),
-      label: "overflowing storm drain",
-    };
-  }
-  if (category === "SEWER_BACKUP" || desc.includes("sewer") || desc.includes("manhole") || desc.includes("backup")) {
-    return {
-      avif: assetPath("/img/sewer-backup.avif"),
-      webp: assetPath("/img/sewer-backup.webp"),
-      png: assetPath("/img/sewer-backup.png"),
-      label: "sewer manhole overflow",
-    };
-  }
-  if (category === "UNDERPASS" || desc.includes("underpass") || desc.includes("subway") || desc.includes("ito") || desc.includes("minto")) {
-    return {
-      avif: assetPath("/img/ito-underpass.avif"),
-      webp: assetPath("/img/ito-underpass.webp"),
-      png: assetPath("/img/ito-underpass.png"),
-      label: "flooded underpass",
-    };
-  }
-  return {
-    avif: assetPath("/img/street-flood.avif"),
-    webp: assetPath("/img/street-flood.webp"),
-    png: assetPath("/img/street-flood.png"),
-    label: "waterlogged street",
-  };
+function getReportThumbnail(
+  category: string,
+  description: string,
+  seed: string,
+  severityReported?: string
+): Thumb {
+  return sceneThumb(category, description, seed, severityReported);
 }
 
 function RecentReportsPanel() {
@@ -453,7 +423,7 @@ function RecentReportsPanel() {
           <ul>
             <Stagger>
               {data.slice(0, 5).map((r) => {
-                const thumb = getReportThumbnail(r.category, r.description);
+                const thumb = getReportThumbnail(r.category, r.description, r.id, r.severityReported);
                 return (
                   <StaggerItem key={r.id}>
                     <li className="hairline-b last:border-0">
@@ -620,6 +590,10 @@ function ActiveEventQueue({ eventsQ, total }: { eventsQ: { data?: EventSummary[]
 // that only change unrelated parent state.
 export const EventRow = memo(function EventRow({ event }: { event: EventSummary }) {
   const openEvent = useUi((s) => s.openEvent);
+  const thumb = useMemo(
+    () => sceneThumb(event.category, event.title, event.code, event.riskScore),
+    [event.category, event.title, event.code, event.riskScore]
+  );
   return (
     <li className="hairline-r hairline-b last:border-0">
       <button
@@ -627,23 +601,45 @@ export const EventRow = memo(function EventRow({ event }: { event: EventSummary 
         className="w-full text-left px-4 py-3 hover:bg-ink-850/70 hover-glow transition-colors group focus:bg-ink-850"
         aria-label={`${event.code}: ${event.title}`}
       >
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="data-mono text-[0.68rem] font-semibold text-water group-hover:text-water-dim">{event.code}</span>
-          <StatusBadge status={event.status} />
-          <RiskBadge band={event.riskBand} score={event.riskScore} />
-          {event.recurrenceCount > 0 && (
-            <span className="micro-label text-[0.55rem]! text-sev-high" title={`recurred ${event.recurrenceCount}×`}>
-              ↻{event.recurrenceCount}
-            </span>
-          )}
-          <TimeAgo iso={event.lastActivityAt} />
-        </div>
-        <p className="mt-1 text-[0.8rem] text-slate-700 leading-snug line-clamp-1">{event.title}</p>
-        <div className="mt-1.5 flex items-center gap-3 flex-wrap">
-          <SeverityTicks severity={event.severity} />
-          <span className="data-mono text-[0.62rem] text-slate-400">{event.reportCount} rep</span>
-          <span className="data-mono text-[0.62rem] text-slate-400">{event.agencyCode ?? "-"}</span>
-          <ConfidenceChip confidence={event.confidence} note={event.confidenceNote} />
+        <div className="flex items-start gap-3">
+          <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-lg ring-1 ring-border bg-ink-850">
+            <picture>
+              <source srcSet={thumb.avif} type="image/avif" />
+              <source srcSet={thumb.webp} type="image/webp" />
+              <img
+                src={thumb.png}
+                alt=""
+                width={64}
+                height={48}
+                loading="lazy"
+                decoding="async"
+                className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            </picture>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="data-mono text-[0.68rem] font-semibold text-water group-hover:text-water-dim">{event.code}</span>
+              <StatusBadge status={event.status} />
+              <RiskBadge band={event.riskBand} score={event.riskScore} />
+              {event.recurrenceCount > 0 && (
+                <span className="micro-label text-[0.55rem]! text-sev-high" title={`recurred ${event.recurrenceCount}×`}>
+                  ↻{event.recurrenceCount}
+                </span>
+              )}
+              <TimeAgo iso={event.lastActivityAt} />
+            </div>
+            <p className="mt-1 text-[0.8rem] text-slate-700 leading-snug line-clamp-1">{event.title}</p>
+            <div className="mt-1.5 flex items-center gap-3 flex-wrap">
+              <SeverityTicks severity={event.severity} />
+              <span className="data-mono text-[0.62rem] text-slate-400">{event.reportCount} rep</span>
+              <span className="data-mono text-[0.62rem] text-slate-400">{event.agencyCode ?? "-"}</span>
+              <ConfidenceChip confidence={event.confidence} note={event.confidenceNote} />
+            </div>
+          </div>
         </div>
       </button>
     </li>

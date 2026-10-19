@@ -123,7 +123,16 @@ export function MapCanvas({ events, hotspots, jurisdictions, assets, weather, cl
       lookup: () => eventsRef.current,
     });
 
+    // Escape closes the anchored popup (same affordance as the × button,
+    // keyboard-first). Bound on the container so it never fights the global
+    // "/" search shortcut.
+    const onKeydown = (ev: KeyboardEvent) => {
+      if (ev.key === "Escape") popupRef.current?.remove();
+    };
+    containerRef.current.addEventListener("keydown", onKeydown);
+
     return () => {
+      containerRef.current?.removeEventListener("keydown", onKeydown);
       unbindPopupRef.current?.();
       unbindPopupRef.current = null;
       popupRef.current?.remove();

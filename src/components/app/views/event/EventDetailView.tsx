@@ -22,8 +22,9 @@ import {
   ArrowLeft, RefreshCw, Camera, MapPin, Umbrella, HardHat, History, FileWarning, GitMerge, Network,
   MessageSquare, Wrench, Upload, FileSearch, Gauge, Braces, ListChecks, ClipboardCheck, ScrollText,
 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { assetPath } from "@/lib/client/assets";
+import { sceneThumb } from "@/lib/client/media";
 
 // URBAN EVENT DETAIL - full dossier: evidence, investigation, risk
 // breakdown, responsibility, verification workflow, audit history.
@@ -134,7 +135,7 @@ export function EventDetailView() {
       {/* header */}
       <Reveal className="panel-raised px-4 sm:px-6 py-3.5">
         <div className="flex items-start gap-3 flex-wrap">
-          <button onClick={() => navigate(useUi.getState().view === "event" ? "command" : "map")} className="p-1.5 -ml-1.5 mt-0.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-ink-850 transition-colors" aria-label="Back">
+          <button onClick={() => navigate(useUi.getState().view === "event" ? "command" : "map")} className="grid size-11 place-items-center -ml-1.5 mt-0.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-ink-850 transition-colors shrink-0" aria-label="Back">
             <ArrowLeft className="size-4" />
           </button>
           <div className="min-w-0 flex-1">
@@ -183,9 +184,10 @@ export function EventDetailView() {
         )}
       </Reveal>
 
-      {/* body: mini map + tabs */}
+      {/* body: scene preview + mini map + tabs */}
       <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-[340px_1fr] overflow-y-auto xl:overflow-hidden">
         <Reveal delay={0.06} className="xl:hairline-r bg-ink-900 flex flex-col xl:min-h-0">
+          <SceneBanner event={event} />
           <div className="relative h-52 xl:h-64 shrink-0">
             <MapView events={[{
               id: event.id, code: event.code, title: event.title, category: event.category,
@@ -270,6 +272,45 @@ function DossierTab({ value, current, children }: { value: string; current: stri
 }
 
 type D = { event: EventDetailResponse["event"]; context: EventDetailResponse["context"]; riskHistory: EventDetailResponse["riskHistory"]; auditHistory: EventDetailResponse["auditHistory"] };
+
+/**
+ * Contextual scene illustration: category picks the scene family, risk score
+ * picks minor-ponding vs deep-water intensity, and the event code seeds the
+ * randomized variant. Always labelled illustrative — never real evidence.
+ */
+function SceneBanner({ event }: { event: EventDetailResponse["event"] }) {
+  const scene = useMemo(
+    () => sceneThumb(event.category, event.title, event.code, event.riskScore),
+    [event.category, event.title, event.code, event.riskScore]
+  );
+  return (
+    <div className="relative h-36 shrink-0 overflow-hidden border-b border-border/60">
+      <picture>
+        <source srcSet={scene.avif} type="image/avif" />
+        <source srcSet={scene.webp} type="image/webp" />
+        <img
+          src={scene.png}
+          alt={`Illustrative scene matching this event: ${scene.label} (synthetic)`}
+          width={340}
+          height={144}
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 size-full object-cover"
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
+        />
+      </picture>
+      <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-ink-950/90 via-ink-950/20 to-transparent" />
+      <div className="absolute bottom-2 left-3 right-3 flex items-end justify-between gap-2">
+        <div className="min-w-0">
+          <p className="micro-label text-[0.5rem]! text-aqua-dim">Scene preview · illustrative</p>
+          <p className="truncate text-[0.72rem] font-medium text-slate-100">{scene.label} · {event.category.toLowerCase().replace(/_/g, " ")}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function QuickFacts({ d }: { d: D }) {
   const e = d.event;

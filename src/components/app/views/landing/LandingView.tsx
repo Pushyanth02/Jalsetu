@@ -5,6 +5,7 @@ import { AlertTriangle, ArrowRight, FileText, Flag, MapPin, Menu, X } from "luci
 import { useState, type ReactNode } from "react";
 import { navigate, type ViewId } from "@/lib/client/store";
 import { assetPath, assetSrcSet } from "@/lib/client/assets";
+import { pickScene, weatherScene, SCENE_HERO } from "@/lib/client/media";
 import { apiGet, type OverviewResponse, type HotspotResponse } from "@/lib/client/api";
 import { Reveal, Stagger, StaggerItem, CountUp, PulseDot, AnimatedProgress } from "@/components/motion/kit";
 import { BorderBeam, Meteors, SpotlightCard } from "@/components/fx";
@@ -54,32 +55,36 @@ const PIPELINE = [
   { step: "07", title: "Field verifies", body: "Crews close the loop with photos and depth readings. Recurrence reopens the event." },
 ] as const;
 
-const GALLERY = [
-  {
-    title: "Overflowing storm drain",
-    klass: "DRAIN_OVERFLOW",
-    avif: "/img/drain-overflow.avif",
-    webp: "/img/drain-overflow.webp",
-    png: "/img/drain-overflow.png",
-    alt: "Storm drain overflowing onto a street during heavy rain (synthetic demo image)",
-  },
-  {
-    title: "Waterlogged street",
-    klass: "WATERLOGGING",
-    avif: "/img/street-flood.avif",
-    webp: "/img/street-flood.webp",
-    png: "/img/street-flood.png",
-    alt: "Street covered with standing rain water (synthetic demo image)",
-  },
-  {
-    title: "Flooded underpass",
-    klass: "WATERLOGGING",
-    avif: "/img/ito-underpass.avif",
-    webp: "/img/ito-underpass.webp",
-    png: "/img/ito-underpass.png",
-    alt: "Road underpass flooded with standing water (synthetic demo image)",
-  },
-] as const;
+// Field-evidence gallery: one randomized scene per category (seeded, so the
+// build is deterministic) + a rainfall context card. All images are
+// AI-generated illustrative scenes from the /img/scenes pool.
+const GALLERY_CATEGORIES = ["WATERLOGGING", "POTHOLE", "DRAIN_OVERFLOW", "SEWER_BACKUP", "UNDERPASS"] as const;
+
+const GALLERY: { title: string; klass: string; avif: string; webp: string; png: string; alt: string }[] = [
+  ...GALLERY_CATEGORIES.map((cat) => {
+    const scene = pickScene(cat, `landing-${cat}`);
+    const title = scene.label.replace(/^./, (c) => c.toUpperCase());
+    return {
+      title,
+      klass: cat,
+      avif: scene.avif,
+      webp: scene.webp,
+      png: scene.png,
+      alt: `${scene.label} during monsoon rain (synthetic demo image)`,
+    };
+  }),
+  (() => {
+    const w = weatherScene("landing-weather");
+    return {
+      title: "Rain gauge context",
+      klass: "WEATHER",
+      avif: w.avif,
+      webp: w.webp,
+      png: w.png,
+      alt: "Rainfall gauge station measuring monsoon rain (synthetic demo image)",
+    };
+  })(),
+];
 
 const VIEWS: { id: ViewId; label: string; body: string; group: Group }[] = [
   { id: "command", label: "Command Center", body: "Live KPIs, ops map, rainfall context and the event queue on one screen.", group: "Operations" },
@@ -250,6 +255,25 @@ export function LandingView() {
           <Reveal delay={0.16}>
             <LiveReadout />
           </Reveal>
+        </div>
+
+        {/* illustrative monsoon skyline panorama, faded into the section background */}
+        <div className="relative mt-2 h-32 sm:h-44 lg:h-56" aria-hidden>
+          <picture>
+            <source srcSet={assetSrcSet(`${SCENE_HERO.avif} 1280w`)} type="image/avif" sizes="100vw" />
+            <source srcSet={assetSrcSet(`${SCENE_HERO.webp} 1280w`)} type="image/webp" sizes="100vw" />
+            <img
+              src={SCENE_HERO.png}
+              alt=""
+              width={1280}
+              height={512}
+              loading="lazy"
+              decoding="async"
+              className="absolute inset-0 size-full object-cover object-center opacity-75"
+            />
+          </picture>
+          <div className="absolute inset-0 bg-gradient-to-b from-background via-background/20 to-background" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background" />
         </div>
       </section>
 

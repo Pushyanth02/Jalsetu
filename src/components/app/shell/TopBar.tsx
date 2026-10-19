@@ -2,14 +2,15 @@
 
 import { useUi, navigate, useClock } from "@/lib/client/store";
 import { useQuery } from "@tanstack/react-query";
-import { apiGet, type OverviewResponse, type EventSummary } from "@/lib/client/api";
+import { apiGet, type OverviewResponse, type EventSummary, type AssetResponse } from "@/lib/client/api";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X, Search, MapPin, Bell, ChevronDown, FileSearch, Map as MapIcon } from "lucide-react";
+import { Menu, X, Search, MapPin, Bell, ChevronDown, Map as MapIcon, Network } from "lucide-react";
 import { useRef, useState, useEffect, useDeferredValue, useMemo } from "react";
 import { NAV_ITEMS, BrandLockupLight } from "./NavRail";
 import { RiskBadge, StatusBadge, TimeAgo } from "@/components/app/shared/domain";
 import { PulseDot } from "@/components/motion/kit";
+import { sceneThumb } from "@/lib/client/media";
 
 /** Responsive header — collapses gracefully: search + filters hide on narrow, drawer for nav */
 export function TopBar() {
@@ -233,18 +234,41 @@ export function TopBar() {
 
 /* ---------------------------------------------------------------- search */
 
+interface SearchReportRow {
+  id: string;
+  publicRef: string;
+  description: string;
+  category: string;
+  severityReported: string;
+  urbanEventId: string | null;
+}
+
 function GlobalSearch({ autoFocus, onSelect }: { autoFocus?: boolean; onSelect?: () => void }) {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const openEvent = useUi((s) => s.openEvent);
+  const focusMap = useUi((s) => s.focusMap);
+  const active = q.trim().length >= 2;
 
   const { data: events } = useQuery({
     queryKey: ["events", "search", "200"],
     queryFn: () => apiGet<EventSummary[]>("/api/events?limit=200").then((r) => r.data),
     staleTime: 60_000,
-    enabled: q.length >= 2,
+    enabled: active,
+  });
+  const { data: reports } = useQuery({
+    queryKey: ["reports", "search", "200"],
+    queryFn: () => apiGet<SearchReportRow[]>("/api/reports?limit=200").then((r) => r.data),
+    staleTime: 60_000,
+    enabled: active,
+  });
+  const { data: assets } = useQuery({
+    queryKey: ["assets"],
+    queryFn: () => apiGet<AssetResponse[]>("/api/assets").then((r) => r.data),
+    staleTime: 600_000,
+    enabled: active,
   });
 
   useEffect(() => {
@@ -269,15 +293,24 @@ function GlobalSearch({ autoFocus, onSelect }: { autoFocus?: boolean; onSelect?:
 
   // Keystrokes stay responsive: the input value updates immediately and the
   // result list is recomputed against a deferred copy, so typing never waits
-  // on the filter pass (and the list is only recomputed when it changes).
+  // on the filter pass. Search covers every entity the placeholder promises:
+  // events, citizen reports and infrastructure assets, grouped in results.
   const deferredQ = useDeferredValue(q);
-  const matches = useMemo(() => {
+  const groups = useMemo(() => {
     const needle = deferredQ.trim().toLowerCase();
-    if (needle.length < 2) return [];
-    return (events ?? [])
+    if (needle.length < 2) return { events: [], reports: [], assets: [] };
+    const ev = (events ?? [])
       .filter((e) => `${e.code} ${e.title} ${e.locationText}`.toLowerCase().includes(needle))
-      .slice(0, 7);
-  }, [events, deferredQ]);
+      .slice(0, 5);
+    const rep = (reports ?? [])
+      .filter((r) => `${r.publicRef} ${r.description}`.toLowerCase().includes(needle))
+      .slice(0, 3);
+    const as = (assets ?? [])
+      .filter((a) => `${a.code} ${a.name} ${a.kind}`.toLowerCase().includes(needle))
+      .slice(0, 3);
+    return { events: ev, reports: rep, assets: as };
+  }, [events, reports, assets, deferredQ]);
+  const total = groups.events.length + groups.reports.length + groups.assets.length;
 
   return (
     <div ref={wrapRef} className="relative flex-1 min-w-0 w-full">
@@ -299,7 +332,7 @@ function GlobalSearch({ autoFocus, onSelect }: { autoFocus?: boolean; onSelect?:
       <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden lg:grid place-items-center data-mono text-[0.6rem] text-slate-400 border border-hairline rounded-md px-1.5 py-0.5 bg-white/[0.04] min-w-5 h-5">/</kbd>
 
       <AnimatePresence>
-        {open && q.length >= 2 && (
+        {open && active && (
           <motion.div
             initial={{ opacity: 0, y: -6, scale: 0.99 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -309,41 +342,109 @@ function GlobalSearch({ autoFocus, onSelect }: { autoFocus?: boolean; onSelect?:
             role="listbox"
             aria-label="Search results"
           >
-            {matches.length === 0 ? (
-              <p className="px-4 py-4 text-sm text-slate-400 text-center">No events match “{q}”</p>
+            {total === 0 ? (
+              <p className="px-4 py-4 text-sm text-slate-400 text-center">No events, reports or assets match “{q}”</p>
             ) : (
               <ul className="overflow-y-auto flex-1 max-h-80">
-                {matches.map((e) => (
-                  <li key={e.id}>
+                {groups.events.length > 0 && (
+                  <li aria-hidden className="px-4 pt-2.5 pb-1 micro-label !text-[0.52rem] !text-slate-500">Events</li>
+                )}
+                {groups.events.map((e) => {
+                  const thumb = sceneThumb(e.category, e.title, e.code, e.riskScore);
+                  return (
+                    <li key={e.id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpen(false);
+                          setQ("");
+                          onSelect?.();
+                          openEvent(e.code);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 sm:px-4 py-2.5 text-left hover:bg-white/[0.05] active:bg-white/[0.08] transition-colors group"
+                        role="option"
+                        aria-selected={false}
+                      >
+                        <span className="relative h-9 w-12 shrink-0 overflow-hidden rounded-md ring-1 ring-border bg-ink-850">
+                          <img src={thumb.png} alt="" width={48} height={36} loading="lazy" decoding="async" className="size-full object-cover" onError={(ev2) => { ev2.currentTarget.style.display = "none"; }} />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center gap-1.5 flex-wrap">
+                            <span className="data-mono text-[0.7rem] font-semibold text-water">{e.code}</span>
+                            <StatusBadge status={e.status} className="!text-[0.55rem] !px-1.5" />
+                            <RiskBadge band={e.riskBand} score={e.riskScore} className="!text-[0.55rem]" />
+                          </span>
+                          <span className="mt-0.5 block text-[0.78rem] text-slate-200 truncate">{e.title}</span>
+                        </span>
+                        <TimeAgo iso={e.lastActivityAt} />
+                      </button>
+                    </li>
+                  );
+                })}
+                {groups.reports.length > 0 && (
+                  <li aria-hidden className="px-4 pt-2.5 pb-1 micro-label !text-[0.52rem] !text-slate-500">Citizen reports</li>
+                )}
+                {groups.reports.map((r) => {
+                  const thumb = sceneThumb(r.category, r.description, r.publicRef, r.severityReported);
+                  return (
+                    <li key={r.id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpen(false);
+                          setQ("");
+                          onSelect?.();
+                          if (r.urbanEventId) openEvent(r.urbanEventId);
+                          else navigate("report");
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 sm:px-4 py-2.5 text-left hover:bg-white/[0.05] active:bg-white/[0.08] transition-colors group"
+                        role="option"
+                        aria-selected={false}
+                      >
+                        <span className="relative h-9 w-12 shrink-0 overflow-hidden rounded-md ring-1 ring-border bg-ink-850">
+                          <img src={thumb.png} alt="" width={48} height={36} loading="lazy" decoding="async" className="size-full object-cover" onError={(ev2) => { ev2.currentTarget.style.display = "none"; }} />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="data-mono text-[0.7rem] font-semibold text-water">{r.publicRef}</span>
+                          <span className="mt-0.5 block text-[0.78rem] text-slate-200 truncate">{r.description}</span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+                {groups.assets.length > 0 && (
+                  <li aria-hidden className="px-4 pt-2.5 pb-1 micro-label !text-[0.52rem] !text-slate-500">Infrastructure</li>
+                )}
+                {groups.assets.map((a) => (
+                  <li key={a.id}>
                     <button
                       type="button"
                       onClick={() => {
                         setOpen(false);
                         setQ("");
                         onSelect?.();
-                        openEvent(e.code);
+                        focusMap(a.lat, a.lng, 15);
+                        navigate("map");
                       }}
                       className="w-full flex items-center gap-2.5 px-3 sm:px-4 py-2.5 text-left hover:bg-white/[0.05] active:bg-white/[0.08] transition-colors group"
                       role="option"
                       aria-selected={false}
                     >
-                      <FileSearch className="size-4 text-slate-500 group-hover:text-aqua shrink-0 hidden xs:block" aria-hidden />
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-center gap-1.5 flex-wrap">
-                          <span className="data-mono text-[0.7rem] font-semibold text-water">{e.code}</span>
-                          <StatusBadge status={e.status} className="!text-[0.55rem] !px-1.5" />
-                          <RiskBadge band={e.riskBand} score={e.riskScore} className="!text-[0.55rem]" />
-                        </span>
-                        <span className="mt-0.5 block text-[0.78rem] text-slate-200 truncate">{e.title}</span>
+                      <span className="grid size-9 w-12 shrink-0 place-items-center rounded-md ring-1 ring-border bg-ink-850">
+                        <Network className="size-4 text-slate-500 group-hover:text-aqua" aria-hidden />
                       </span>
-                      <TimeAgo iso={e.lastActivityAt} />
+                      <span className="min-w-0 flex-1">
+                        <span className="data-mono text-[0.7rem] font-semibold text-water">{a.code}</span>
+                        <span className="mt-0.5 block text-[0.78rem] text-slate-200 truncate">{a.name} · {a.kind.toLowerCase()}</span>
+                      </span>
+                      <span className="micro-label !text-[0.52rem] !text-slate-500 shrink-0">{a.agencyCode}</span>
                     </button>
                   </li>
                 ))}
               </ul>
             )}
             <p className="hairline-t px-4 py-2 micro-label !text-[0.55rem] text-muted-foreground/70 flex items-center gap-1.5 shrink-0">
-              <MapIcon className="size-3 shrink-0" aria-hidden /> tap to open dossier · esc to close
+              <MapIcon className="size-3 shrink-0" aria-hidden /> events · reports · assets · esc to close
             </p>
           </motion.div>
         )}

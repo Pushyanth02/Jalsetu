@@ -702,6 +702,32 @@
   pointer-events: auto;
 }
 
+/* --- touch ergonomics ----------------------------------------------------
+   On coarse pointers (phones/tablets) every interactive map element grows to
+   a ≥44px hit target. Visual size stays restrained; the extra hit area is
+   transparent, so dense clusters remain readable while staying easy to tap. */
+@media (pointer: coarse) {
+  .maplibregl-ctrl-group button {
+    width: 44px !important;
+    height: 44px !important;
+  }
+  .event-marker {
+    width: 26px;
+    height: 26px;
+  }
+  .event-marker::before,
+  .cluster-marker::before {
+    content: "";
+    position: absolute;
+    inset: -12px;
+    border-radius: 999px;
+  }
+  .station-marker {
+    width: 44px;
+    height: 44px;
+  }
+}
+
 .user-dot {
   width: 18px;
   height: 18px;

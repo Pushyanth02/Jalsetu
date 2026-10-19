@@ -14,6 +14,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { navigate, useUi } from "@/lib/client/store";
+import { sceneThumb } from "@/lib/client/media";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { AnimatedProgress, CountUp, HoverLift, PulseDot, Reveal, Stagger, StaggerItem } from "@/components/motion/kit";
@@ -210,6 +211,32 @@ function TrackReport() {
       {found && (
         <div className="relative mt-3 rounded-xl border border-border/70 bg-slate-50/70 p-3" aria-live="polite">
           <BorderBeam size={56} duration={8} colorFrom="#2dd4bf" colorTo="#14b88a" />
+          <div className="flex gap-3">
+            {(() => {
+              const thumb = sceneThumb(found.category, found.description, found.publicRef, found.severityReported);
+              return (
+                <div className="relative h-16 w-20 shrink-0 self-start overflow-hidden rounded-lg ring-1 ring-border bg-ink-850">
+                  <picture>
+                    <source srcSet={thumb.avif} type="image/avif" />
+                    <source srcSet={thumb.webp} type="image/webp" />
+                    <img
+                      src={thumb.png}
+                      alt={`Illustrative scene: ${thumb.label} (synthetic)`}
+                      width={80}
+                      height={64}
+                      loading="lazy"
+                      decoding="async"
+                      className="size-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                  </picture>
+                  <span aria-hidden className="absolute bottom-1 left-1 rounded bg-ink-950/80 px-1 py-px text-[0.45rem] font-semibold tracking-wide text-aqua-dim">SCENE</span>
+                </div>
+              );
+            })()}
+            <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="data-mono text-sm font-semibold text-water">{found.publicRef}</span>
             {rStatus && (
@@ -254,6 +281,8 @@ function TrackReport() {
           ) : (
             <p className="mt-3 pt-3 hairline-t text-xs text-muted-foreground">No urban event linked yet. The system is still processing this report.</p>
           )}
+            </div>
+          </div>
         </div>
       )}
     </Panel>

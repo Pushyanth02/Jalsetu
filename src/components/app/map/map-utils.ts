@@ -2,6 +2,7 @@
 
 import type { EventSummary } from "@/lib/client/api";
 import { PALETTE, RISK_HEX, STATUS_HEX, severityHex } from "@/lib/palette";
+import { pickScene, sceneCategoryFor, intensityFromScore, type SceneImage } from "@/lib/client/media";
 
 /**
  * Shared map utilities used by BOTH map engines (Google Maps + MapLibre
@@ -108,7 +109,26 @@ function escapeHtml(s: string): string {
  * Anchored marker popup (InfoWindow) content shared by both map engines.
  * Buttons use data attributes handled by delegated listeners on the map
  * container, so both Google InfoWindows and MapLibre Popups behave the same.
+ * The banner image is a randomized, context-appropriate scene from the media
+ * pool: category + severity drive the choice, the event code seeds the pick.
  */
+function sceneBanner(e: EventSummary): string {
+  const scene: SceneImage = pickScene(
+    sceneCategoryFor(e.category, e.title),
+    e.code,
+    intensityFromScore(e.severity)
+  );
+  return `
+<div class="relative h-[104px] w-[264px] overflow-hidden">
+  <picture>
+    <source srcset="${scene.avif}" type="image/avif"/>
+    <source srcset="${scene.webp}" type="image/webp"/>
+    <img src="${scene.png}" alt="Illustrative scene: ${escapeHtml(scene.label)} (synthetic)" width="264" height="104" loading="lazy" decoding="async" class="size-full object-cover"/>
+  </picture>
+  <span aria-hidden="true" class="absolute left-2 top-2 rounded bg-ink-950/80 px-1.5 py-0.5 text-[0.5rem] font-semibold tracking-wide text-aqua-dim backdrop-blur-sm">ILLUSTRATIVE SCENE</span>
+</div>`;
+}
+
 export function eventPopupHTML(e: EventSummary, now = Date.now()): string {
   const statusHex = STATUS_HEX[e.status] ?? PALETTE.textFaint;
   // escapeHtml on the fallback paths too: status/riskBand are app-controlled
@@ -121,7 +141,9 @@ export function eventPopupHTML(e: EventSummary, now = Date.now()): string {
   const updated = e.lastActivityAt ? timeAgoText(e.lastActivityAt, now) : "unknown";
 
   return `
-<div class="w-[264px] p-3.5 font-sans" role="dialog" aria-label="Event ${escapeHtml(e.code)} summary">
+<div class="w-[264px] font-sans" role="dialog" aria-label="Event ${escapeHtml(e.code)} summary">
+  ${sceneBanner(e)}
+  <div class="p-3.5">
   <div class="flex items-center gap-1.5 flex-wrap">
     <span class="data-mono text-[0.7rem] font-semibold" style="color:${PALETTE.aqua}">${escapeHtml(e.code)}</span>
     <span class="rounded-full px-2 py-0.5 text-[0.58rem] font-semibold tracking-wide uppercase" style="color:${statusHex};background:${statusHex}14;border:1px solid ${statusHex}33">${statusPlain}</span>
@@ -134,6 +156,7 @@ export function eventPopupHTML(e: EventSummary, now = Date.now()): string {
   <div class="mt-3 flex gap-2">
     <button type="button" data-open-event="${escapeHtml(e.code)}" class="flex-1 rounded-lg text-[0.65rem] font-semibold tracking-wide py-2" style="background:${PALETTE.aqua};color:${PALETTE.canvas}">Open Full Dossier</button>
     <button type="button" data-zoom-event="${escapeHtml(e.code)}" class="rounded-lg border border-slate-200 text-slate-600 px-3 py-2 text-[0.65rem] font-medium" title="Zoom to this location">Zoom</button>
+  </div>
   </div>
 </div>`.trim();
 }

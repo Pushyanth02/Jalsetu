@@ -32,6 +32,7 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 import { assetPath, assetSrcSet } from "@/lib/client/assets";
+import { weatherScene } from "@/lib/client/media";
 
 /** JalSetu logo — optimized for LCP, crisp on all DPIs */
 export function BrandLockup({ compact = false }: { compact?: boolean }) {
@@ -177,15 +178,17 @@ function WeatherWidget() {
   const mm = data ? Math.round(data.rainfall.pilot24hMm) : weatherQ.data?.stations.reduce((a, s) => a + s.totalMm, 0) ?? 0;
   const condition = mm >= 40 ? "Heavy rain" : mm >= 15 ? "Moderate rain" : mm > 0.5 ? "Light rain" : "Dry";
   const dateLabel = now.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase();
+  // rotate the weather backdrop daily (deterministic — no hydration flicker)
+  const wx = weatherScene(`navrail-${new Date().toISOString().slice(0, 10)}`);
 
   return (
     <div className="shrink-0 border-t border-hairline p-4">
       <div className="relative overflow-hidden rounded-xl h-24 bg-sb-850">
         <picture>
-          <source srcSet={assetSrcSet("/img/weather-delhi.avif 480w")} type="image/avif" sizes="280px" />
-          <source srcSet={assetSrcSet("/img/weather-delhi.webp 480w")} type="image/webp" sizes="280px" />
+          <source srcSet={assetSrcSet(`${wx.avif} 480w`)} type="image/avif" sizes="280px" />
+          <source srcSet={assetSrcSet(`${wx.webp} 480w`)} type="image/webp" sizes="280px" />
           <img
-            src={assetPath("/img/weather-delhi.png")}
+            src={wx.png}
             alt=""
             width={480}
             height={96}
