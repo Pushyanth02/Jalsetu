@@ -125,6 +125,18 @@ bun run seed                 # overwrites src/data/snapshot.json (also --out <pa
 Then commit the changed `src/data/snapshot.json` — that file **is** the app's
 data at runtime, so the commit is the release.
 
+## Editing In VS Code
+
+Open the folder and you are set:
+
+- Accept the workspace TypeScript SDK prompt (uses the repo's `typescript`).
+- Recommended extensions are auto-suggested (ESLint, Tailwind IntelliSense,
+  pretty TS errors, Error Lens, EditorConfig, GitHub Actions).
+- **F5** launches Chrome against the dev server (start it via the
+  `Dev: Start Next.js` task or `bun run dev` first).
+- Tasks: `Dev: Start Next.js`, `Lint`, `Typecheck`, `Static Export (GitHub Pages)`
+  (Terminal → Run Task).
+
 ## Deploying
 
 ### Vercel (recommended)
