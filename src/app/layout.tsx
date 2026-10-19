@@ -86,7 +86,7 @@ export const metadata: Metadata = {
     locale: "en_IN",
     images: [
       {
-        url: `${SITE_BASE_PATH}/og.jpg`,
+        url: "/og.jpg", // relative — metadataBase (origin + base path) resolves it
         width: 1200,
         height: 630,
         alt: "JalSetu control-room map of Delhi with waterlogging risk markers",
@@ -97,7 +97,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
-    images: [`${SITE_BASE_PATH}/og.jpg`],
+    images: ["/og.jpg"], // relative — metadataBase (origin + base path) resolves it
   },
   robots: {
     index: true,
