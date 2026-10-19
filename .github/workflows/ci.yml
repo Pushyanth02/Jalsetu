@@ -1,0 +1,48 @@
+# CI — quality gate for every push to main and every PR.
+# If this passes, the Vercel build (next build) and the GitHub Pages
+# static export (bun run build:pages) will both succeed.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Static export smoke build (covers Vercel's next build path)
+        run: bun run build:pages
+        env:
+          NEXT_PUBLIC_SITE_URL: https://pushyanth02.github.io
+
+      - name: Verify export artifacts
+        run: |
+          test -f out/index.html
+          test -f out/llms.txt
+          test -f out/sitemap.xml
+          test -f out/robots.txt
+          echo "Export verified: index, llms.txt, sitemap, robots all present"

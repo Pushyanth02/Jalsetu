@@ -19,6 +19,7 @@ demo data ships in the repo (`src/data/snapshot.json`).
   off `main`. Keep PRs focused.
 - **Before every commit**: `bun run lint` and `bun run typecheck` must pass
   (CI runs both plus a full static-export smoke build on every PR).
+  `main` deploys to Vercel on push; CI green means the deploy is green.
 - **Honest-data rules (non-negotiable)**: never present synthetic data as real.
   Keep the `SYNTHETIC_DEMO` / `MOCK` / "deterministic" labels and provenance
   badges intact. New data must be regenerated with `bun run seed` and committed
@@ -33,6 +34,12 @@ demo data ships in the repo (`src/data/snapshot.json`).
   probably belongs in the offline pipeline instead.
 - **UI changes**: include screenshots (desktop + narrow viewport when layout
   moves) in your PR.
+- **Adding a view**: update the view table in [README.md](README.md), the view
+  list in `src/app/llms.txt/route.ts` and the layout contracts in
+  [docs/wireframes.md](docs/wireframes.md) in the same PR.
+- **Docs**: keep [README.md](README.md) and [docs/wireframes.md](docs/wireframes.md)
+  in sync with reality — no dead links, no features that do not exist.
+  Deployment docs cover Vercel (primary) and GitHub Pages (workflow included).
 - **Sign-off**: by contributing you agree your work is licensed MIT (code) /
   CC-BY-4.0 (the demo dataset).
 

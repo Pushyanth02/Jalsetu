@@ -1,0 +1,87 @@
+# Deploy — builds the static export and publishes it to GitHub Pages.
+# One-time setup: repo Settings → Pages → Source: GitHub Actions.
+# Vercel remains the recommended deployment target (zero config, see README);
+# this workflow keeps a fully static, server-free Pages mirror available.
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      site_url:
+        description: "Public site URL (custom domain). Empty = github.io default"
+        required: false
+        default: ""
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Compute base path and site URL
+        id: paths
+        env:
+          MANUAL_SITE_URL: ${{ github.event.inputs.site_url }}
+        run: |
+          # Root repos (owner.github.io) serve at / ; project pages at /<repo>
+          if [[ "${{ github.repository }}" == *.github.io ]]; then
+            BASE=""
+            DEFAULT_URL="https://${{ github.repository_owner }}.github.io"
+          else
+            BASE="/${{ github.event.repository.name }}"
+            DEFAULT_URL="https://${{ github.repository_owner }}.github.io${BASE}"
+          fi
+          SITE_URL="${MANUAL_SITE_URL:-$DEFAULT_URL}"
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+          echo "site_url=$SITE_URL" >> "$GITHUB_OUTPUT"
+          echo "Building with BASE='$BASE' SITE_URL='$SITE_URL'"
+
+      - name: Static export
+        run: bun run build:pages
+        env:
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.paths.outputs.base }}
+          NEXT_PUBLIC_SITE_URL: ${{ steps.paths.outputs.site_url }}
+
+      - name: Verify export artifacts
+        run: |
+          test -f out/index.html
+          test -f out/llms.txt
+          echo "Export verified"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

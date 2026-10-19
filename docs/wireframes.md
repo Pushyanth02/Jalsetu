@@ -164,6 +164,14 @@ lg+: 2–3 col content grids; analytics keeps 1-col chart column with
      side stat rail at xl.
 ```
 
+### 3.6 Terms of Service / Privacy Policy (`#/terms`, `#/privacy`)
+
+```
+All widths: long-form legal prose, single reading column (max-w ~68ch),
+           section anchors + sticky mini-TOC at lg+, footer pushed naturally
+           on long pages (verified: no overlap, no floating gap).
+```
+
 ---
 
 ## 4. Shared components
@@ -186,7 +194,7 @@ Verified per release (agent-browser, headless Chromium):
 
 | Check | 390×844 | 768×1024 | 1440×900 |
 |-------|---------|----------|----------|
-| No horizontal overflow — all 10 views | ✅ | ✅ | ✅ |
+| No horizontal overflow — all 12 views + 404 | ✅ | ✅ | ✅ |
 | Sticky footer (short page) / push (long) | ✅ | ✅ | ✅ |
 | Hamburger + drawer | ✅ | n/a | n/a |
 | Bottom nav clear of content | ✅ | ✅ | n/a |

@@ -2,38 +2,56 @@
 
 A research-grade demo of a cross-agency waterlogging intelligence system: citizen
 reports → rule-based classification → risk-scored urban events → agency routing → field
-verification → learning, shown across 9 interactive views.
+verification → learning, shown across 12 interactive views.
 
 [![CI](https://github.com/Pushyanth02/Jalsetu/actions/workflows/ci.yml/badge.svg)](https://github.com/Pushyanth02/Jalsetu/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 ![Static](https://img.shields.io/badge/Static-No_API_Keys-No_Backend-2ea44f)
 
-> **Live demo** — the site deploys to GitHub Pages automatically via the included
-> workflow. Once: repo **Settings → Pages → Source: GitHub Actions**. After that,
-> every push to `main` ships. See [Deploying To GitHub Pages](#deploying-to-github-pages).
+> **Live demo** — deploy with **Vercel** (recommended, zero configuration) or
+> **GitHub Pages** (workflow included). Both paths are documented in
+> [Deploying](#deploying).
 
 **Not an official government system.** All data is synthetic demonstration data,
 labelled as such everywhere in the UI. See [Data Ethics](#data-ethics).
 
 ## What You Get
 
-One single-page app, 9 hash-routed views, deep-linkable (e.g. `#/events/UE-2026-0001`):
+One single-page app, 12 hash-routed views, deep-linkable (e.g. `#/events/UE-2026-0001`):
 
 | View | What it shows |
 | --- | --- |
-| **Command Center** (`#/`) | KPIs, live ops map, rainfall context, alerts, event queue |
+| **Landing** (`#/`) | What JalSetu is, the seven-step pipeline, live pilot numbers, entry points to every tool |
+| **Command Center** (`#/command`) | KPIs, live ops map, rainfall context, alerts, event queue |
 | **Waterlogging Map** (`#/map`) | Every event on a keyless MapLibre GL map (Esri World Dark Gray Canvas tiles + OpenStreetMap labels), severity markers, clusters, filters, hotspots, "Locate Me" |
-| **Event Dossier** (`#/events/:id`) | The full evidence chain for one event: evidence, investigation, risk factors, response, audit trail |
-| **Investigate** (`#/investigate`) | Deterministic tools with full provenance: classification, duplicate clustering, risk advisory |
-| **Responsibility** (`#/responsibility`) | Cross-agency register: who owns which asset and who was routed where |
-| **Verification** (`#/verify`) | Field-verification board closing the loop from routed action to ground truth |
-| **Report Wizard** (`#/report`) | Five-step citizen report: location → issue → evidence → review → submit, with a tracking reference |
-| **Analytics** (`#/analytics`) | Does combining evidence types find flooding hotspots better than counting complaints? Counterfactual comparison, honestly reported |
+| **Event Dossier** (`#/events/:code`) | The full evidence chain for one event: evidence, investigation, risk factors, responsibility, verification, audit trail |
+| **Investigation Tools** (`#/investigate`) | Deterministic tools with full provenance: classification, duplicate clustering, risk advisory |
+| **Responsibility Register** (`#/responsibility`) | Cross-agency register: who owns which asset and who was routed where |
+| **Field Verification Board** (`#/verify`) | Assignment to verified closure, closing the loop from routed action to ground truth |
+| **Citizen Report** (`#/report`) | Guided report wizard (location → issue → evidence → review → result) with a tracking reference; submissions are auto-classified and merged into events live |
+| **Research & Analytics** (`#/analytics`) | Does combining evidence types find flooding hotspots better than counting complaints? Counterfactual comparison, honestly reported (F1, AUC, ARI) |
 | **Data & Model Health** (`#/health`) | Dataset provenance, missingness, model runs, endpoint checks, plain-language glossary |
+| **Terms of Service** (`#/terms`) | Scope of the research prototype, permitted research use, licences, liability |
+| **Privacy Policy** (`#/privacy`) | No accounts, no cookies, no analytics, no server; third-party map tiles only |
+
+## Design System ("Monsoon Atlas")
+
+Deliberate, documented choices — not defaults:
+
+- **Typography** — *Fraunces* (display serif: the character of a printed survey
+  atlas, italic reserved for one poetic accent), *Public Sans* (UI + body: the
+  civic face designed for government digital services, best-in-class at 12–14px)
+  and *IBM Plex Mono* (data readouts: codes, coordinates, tabular numerals).
+  All three are self-hosted via `next/font` — zero third-party font requests.
+- **Gradients** — a small set of static, close-hue, long-blend tokens
+  (`bg-atlas`, `text-signal`, `scrim-photo`, `feather-y`, `panel-raised`,
+  `aurora-band`); no animated or sloped gradients.
+- **Contrast** — AA floors enforced across all views: body text ≥ 4.5:1
+  (most tokens sit at 5–8:1), micro-labels ≥ 4.5:1, input affordances ≥ 3:1.
 
 ## No API Keys, No Backend
 
-The deployed app is a **fully static export**:
+The deployed app runs entirely in the browser:
 
 - All data ships as [`src/data/snapshot.json`](src/data/snapshot.json) — clearly
   labelled **synthetic demonstration data** — generated once by the offline
@@ -47,6 +65,20 @@ The deployed app is a **fully static export**:
   mode. No model calls, no keys, no network. Every synthetic/model artefact is
   labelled in the UI: `SYNTHETIC_DEMO`, `MOCK`, "deterministic".
 - The map needs **no key**: MapLibre GL with free Esri/OSM tile services.
+
+## SEO & AI Discoverability
+
+Built for both crawlers and AI assistants:
+
+- **JSON-LD** (`@graph`: WebSite, LocalBusiness, BreadcrumbList, Dataset)
+  server-rendered on `/` — the site graph is readable without JavaScript.
+- **Per-view metadata**: each hash view updates `<title>` and description on
+  activation (12 views, one H1 each, view breadcrumbs in the UI).
+- **`/llms.txt`** — the [llmstxt.org](https://llmstxt.org) discovery file,
+  generated as a route so its `Site:`/`Sitemap:` lines always match the real
+  deployment origin (localhost in dev, the production domain when deployed).
+- `sitemap.xml`, `robots.txt`, Open Graph + Twitter cards, favicon set and a
+  branded 404 — all production-ready.
 
 ## Data Ethics
 
@@ -76,7 +108,7 @@ with the repo.
 | `bun run dev` | Dev server on port 3000 |
 | `bun run lint` | ESLint across the repo |
 | `bun run typecheck` | `tsc --noEmit` |
-| `bun run build` | Standard Next.js production build |
+| `bun run build` | Standard Next.js production build (what Vercel runs) |
 | `bun run build:pages` | Static export with `STATIC_EXPORT=true` → `out/` (GitHub Pages artifact) |
 | `bun run seed` | Regenerate `src/data/snapshot.json` deterministically (no database, no network) |
 
@@ -93,7 +125,35 @@ bun run seed                 # overwrites src/data/snapshot.json (also --out <pa
 Then commit the changed `src/data/snapshot.json` — that file **is** the app's
 data at runtime, so the commit is the release.
 
-## Deploying To GitHub Pages
+## Deploying
+
+### Vercel (recommended)
+
+1. Push to `main` (repository: `Pushyanth02/Jalsetu`).
+2. In Vercel: **Add New → Project → Import** the repository.
+3. The **Next.js** preset is auto-detected; the build command (`next build`)
+   needs no changes. **No environment variables are required.**
+4. Deploy. Canonical URLs, `sitemap.xml`, JSON-LD identifiers, Open Graph and
+   `llms.txt` automatically switch to your production domain —
+   `src/lib/site-config.ts` falls back to `VERCEL_PROJECT_PRODUCTION_DOMAIN`
+   and `VERCEL_URL` when `NEXT_PUBLIC_SITE_URL` is unset.
+5. **Custom domain**: attach it in Vercel (it is picked up automatically), or
+   set `NEXT_PUBLIC_SITE_URL=https://your.domain` for full control.
+
+Every pull request gets a preview deployment with its own correct canonicals.
+CI (`.github/workflows/ci.yml`) additionally gates every push and PR with
+lint + typecheck + a full static-export smoke build — if CI is green, the
+Vercel build is green.
+
+#### Environment variables
+
+| Variable | Required | Behavior when unset |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | no | Auto-resolved: Vercel production domain → Vercel deployment URL → `http://localhost:3000` (dev) |
+| `NEXT_PUBLIC_BASE_PATH` | no | Empty. Set only when hosting under a subdirectory (the Pages workflow sets it automatically) |
+| `STATIC_EXPORT` | no | Unset. Only `bun run build:pages` sets it (`true`) |
+
+### GitHub Pages
 
 1. Push to `main`. The [Deploy workflow](.github/workflows/deploy.yml) builds
    the static export and publishes it.
@@ -101,36 +161,23 @@ data at runtime, so the commit is the release.
 3. The workflow computes `NEXT_PUBLIC_BASE_PATH` automatically
    (`/<repo-name>`, or empty for an `<owner>.github.io` root repo), so project
    pages work out of the box.
-4. **Custom domain**: add a `CNAME` file, set `NEXT_PUBLIC_SITE_URL` to your
-   domain (repo → workflow inputs on manual runs, or hardcode), and leave the
+4. **Custom domain**: run the workflow manually with the `site_url` input
+   (or hardcode `NEXT_PUBLIC_SITE_URL`), add your `CNAME` file, and leave the
    base path empty.
-5. Every PR additionally runs CI: lint + typecheck + a full export smoke build
-   (`.github/workflows/ci.yml`) — if it builds there, it deploys.
-
-## Editing In VS Code
-
-Open the folder and you are set:
-
-- Accept the workspace TypeScript SDK prompt (uses the repo's `typescript`).
-- Recommended extensions are auto-suggested (ESLint, Tailwind IntelliSense,
-  pretty TS errors, Error Lens, EditorConfig, GitHub Actions).
-- **F5** launches Chrome against the dev server (start it via the
-  `Dev: Start Next.js` task or `bun run dev` first).
-- Tasks: `Dev: Start Next.js`, `Lint`, `Typecheck`, `Static Export (GitHub Pages)`
-  (Terminal → Run Task).
 
 ## Project Structure
 
 ```text
-src/app/            # Single route + SEO metadata routes (robots, sitemap, icons)
-src/components/app/ # Shell (nav, top bar), the 9 views, keyless map components
+src/app/            # Single route + metadata routes (robots, sitemap, llms.txt) + 404
+src/components/app/ # Shell (nav, top bar), the 12 views, keyless map components
 src/components/ui/  # shadcn/ui primitives
-src/lib/static/     # In-browser data layer: snapshot store + engine + API shim + seed
-src/lib/            # Pure utilities: geo, rng, validation, types
+src/lib/static/     # In-browser data layer: snapshot store, engine, API shim, seed
+src/lib/client/     # Client runtime: hash-router store, SEO shim, media, asset paths
+src/lib/            # Pure utilities: geo, rng, validation, types, site-config
 src/data/           # snapshot.json — the committed synthetic demo dataset
-src/scripts/        # Offline pipeline: deterministic seed, icon tools
-.github/            # CI + Pages deploy workflows, issue/PR templates, Dependabot
-.vscode/            # Workspace settings, launch config, tasks
+src/scripts/        # Offline pipeline: deterministic seed, image tools
+.github/            # CI + Pages deploy workflows
+docs/               # Responsive wireframes & breakpoint specification
 ```
 
 ## Responsive Behavior
@@ -146,23 +193,29 @@ The interface adapts at four tiers — no separate mobile app, one code path:
 
 Safe-area insets are respected on notched phones (bottom bar + footer), and
 `100dvh` keeps the app shell correct when mobile browsers collapse their URL
-bar. Test with devtools device emulation at **320 px, 390 px, 768 px,
-1280 px and 1920 px** before shipping UI changes.
+bar. Full layout contracts live in
+[`docs/wireframes.md`](docs/wireframes.md). Test with devtools device
+emulation at **320 px, 390 px, 768 px, 1280 px and 1920 px** before shipping
+UI changes.
 
 ## Accessibility & Performance
 
 - WCAG-minded: visible focus states, ARIA on interactive widgets,
-  `prefers-reduced-motion` respected by all animation, AA-contrast palettes.
-- All 9 views are route-level lazy-loaded; no source maps ship in production
-  builds; images are optimized (AVIF/WebP) with explicit dimensions.
-- One page, zero runtime backend — it loads like a static site because it is one.
+  `prefers-reduced-motion` respected by all animation, AA-contrast palettes
+  with enforced text floors.
+- All 12 views are route-level lazy-loaded; no source maps ship in production
+  builds; fonts are self-hosted variable fonts (single file per family).
+- Images are optimized (AVIF/WebP) with explicit dimensions; the OG image is a
+  1200×630 optimized JPEG.
+- One page, zero runtime backend — it loads like a static site because it
+  is one.
 
 ### How the fast loads are achieved
 
-- **Images**: raster art ships as WebP with a PNG fallback (`<picture>`); the
-  OG image is a 1200×630 optimized JPEG (~150 KB, down from 370 KB). Every
-  image declares explicit dimensions, `sizes`, lazy loading below the fold,
-  and `decoding="async"` — so the layout never shifts while media streams in.
+- **Images**: raster art ships as WebP with a PNG fallback (`<picture>`);
+  every image declares explicit dimensions, `sizes`, lazy loading below the
+  fold, and `decoding="async"` — so the layout never shifts while media
+  streams in.
 - **Tailwind v4 breakpoints**: `xs` (380 px) and `3xl` (1600 px) are defined
   via `@theme` in `src/app/globals.css` (Tailwind v4 ignores
   `tailwind.config.ts`); use them freely for one-extra-item phone layouts and
