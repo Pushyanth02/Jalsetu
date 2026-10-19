@@ -223,7 +223,7 @@ export function VerificationView() {
                     </span>
                   }
                   dense
-                  className="overflow-hidden"
+                  className="panel-raised overflow-hidden"
                   bodyClassName="p-2 flex flex-col gap-2 overflow-y-auto max-h-[46vh] xl:max-h-none xl:flex-1"
                 >
                   {items.length === 0 ? (
@@ -270,7 +270,7 @@ function BoardCard({ event, onOpen }: { event: EventSummary; onOpen: () => void 
     <HoverLift>
       <button
         onClick={onOpen}
-        className="w-full text-left rounded-xl border border-border/80 bg-ink-900 px-3 py-2.5 shadow-xs transition-colors hover:border-aqua/50 group"
+        className="w-full text-left rounded-xl border border-border/80 bg-ink-900 px-3 py-2.5 shadow-xs transition-colors hover:border-aqua/50 hover-glow group"
         aria-label={`${event.code}: ${event.title}. Risk ${event.riskBand.toLowerCase()}, ${event.reportCount} reports.`}
       >
         <div className="flex items-center gap-2 flex-wrap">

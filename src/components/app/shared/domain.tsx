@@ -44,10 +44,18 @@ export const RISK_META: Record<string, { label: string; cls: string; bar: string
   CRITICAL: { label: "Critical", cls: "text-red-700 bg-red-50 border-red-200", bar: "bg-red-500" },
 };
 
+/** Soft halo for the risk band dot — severity ramp colours at glow strength. */
+const RISK_DOT_GLOW: Record<string, string> = {
+  MODERATE: "shadow-[0_0_6px_rgba(245,165,36,0.65)]",
+  HIGH: "shadow-[0_0_6px_rgba(251,143,60,0.65)]",
+  CRITICAL: "shadow-[0_0_6px_rgba(255,77,106,0.7)]",
+};
+
 export function RiskBadge({ band, score, className }: { band: string; score?: number; className?: string }) {
   const m = RISK_META[band] ?? RISK_META.LOW;
   return (
     <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 micro-label !text-[0.6rem] font-medium", m.cls, className)}>
+      <span aria-hidden className={cn("size-1.5 rounded-full", m.bar, RISK_DOT_GLOW[band] ?? "")} />
       {score != null && <span className="data-mono !text-[0.65rem] !tracking-normal !normal-case">{score}</span>}
       {m.label}
     </span>
@@ -56,10 +64,12 @@ export function RiskBadge({ band, score, className }: { band: string; score?: nu
 
 export function RiskMeter({ score, band, className }: { score: number; band: string; className?: string }) {
   const m = RISK_META[band] ?? RISK_META.LOW;
+  // Key numbers emit light: the score halo follows the band colour.
+  const glow = band === "CRITICAL" || band === "HIGH" ? "text-glow-critical" : band === "MODERATE" ? "text-glow-amber" : "text-glow";
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <AnimatedProgress value={score} max={100} className="w-24" fillClassName={m.bar} />
-      <span className="data-mono text-xs text-foreground">{score}</span>
+      <span className={cn("data-mono text-xs text-foreground", glow)}>{score}</span>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { navigate, type ViewId } from "@/lib/client/store";
 import { assetPath, assetSrcSet } from "@/lib/client/assets";
 import { apiGet, type OverviewResponse, type HotspotResponse } from "@/lib/client/api";
 import { Reveal, Stagger, StaggerItem, CountUp, PulseDot, AnimatedProgress } from "@/components/motion/kit";
+import { BorderBeam, Meteors, SpotlightCard } from "@/components/fx";
 import { RISK_META } from "@/components/app/shared/domain";
 
 /**
@@ -17,9 +18,11 @@ import { RISK_META } from "@/components/app/shared/domain";
  * from the same in-browser API the console uses, so the landing page can
  * never drift from the data it describes.
  *
- * Design rules for this page: no ambient orbs, no background grids, no
- * gradient headlines, no card-grid of "features". It is laid out like a
- * document — rules, an index, a ledger — and the only accent is one aqua rule.
+ * Design language — "future city command ops": an engineered grid and aurora
+ * radial behind the hero, one aurora-gradient headline phrase, a glass status
+ * chip, a HUD-framed live readout with a travelling border beam and scan
+ * sweep, spotlight view cards and light-emitting stat values. Restraint is
+ * the rule: one or two effects per section, aqua as the only signal colour.
  */
 
 type Group = "Operations" | "Evidence flow" | "Research";
@@ -190,11 +193,13 @@ export function LandingView() {
       </header>
 
       {/* ---------------- hero ---------------- */}
-      <section className="border-b border-hairline">
-        <div className="content-wrap grid items-start gap-12 px-4 pb-16 pt-14 sm:px-6 sm:pb-20 sm:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
+      <section className="relative overflow-hidden border-b border-hairline bg-aurora-radial">
+        <div aria-hidden className="absolute inset-0 bg-grid-faint mask-fade-b" />
+        <Meteors number={4} />
+        <div className="content-wrap relative grid items-start gap-12 px-4 pb-16 pt-14 sm:px-6 sm:pb-20 sm:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
           <div>
             <Reveal>
-              <p className="flex items-center gap-2 micro-label !text-aqua-dim">
+              <p className="glass inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 micro-label !text-aqua-dim">
                 <PulseDot size={6} color="bg-aqua" />
                 Research prototype · Delhi pilot
               </p>
@@ -203,7 +208,7 @@ export function LandingView() {
             <Reveal delay={0.06}>
               <h1 className="mt-6 font-display text-[2.6rem] font-bold leading-[1.03] tracking-[-0.03em] text-foreground sm:text-6xl lg:text-[4.1rem]">
                 Every flooded street in Delhi,{" "}
-                <span className="text-aqua-dim">scored and routed</span> before the water rises.
+                <span className="aurora-text">scored and routed</span> before the water rises.
               </h1>
             </Reveal>
 
@@ -220,14 +225,14 @@ export function LandingView() {
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <button
                   onClick={() => go("command")}
-                  className="inline-flex h-12 items-center gap-2 rounded-xl bg-aqua px-6 text-[0.92rem] font-semibold text-ink-950 transition-colors hover:bg-aqua-dim"
+                  className="inline-flex h-12 items-center gap-2 rounded-xl bg-aqua px-6 text-[0.92rem] font-semibold text-ink-950 transition-[background-color,box-shadow] hover:bg-aqua-dim hover:shadow-[0_0_24px_-6px_rgba(45,212,191,0.55)]"
                 >
                   Open the command center
                   <ArrowRight className="size-4" aria-hidden />
                 </button>
                 <button
                   onClick={() => go("map")}
-                  className="inline-flex h-12 items-center gap-2 rounded-xl border border-hairline bg-ink-900 px-6 text-[0.92rem] font-semibold text-foreground transition-colors hover:border-aqua/40 hover:bg-ink-850"
+                  className="inline-flex h-12 items-center gap-2 rounded-xl border border-hairline bg-ink-900 px-6 text-[0.92rem] font-semibold text-foreground transition-[background-color,border-color,box-shadow] hover:border-aqua/40 hover:bg-ink-850 hover:shadow-[0_0_20px_-8px_rgba(45,212,191,0.45)]"
                 >
                   <MapPin className="size-4 text-aqua" aria-hidden />
                   Explore the map
@@ -327,23 +332,25 @@ export function LandingView() {
           {GROUPS.map((group) => (
             <div key={group}>
               <p className="border-b border-hairline pb-2.5 micro-label">{group}</p>
-              <Stagger className="mt-1">
+              <Stagger className="mt-5 space-y-3">
                 {VIEWS.filter((v) => v.group === group).map((v) => (
                   <StaggerItem key={v.id}>
-                    <button
-                      onClick={() => go(v.id)}
-                      className="group block w-full border-b border-hairline py-3.5 text-left"
-                    >
-                      <span className="flex items-baseline justify-between gap-3">
-                        <span className="font-display text-[0.94rem] font-semibold text-foreground transition-colors group-hover:text-aqua-dim">
-                          {v.label}
+                    <SpotlightCard className="panel hover-glow rounded-xl">
+                      <button
+                        onClick={() => go(v.id)}
+                        className="group block w-full rounded-xl px-4 py-3.5 text-left"
+                      >
+                        <span className="flex items-baseline justify-between gap-3">
+                          <span className="font-display text-[0.94rem] font-semibold text-foreground transition-colors group-hover:text-aqua-dim">
+                            {v.label}
+                          </span>
+                          <span className="data-mono shrink-0 text-[0.62rem] text-slate-500 opacity-0 transition-opacity group-hover:opacity-100">
+                            open
+                          </span>
                         </span>
-                        <span className="data-mono shrink-0 text-[0.62rem] text-slate-500 opacity-0 transition-opacity group-hover:opacity-100">
-                          open
-                        </span>
-                      </span>
-                      <span className="mt-1 block text-[0.82rem] leading-relaxed text-slate-600">{v.body}</span>
-                    </button>
+                        <span className="mt-1 block text-[0.82rem] leading-relaxed text-slate-600">{v.body}</span>
+                      </button>
+                    </SpotlightCard>
                   </StaggerItem>
                 ))}
               </Stagger>
@@ -429,7 +436,7 @@ export function LandingView() {
 
           <button
             onClick={() => go("analytics")}
-            className="mt-7 inline-flex h-11 items-center gap-2 rounded-xl border border-hairline bg-ink-900 px-5 text-[0.88rem] font-semibold text-foreground transition-colors hover:border-aqua/40 hover:bg-ink-850"
+            className="mt-7 inline-flex h-11 items-center gap-2 rounded-xl border border-hairline bg-ink-900 px-5 text-[0.88rem] font-semibold text-foreground transition-[background-color,border-color,box-shadow] hover:border-aqua/40 hover:bg-ink-850 hover:shadow-[0_0_20px_-8px_rgba(45,212,191,0.45)]"
           >
             Read the evaluation
             <ArrowRight className="size-4 text-aqua" aria-hidden />
@@ -458,14 +465,14 @@ export function LandingView() {
               <div className="flex flex-wrap items-center gap-3 lg:justify-end">
                 <button
                   onClick={() => go("report")}
-                  className="inline-flex h-12 items-center gap-2 rounded-xl bg-aqua px-6 text-[0.92rem] font-semibold text-ink-950 transition-colors hover:bg-aqua-dim"
+                  className="inline-flex h-12 items-center gap-2 rounded-xl bg-aqua px-6 text-[0.92rem] font-semibold text-ink-950 transition-[background-color,box-shadow] hover:bg-aqua-dim hover:shadow-[0_0_24px_-6px_rgba(45,212,191,0.55)]"
                 >
                   <Flag className="size-4" aria-hidden />
                   Report waterlogging
                 </button>
                 <button
                   onClick={() => go("command")}
-                  className="inline-flex h-12 items-center gap-2 rounded-xl border border-hairline bg-ink-900 px-6 text-[0.92rem] font-semibold text-foreground transition-colors hover:border-aqua/40 hover:bg-ink-850"
+                  className="inline-flex h-12 items-center gap-2 rounded-xl border border-hairline bg-ink-900 px-6 text-[0.92rem] font-semibold text-foreground transition-[background-color,border-color,box-shadow] hover:border-aqua/40 hover:bg-ink-850 hover:shadow-[0_0_20px_-8px_rgba(45,212,191,0.45)]"
                 >
                   Open the console
                   <ArrowRight className="size-4 text-aqua" aria-hidden />
@@ -509,7 +516,8 @@ function LiveReadout() {
     .slice(0, 4);
 
   return (
-    <div className="panel overflow-hidden rounded-xl">
+    <div className="panel-raised hud-corners scanline relative overflow-hidden rounded-xl">
+      <BorderBeam duration={9} />
       <div className="flex items-center gap-2.5 border-b border-hairline px-4 py-3">
         <PulseDot size={6} color="bg-aqua" />
         <span className="micro-label !text-[0.55rem] !text-aqua-dim">Delhi pilot · live readout</span>
@@ -520,7 +528,7 @@ function LiveReadout() {
         {bands.map((b) => (
           <div key={b.label} className="bg-ink-900 px-4 py-4">
             <p className="micro-label !text-[0.53rem]">{b.label}</p>
-            <p className="mt-1.5 flex items-baseline gap-1 font-display text-2xl font-bold text-foreground">
+            <p className="mt-1.5 flex items-baseline gap-1 font-display text-2xl font-bold text-foreground text-glow">
               {b.value == null ? (
                 <span className="inline-block h-7 w-12 rounded shimmer" />
               ) : (
@@ -595,7 +603,7 @@ function LiveBand() {
       <div className="content-wrap grid grid-cols-2 gap-px bg-hairline sm:grid-cols-3 lg:grid-cols-5">
         {stats.map((s, i) => (
           <Reveal key={s.label} delay={i * 0.05} className="bg-ink-900 px-5 py-7 text-center">
-            <p className="font-display text-3xl font-bold text-foreground">
+            <p className="font-display text-3xl font-bold text-foreground text-glow">
               {s.value == null ? (
                 <span className="inline-block h-8 w-10 rounded shimmer align-middle" />
               ) : (
@@ -630,7 +638,7 @@ function EvidenceCard() {
   ];
 
   return (
-    <div className="panel rounded-xl p-6 sm:p-7">
+    <div className="panel-raised rounded-xl p-6 sm:p-7">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="font-display text-[0.95rem] font-semibold text-foreground">Hotspot detection</p>
@@ -651,7 +659,7 @@ function EvidenceCard() {
                 <span className="data-mono text-[0.78rem] text-slate-500">
                   {r.base != null ? r.base.toFixed(3) : "n/a"}{" "}
                   <span className="px-1 text-slate-400">→</span>{" "}
-                  <span className="text-aqua">{r.prop != null ? r.prop.toFixed(3) : "n/a"}</span>
+                  <span className="text-aqua text-glow">{r.prop != null ? r.prop.toFixed(3) : "n/a"}</span>
                 </span>
               </div>
               <div className="mt-2 space-y-1.5">
@@ -723,6 +731,7 @@ function LandingFooter({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
 
   return (
     <footer className="border-t border-hairline bg-ink-900/50">
+      <div className="aurora-band" aria-hidden />
       <div className="content-wrap grid gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.4fr_repeat(3,1fr)]">
         <div>
           <div className="flex items-center gap-2.5">

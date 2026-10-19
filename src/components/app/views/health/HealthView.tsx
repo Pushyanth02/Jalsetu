@@ -659,6 +659,7 @@ export function HealthView() {
               </span>
             }
             icon={<Server />}
+            className="panel-raised"
             actions={
               <div className="flex items-center gap-3">
                 {lastPingAt != null && (
@@ -754,7 +755,7 @@ function StatCard({ tone = "plain", value, label, sub }: {
 }) {
   return (
     <HoverLift className="h-full">
-      <div className="panel rounded-xl h-full p-4">
+      <div className="panel-raised rounded-xl h-full p-4">
         <span className="flex items-center gap-2">
           <span
             aria-hidden

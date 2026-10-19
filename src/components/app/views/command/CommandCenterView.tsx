@@ -10,6 +10,7 @@ import { AlertTriangle, ChevronRight, Umbrella, CheckCircle2, Layers, Radio, Dro
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { CountUp, Stagger, StaggerItem, Reveal, PulseDot, HoverLift } from "@/components/motion/kit";
+import { BorderBeam } from "@/components/fx";
 import { memo, useState } from "react";
 import { assetPath } from "@/lib/client/assets";
 import { PALETTE } from "@/lib/palette";
@@ -44,7 +45,7 @@ export function CommandCenterView() {
   return (
     <div className="flex flex-col min-h-0 flex-1">
       {/* page header */}
-      <div className="hairline-b bg-ink-900">
+      <div className="hairline-b bg-ink-900 bg-grid-faint">
         <div className="px-4 sm:px-6 py-3.5 flex flex-wrap items-center gap-x-4 gap-y-2">
           <div>
             <h1 className="font-display text-lg font-bold tracking-tight text-slate-900 leading-tight">Command Center</h1>
@@ -89,6 +90,7 @@ export function CommandCenterView() {
                 to="map"
                 filterRisk="HIGH"
                 hint="Rated High Risk or Critical on the 0-100 risk scale"
+                critical
               />
               <KpiCard
                 label="Unresolved Events"
@@ -182,7 +184,7 @@ export function CommandCenterView() {
 
 /* ------------------------------------------------------------- KPI cards */
 
-function KpiCard({ label, value, delta, icon, tint, to, filterRisk, hint }: {
+function KpiCard({ label, value, delta, icon, tint, to, filterRisk, hint, critical }: {
   label: string;
   value: number;
   delta: number | null;
@@ -191,12 +193,13 @@ function KpiCard({ label, value, delta, icon, tint, to, filterRisk, hint }: {
   to: "map" | "verify";
   filterRisk?: string;
   hint: string;
+  critical?: boolean;
 }) {
   const setFilters = useUi((s) => s.setFilters);
   const reduce = useReducedMotion();
   return (
     <HoverLift>
-      <div className="rounded-xl">
+      <div className="relative rounded-xl">
         <button
           onClick={() => {
             if (filterRisk) setFilters({ riskBand: filterRisk as "HIGH" });
@@ -210,7 +213,10 @@ function KpiCard({ label, value, delta, icon, tint, to, filterRisk, hint }: {
             {delta !== null && <DeltaPill delta={delta} />}
           </span>
           <motion.span
-            className="block mt-3 font-display text-3xl sm:text-[2.1rem] font-bold tabular-nums text-slate-900 leading-none"
+            className={cn(
+              "block mt-3 font-display text-3xl sm:text-[2.1rem] font-bold tabular-nums text-slate-900 leading-none",
+              critical ? "text-glow-critical" : "text-glow"
+            )}
             initial={reduce ? { opacity: 0 } : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.4 }}
@@ -219,6 +225,7 @@ function KpiCard({ label, value, delta, icon, tint, to, filterRisk, hint }: {
           </motion.span>
           <span className="block mt-1.5 text-[0.72rem] font-medium text-slate-500 leading-snug">{label}</span>
         </button>
+        {critical && <BorderBeam size={56} duration={8} colorFrom="#ff4d6a" colorTo="#fb8f3c" />}
       </div>
     </HoverLift>
   );
@@ -530,7 +537,7 @@ function OperationalAlertsPanel() {
       icon={<AlertTriangle />}
       actions={<span className="micro-label text-[0.55rem]! text-muted-foreground">{d ? `${d.alerts.length} active` : ""}</span>}
       dense
-      className="overflow-hidden"
+      className="panel-raised overflow-hidden"
     >
       {err ? (
         <div className="p-4"><ErrorNoteInline message={err.message} onRetry={() => overviewQ.refetch()} /></div>
@@ -543,7 +550,7 @@ function OperationalAlertsPanel() {
               <li key={i} className="hairline-b last:border-0">
                 <button
                   className={cn(
-                    "w-full flex items-start gap-3 px-4 py-2.5 text-left hover:bg-ink-850/70 transition-colors group",
+                    "w-full flex items-start gap-3 px-4 py-2.5 text-left hover:bg-ink-850/70 hover-glow transition-colors group",
                     i === 0 && "animate-in fade-in slide-in-from-bottom-1 duration-300"
                   )}
                   onClick={() => a.eventCode && navigate("event", a.eventCode)}
@@ -617,7 +624,7 @@ export const EventRow = memo(function EventRow({ event }: { event: EventSummary 
     <li className="hairline-r hairline-b last:border-0">
       <button
         onClick={() => openEvent(event.code)}
-        className="w-full text-left px-4 py-3 hover:bg-ink-850/70 transition-colors group focus:bg-ink-850"
+        className="w-full text-left px-4 py-3 hover:bg-ink-850/70 hover-glow transition-colors group focus:bg-ink-850"
         aria-label={`${event.code}: ${event.title}`}
       >
         <div className="flex items-center gap-2 flex-wrap">

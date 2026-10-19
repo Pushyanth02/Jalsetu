@@ -177,6 +177,10 @@ export function MapExplorerView() {
                 assets={assetsQ.data}
               />
             )}
+            {/* HUD frame — brackets must paint above the canvas, so the
+                hud-corners utility rides on an overlay sibling (the canvas
+                would otherwise cover a parent's ::before). Decorative only. */}
+            <div aria-hidden className="hud-corners pointer-events-none" style={{ position: "absolute", inset: 0 }} />
           </Reveal>
 
           <div className="h-64 lg:h-56 shrink-0 hairline-t bg-ink-900 overflow-y-auto cv-auto">
@@ -265,11 +269,14 @@ function FilterRailContent({
               className={cn(
                 "rounded-lg border micro-label !text-[0.55rem] py-2 lg:py-1.5 transition-colors",
                 filters.riskBand === b
-                  ? b === "CRITICAL"
-                    ? "border-red-200 bg-red-50 text-sev-critical"
-                    : b === "HIGH"
-                      ? "border-orange-200 bg-orange-50 text-sev-high"
-                      : "border-blue-200 bg-blue-50 text-water"
+                  ? cn(
+                      b === "CRITICAL"
+                        ? "border-red-200 bg-red-50 text-sev-critical"
+                        : b === "HIGH"
+                          ? "border-orange-200 bg-orange-50 text-sev-high"
+                          : "border-blue-200 bg-blue-50 text-water",
+                      "ring-glow"
+                    )
                   : "border-border text-slate-500 hover:bg-ink-850 hover:text-slate-700"
               )}
             >

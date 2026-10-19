@@ -12,6 +12,7 @@ import {
 import {
   CountUp, Reveal, Stagger, StaggerItem, AnimatedProgress, HoverLift, PulseDot,
 } from "@/components/motion/kit";
+import { SpotlightCard } from "@/components/fx";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -229,39 +230,41 @@ export function InvestigateView() {
               const active = tool === t.id;
               return (
                 <HoverLift key={t.id}>
-                  <button
-                    onClick={() => setTool(t.id)}
-                    aria-pressed={active}
-                    className={cn(
-                      "relative w-full text-left rounded-lg border overflow-hidden p-2.5 lg:p-3 transition-colors",
-                      active ? "border-water" : "border-border bg-ink-900 hover:bg-ink-850"
-                    )}
-                  >
-                    {active && (
-                      <motion.span
-                        layoutId="investigate-tool-highlight"
-                        className="absolute inset-0 rounded-[inherit] bg-blue-50"
-                        transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                        aria-hidden
-                      />
-                    )}
-                    <span className="relative flex items-center gap-2.5 lg:gap-3">
-                      <span
-                        className={cn(
-                          "grid size-9 lg:size-10 place-items-center rounded-lg shrink-0",
-                          active ? "bg-aqua/10 text-aqua shadow-sm" : "bg-ink-850 text-slate-400"
-                        )}
-                      >
-                        <t.icon className="size-4 lg:size-5" aria-hidden />
-                      </span>
-                      <span className="min-w-0">
-                        <span className={cn("block text-[0.7rem] lg:text-[0.78rem] font-semibold leading-tight", active ? "text-slate-900" : "text-slate-800")}>
-                          {t.label}
+                  <SpotlightCard className="rounded-lg">
+                    <button
+                      onClick={() => setTool(t.id)}
+                      aria-pressed={active}
+                      className={cn(
+                        "relative w-full text-left rounded-lg border overflow-hidden p-2.5 lg:p-3 transition-colors hover-glow",
+                        active ? "border-water" : "border-border bg-ink-900 hover:bg-ink-850"
+                      )}
+                    >
+                      {active && (
+                        <motion.span
+                          layoutId="investigate-tool-highlight"
+                          className="absolute inset-0 rounded-[inherit] bg-blue-50"
+                          transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                          aria-hidden
+                        />
+                      )}
+                      <span className="relative flex items-center gap-2.5 lg:gap-3">
+                        <span
+                          className={cn(
+                            "grid size-9 lg:size-10 place-items-center rounded-lg shrink-0",
+                            active ? "bg-aqua/10 text-aqua shadow-sm" : "bg-ink-850 text-slate-400"
+                          )}
+                        >
+                          <t.icon className="size-4 lg:size-5" aria-hidden />
                         </span>
-                        <span className="hidden lg:block mt-0.5 text-[0.62rem] text-slate-500 leading-snug">{t.hint}</span>
+                        <span className="min-w-0">
+                          <span className={cn("block text-[0.7rem] lg:text-[0.78rem] font-semibold leading-tight", active ? "text-slate-900" : "text-slate-800")}>
+                            {t.label}
+                          </span>
+                          <span className="hidden lg:block mt-0.5 text-[0.62rem] text-slate-500 leading-snug">{t.hint}</span>
+                        </span>
                       </span>
-                    </span>
-                  </button>
+                    </button>
+                  </SpotlightCard>
                 </HoverLift>
               );
             })}
@@ -443,7 +446,7 @@ function ReportQueue({ pending, onClassify }: { pending: boolean; onClassify: (r
 function ClassifyResults({ m }: { m: ClassifyMutation }) {
   if (m.isPending) {
     return (
-      <Panel title="Classification · Result" icon={<Tags />}>
+      <Panel title="Classification · Result" icon={<Tags />} className="panel-raised">
         <LoadingRows rows={5} />
         <p className="micro-label !text-[0.52rem] text-muted-foreground/60 mt-2">
           running provider call for {m.variables?.reportRef ?? "ad-hoc text"}…
@@ -453,7 +456,7 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
   }
   if (m.isError) {
     return (
-      <Panel title="Classification · Result" icon={<Tags />}>
+      <Panel title="Classification · Result" icon={<Tags />} className="panel-raised">
         <ErrorNote
           message={(m.error as Error).message}
           onRetry={m.variables ? () => m.mutate(m.variables!) : undefined}
@@ -463,7 +466,7 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
   }
   if (!m.data) {
     return (
-      <Panel title="Classification · Result" icon={<Tags />}>
+      <Panel title="Classification · Result" icon={<Tags />} className="panel-raised">
         <EmptyState
           icon={<Tags className="size-7" />}
           title="No Classification Run Yet"
@@ -485,6 +488,7 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
           title={`Classification · ${r._label}`}
           icon={<Tags />}
           actions={<ProviderChip provider={prov.provider} model={prov.modelId} />}
+          className="panel-raised"
         >
           {/* verdict headline */}
           <div className="rounded-lg border border-blue-100 bg-blue-50/70 px-3.5 py-2.5 mb-3">
@@ -534,7 +538,7 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
 
       {/* provenance */}
       <Reveal key={`cl-prov-${rkey}`} delay={0.07}>
-        <Panel title="Provenance" icon={<ShieldAlert />}>
+        <Panel title="Provenance" icon={<ShieldAlert />} className="panel-raised">
           <div className="space-y-2.5">
             <FactRow label="Provider"><ProviderChip provider={prov.provider} model={prov.modelId} /></FactRow>
             <FactRow label="Model ID"><span className="data-mono text-[0.62rem] break-all">{prov.modelId}</span></FactRow>
@@ -570,7 +574,7 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
 
       {/* context */}
       <Reveal key={`cl-ctx-${rkey}`} delay={0.14}>
-        <Panel title="Evidence Context · Fed to the Model" icon={<Database />}>
+        <Panel title="Evidence Context · Fed to the Model" icon={<Database />} className="panel-raised">
           <ul className="space-y-2.5">
             <EvidenceCheck label="Rainfall 24h / 72h">
               <span className="text-water">{Math.round(r.context.rainfall24hMm ?? 0)} / {Math.round(r.context.rainfall72hMm ?? 0)} mm</span>
@@ -606,7 +610,7 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
 
       {/* duplicate signals */}
       <Reveal key={`cl-dup-${rkey}`} delay={0.21}>
-        <Panel title="Duplicate Signals · Engine Candidates" icon={<GitMerge />}>
+        <Panel title="Duplicate Signals · Engine Candidates" icon={<GitMerge />} className="panel-raised">
           {r.duplicateSignals.length === 0 ? (
             <EmptyState title="No Duplicate Candidates" hint="No active incidents within 150m in the last 48 hours." />
           ) : (
@@ -678,7 +682,7 @@ function ClusterInput({ cluster, radius, setRadius }: { cluster: ClusterMutation
 function ClusterResults({ m }: { m: ClusterMutation }) {
   if (m.isPending) {
     return (
-      <Panel title="Duplicate Clustering · Result" icon={<GitMerge />}>
+      <Panel title="Duplicate Clustering · Result" icon={<GitMerge />} className="panel-raised">
         <LoadingRows rows={5} />
         <p className="micro-label !text-[0.52rem] text-muted-foreground/60 mt-2">union-find over last-72h reports…</p>
       </Panel>
@@ -686,14 +690,14 @@ function ClusterResults({ m }: { m: ClusterMutation }) {
   }
   if (m.isError) {
     return (
-      <Panel title="Duplicate Clustering · Result" icon={<GitMerge />}>
+      <Panel title="Duplicate Clustering · Result" icon={<GitMerge />} className="panel-raised">
         <ErrorNote message={(m.error as Error).message} onRetry={() => m.mutate(m.variables ?? 150)} />
       </Panel>
     );
   }
   if (!m.data) {
     return (
-      <Panel title="Duplicate Clustering · Result" icon={<GitMerge />}>
+      <Panel title="Duplicate Clustering · Result" icon={<GitMerge />} className="panel-raised">
         <EmptyState
           icon={<GitMerge className="size-7" />}
           title="No Clustering Run Yet"
@@ -711,6 +715,7 @@ function ClusterResults({ m }: { m: ClusterMutation }) {
       <Panel
         title={`Duplicate Clusters · ${data.clusters.length}`}
         icon={<GitMerge />}
+        className="panel-raised"
         actions={
           <span className="data-mono text-[0.62rem] text-slate-500">
             {data.singletons} singletons · {String(meta.evaluated ?? "?")} evaluated
@@ -878,7 +883,7 @@ function RiskInput({ risk }: { risk: RiskMutation }) {
 function RiskResults({ m }: { m: RiskMutation }) {
   if (m.isPending) {
     return (
-      <Panel title="Risk Assessment · Result" icon={<Gauge />}>
+      <Panel title="Risk Assessment · Result" icon={<Gauge />} className="panel-raised">
         <LoadingRows rows={5} />
         <p className="micro-label !text-[0.52rem] text-muted-foreground/60 mt-2">computing factors + advisory…</p>
       </Panel>
@@ -886,7 +891,7 @@ function RiskResults({ m }: { m: RiskMutation }) {
   }
   if (m.isError) {
     return (
-      <Panel title="Risk Assessment · Result" icon={<Gauge />}>
+      <Panel title="Risk Assessment · Result" icon={<Gauge />} className="panel-raised">
         <ErrorNote
           message={(m.error as Error).message}
           onRetry={m.variables ? () => m.mutate(m.variables!) : undefined}
@@ -896,7 +901,7 @@ function RiskResults({ m }: { m: RiskMutation }) {
   }
   if (!m.data) {
     return (
-      <Panel title="Risk Assessment · Result" icon={<Gauge />}>
+      <Panel title="Risk Assessment · Result" icon={<Gauge />} className="panel-raised">
         <EmptyState
           icon={<Gauge className="size-7" />}
           title="No Risk Assessment Run Yet"
@@ -917,6 +922,7 @@ function RiskResults({ m }: { m: RiskMutation }) {
           title={`Risk Assessment · ${r.event.code}`}
           icon={<Gauge />}
           actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/70">{r.risk.modelVersion}</span>}
+          className="panel-raised"
         >
           <div className="flex items-center gap-4 flex-wrap mb-4">
             <RiskMeter score={r.risk.score} band={r.risk.band} />
@@ -954,6 +960,7 @@ function RiskResults({ m }: { m: RiskMutation }) {
           title="Risk Advisory · Structured Output"
           icon={<FileText />}
           actions={<ProviderChip provider={r.advisory.provider} model={r.advisory.modelId} />}
+          className="panel-raised"
         >
           {r.advisory.fallbackUsed && r.advisory.error && (
             <p className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-sev-moderate" role="alert">
@@ -992,7 +999,7 @@ function RiskResults({ m }: { m: RiskMutation }) {
       </Reveal>
 
       <Reveal key={`rk-prov-${rkey}`} delay={0.16}>
-        <Panel title="Provenance" icon={<ShieldAlert />}>
+        <Panel title="Provenance" icon={<ShieldAlert />} className="panel-raised">
           <dl className="space-y-2 text-xs">
             <FactRow label="Risk Engine"><span className="data-mono text-[0.62rem]">{r.provenance.riskModelVersion}</span></FactRow>
             <FactRow label="Advisory Provider"><ProviderChip provider={r.advisory.provider} model={r.advisory.modelId} /></FactRow>

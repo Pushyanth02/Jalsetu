@@ -335,6 +335,7 @@ export function AnalyticsView() {
                   icon={<BarChart3 />}
                   actions={<LegendSwatches />}
                   bodyClassName="space-y-4 pt-4"
+                  className="panel-raised"
                 >
                   <div>
                     <p className="micro-label !text-[0.55rem] text-slate-500 mb-2">Hotspot-Level F1 at Top-K</p>
@@ -403,6 +404,7 @@ export function AnalyticsView() {
                     title="Duplicate Clustering · Ingestion"
                     icon={<GitMerge />}
                     bodyClassName="space-y-3"
+                    className="panel-raised"
                   >
                     <div className="flex items-baseline gap-2">
                       <span className="data-mono text-2xl font-semibold text-slate-900">
@@ -428,6 +430,7 @@ export function AnalyticsView() {
                     title="Responsibility Routing · Proposed"
                     icon={<Network />}
                     bodyClassName="space-y-3"
+                    className="panel-raised"
                   >
                     <div className="flex items-baseline gap-2">
                       <span className="data-mono text-2xl font-semibold text-slate-900">
@@ -474,6 +477,7 @@ export function AnalyticsView() {
                     title="Assignment Delay · Counterfactual Queue Simulation"
                     icon={<Clock />}
                     bodyClassName="space-y-3"
+                    className="panel-raised"
                   >
                     <DelayRow
                       label="Baseline"
@@ -499,6 +503,7 @@ export function AnalyticsView() {
                     title="Intervention Verification · Proposed"
                     icon={<CheckCircle2 />}
                     bodyClassName="space-y-3"
+                    className="panel-raised"
                   >
                     <div className="grid grid-cols-2 gap-3">
                       <div>

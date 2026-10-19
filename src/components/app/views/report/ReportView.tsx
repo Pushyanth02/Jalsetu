@@ -17,6 +17,7 @@ import { navigate, useUi } from "@/lib/client/store";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { AnimatedProgress, CountUp, HoverLift, PulseDot, Reveal, Stagger, StaggerItem } from "@/components/motion/kit";
+import { BorderBeam } from "@/components/fx";
 import {
   AlertTriangle, Camera, Check, ChevronLeft, ChevronRight, Copy, FileCheck, Flag, LocateFixed, MapPin, Search, X,
 } from "lucide-react";
@@ -207,7 +208,8 @@ function TrackReport() {
       )}
 
       {found && (
-        <div className="mt-3 rounded-xl border border-border/70 bg-slate-50/70 p-3" aria-live="polite">
+        <div className="relative mt-3 rounded-xl border border-border/70 bg-slate-50/70 p-3" aria-live="polite">
+          <BorderBeam size={56} duration={8} colorFrom="#2dd4bf" colorTo="#14b88a" />
           <div className="flex items-center gap-2 flex-wrap">
             <span className="data-mono text-sm font-semibold text-water">{found.publicRef}</span>
             {rStatus && (
@@ -435,6 +437,7 @@ function ReportWizard() {
       title="File a New Report"
       icon={<Flag />}
       actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/70">Public · Web Channel</span>}
+      className="panel-raised"
     >
       {/* step progress: numbered circles, completed shows a check */}
       <ol className="flex items-center gap-0 overflow-x-auto no-scrollbar pb-1" aria-label="Wizard progress">
@@ -622,6 +625,9 @@ function StepLocation(p: {
             Pilot area: central Delhi · place your report using coordinates, GPS or an area below
           </p>
         </div>
+        {/* HUD frame — brackets ride on an overlay sibling so they paint above
+            the map canvas (a parent's ::before would be covered by it). */}
+        <div aria-hidden className="hud-corners pointer-events-none" style={{ position: "absolute", inset: 0 }} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

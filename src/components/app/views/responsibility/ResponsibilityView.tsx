@@ -220,7 +220,7 @@ function CrossAgencyRegister() {
                 <StaggerItem key={e.id} className="hairline-b last:border-0">
                   <button
                     onClick={() => navigate("event", e.code)}
-                    className="w-full text-left py-2.5 px-1.5 -mx-1.5 rounded-lg hover:bg-ink-850/50 transition-colors group"
+                    className="w-full text-left py-2.5 px-1.5 -mx-1.5 rounded-lg hover:bg-ink-850/50 hover-glow transition-colors group"
                     aria-label={`${e.code}: ${e.title}`}
                   >
                     {/* line 1: code + badges */}
@@ -297,7 +297,7 @@ function AgencyWorkload() {
           const verified = s?.verified ?? 0;
           return (
             <StaggerItem key={a.code}>
-              <div className="rounded-lg border border-border bg-slate-50 px-3 py-2.5">
+              <div className="rounded-lg panel-raised px-3 py-2.5">
                 <div className="flex items-baseline gap-2.5 flex-wrap">
                   <span className="data-mono text-xs font-semibold text-water w-10 shrink-0">{a.code}</span>
                   <span className="text-xs text-slate-700 flex-1 min-w-40 truncate" title={a.name}>{a.name}</span>
@@ -525,7 +525,7 @@ function EscalationMatrix() {
           </thead>
           <tbody>
             {ROUTING_RULES.map((r) => (
-              <tr key={r.trigger} className="hairline-b last:border-0">
+              <tr key={r.trigger} className="hairline-b last:border-0 hover-glow">
                 <td className="py-2.5 pr-4 text-[0.78rem] text-slate-700 leading-snug align-top">{r.trigger}</td>
                 <td className="py-2.5 pr-4 align-top">
                   <span className="data-mono text-[0.68rem] font-medium text-water">{r.route}</span>

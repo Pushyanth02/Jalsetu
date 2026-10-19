@@ -132,7 +132,7 @@ export function EventDetailView() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* header */}
-      <Reveal className="hairline-b bg-ink-900 px-4 sm:px-6 py-3.5">
+      <Reveal className="panel-raised px-4 sm:px-6 py-3.5">
         <div className="flex items-start gap-3 flex-wrap">
           <button onClick={() => navigate(useUi.getState().view === "event" ? "command" : "map")} className="p-1.5 -ml-1.5 mt-0.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-ink-850 transition-colors" aria-label="Back">
             <ArrowLeft className="size-4" />
@@ -1034,7 +1034,7 @@ function AuditTab({ d }: { d: D }) {
             <Stagger>
               {d.auditHistory.map((a) => (
                 <StaggerItem key={a.id}>
-                  <li className="relative pl-5 py-2 hairline-b last:border-0">
+                  <li className="relative pl-5 py-2 hairline-b last:border-0 hover-glow">
                     <span className={cn("absolute left-0 top-3.5 size-1.5 rounded-full", a.actor === "SYSTEM" ? "bg-muted-foreground" : a.actor === "CITIZEN" ? "bg-water-dim" : "bg-sev-moderate")} aria-hidden />
                     <div className="flex items-baseline gap-2 flex-wrap">
                       <span className="data-mono text-[0.65rem] text-water">{a.action}</span>
