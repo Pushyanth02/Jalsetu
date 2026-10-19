@@ -36,7 +36,8 @@ export function TopBar() {
   }
 
   return (
-    <header className="sticky top-0 z-30 bg-ink-950/92 backdrop-blur-md supports-[backdrop-filter]:bg-ink-950/80 border-b border-hairline shadow-[0_1px_0_rgba(45,212,191,0.12)]">
+    <header className="sticky top-0 z-30 glass-deep border-b border-hairline">
+      <div aria-hidden className="aurora-band absolute inset-x-0 bottom-0" />
       <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 lg:px-5 h-14 sm:h-16">
         <button
           type="button"
@@ -167,7 +168,7 @@ export function TopBar() {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: "-100%", opacity: 0 }}
               transition={{ type: "spring", stiffness: 380, damping: 32 }}
-              className="lg:hidden fixed left-0 top-14 sm:top-16 bottom-0 w-[84%] max-w-[320px] bg-ink-900 hairline-r shadow-2xl z-30 flex flex-col overflow-hidden"
+              className="lg:hidden fixed left-0 top-14 sm:top-16 bottom-0 w-[84%] max-w-[320px] bg-ink-900/92 backdrop-blur-xl hairline-r shadow-2xl z-30 flex flex-col overflow-hidden"
               role="dialog"
               aria-label="Navigation menu"
               aria-modal="true"
@@ -196,7 +197,9 @@ export function TopBar() {
                               aria-current={active ? "page" : undefined}
                               className={cn(
                                 "flex w-full items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-left touch-target transition-colors",
-                                active ? "text-aqua bg-ink-850" : "text-slate-500 hover:bg-ink-850 hover:text-foreground active:bg-ink-800"
+                                active
+                                  ? "text-aqua bg-aqua/10 ring-1 ring-aqua/25 shadow-[0_0_24px_-10px_rgba(45,212,191,0.5)]"
+                                  : "text-slate-500 hover:bg-ink-850 hover:text-foreground active:bg-ink-800"
                               )}
                             >
                               <item.icon className={cn("size-4 shrink-0", active ? "text-aqua" : "text-slate-500")} aria-hidden />
@@ -291,7 +294,7 @@ function GlobalSearch({ autoFocus, onSelect }: { autoFocus?: boolean; onSelect?:
         }}
         onFocus={() => setOpen(true)}
         placeholder="Search locations, events, reports…"
-        className="w-full h-10 rounded-xl bg-white/[0.04] border border-hairline focus:border-aqua/40 focus:bg-ink-850 focus:ring-2 focus:ring-aqua/15 pl-10 pr-12 text-sm text-foreground placeholder:text-slate-500 outline-none transition-all"
+        className="w-full h-10 rounded-xl bg-white/[0.04] border border-hairline focus:border-aqua/50 focus:bg-ink-850 focus:ring-2 focus:ring-aqua/15 focus:shadow-[0_0_28px_-8px_rgba(45,212,191,0.5)] pl-10 pr-12 text-sm text-foreground placeholder:text-slate-500 outline-none transition-all"
       />
       <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden lg:grid place-items-center data-mono text-[0.6rem] text-slate-400 border border-hairline rounded-md px-1.5 py-0.5 bg-white/[0.04] min-w-5 h-5">/</kbd>
 

@@ -16,7 +16,7 @@ const ViewSkeleton = () => (
       <div className="h-5 w-48 max-w-[60vw] rounded-lg shimmer" />
       <div className="mt-2 h-3 w-72 max-w-[80vw] rounded shimmer" />
     </div>
-    <div className="flex-1 grid place-items-center p-4 sm:p-6">
+    <div className="flex-1 grid place-items-center p-4 sm:p-6 bg-grid-faint">
       <div className="w-full max-w-md space-y-3">
         <div className="h-24 rounded-xl shimmer" />
         <div className="h-24 rounded-xl shimmer" />
@@ -95,7 +95,8 @@ function AppFooter() {
     staleTime: 300_000,
   });
   return (
-    <footer className="mt-auto hairline-t bg-ink-900">
+    <footer className="mt-auto hairline-t bg-ink-900/60">
+      <div aria-hidden className="aurora-band" />
       <div className="px-3 sm:px-4 lg:px-6 py-3 flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-2 text-[0.65rem] text-muted-foreground">
         <span className="hidden sm:flex items-center gap-2">
           <BrandLockupLight compact />

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, IBM_Plex_Mono } from "next/font/google";
+import { Inter, IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Providers } from "@/components/app/providers";
@@ -23,6 +23,18 @@ const plexMono = IBM_Plex_Mono({
   display: "swap",
   preload: false,
   fallback: ["ui-monospace", "monospace"],
+  adjustFontFallback: true,
+});
+
+/* Display face for the futuristic identity: geometric, engineered
+   letterforms for headlines, KPI numerals and brand lockups. */
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-grotesk",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  preload: true,
+  fallback: ["var(--font-inter)", "system-ui", "sans-serif"],
   adjustFontFallback: true,
 });
 
@@ -110,7 +122,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       </head>
       <body
-        className={`${inter.variable} ${plexMono.variable} antialiased bg-background text-foreground min-h-dvh`}
+        className={`${inter.variable} ${plexMono.variable} ${spaceGrotesk.variable} antialiased bg-background text-foreground min-h-dvh`}
       >
         {/* Skip link — keyboard users jump straight to the view */}
         <a

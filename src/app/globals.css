@@ -9,6 +9,22 @@
 @theme {
   --breakpoint-xs: 380px;
   --breakpoint-3xl: 1600px;
+  /* FX animations (components/fx/*) */
+  --animate-meteor: meteor 7s linear infinite;
+}
+
+@keyframes meteor {
+  0% {
+    transform: rotate(var(--angle, -215deg)) translateX(0);
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(var(--angle, -215deg)) translateX(-560px);
+    opacity: 0;
+  }
 }
 
 /* ============================================================
@@ -114,6 +130,8 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
+  /* Display face — geometric, engineered, futuristic. Used by .font-display. */
+  --font-display: var(--font-grotesk), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -289,8 +307,8 @@
     display: none;
   }
   .font-display {
-    font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-    letter-spacing: -0.02em;
+    font-family: var(--font-grotesk), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.015em;
   }
   .micro-label {
     font-family: var(--font-plex-mono), monospace;
@@ -368,21 +386,215 @@
   }
 
   /* --- Monsoon ink: signal accents -------------------------------- */
-  /* Deliberately no ambient orbs, no background grids and no gradient
-     headlines: the public pages read as a document, and depth here comes
-     from the ink ramp plus the single hairline border colour. */
-  /* The one decorative mark allowed: a short aqua rule under a section label. */
+  /* The one decorative mark allowed in the document era: a short aqua rule
+     under a section label. Retained; now with a soft energy halo. */
   .signal-rule {
     display: block;
     width: 28px;
     height: 2px;
     background: var(--aqua);
+    box-shadow: 0 0 12px rgba(45, 212, 191, 0.55);
+  }
+
+  /* =====================================================================
+     NEXUS LAYER — futuristic command-ops surface treatments.
+     Glass chrome, engineered grids, aurora accents, HUD framing and
+     light-emitting signal states. Everything degrades gracefully:
+     reduced-motion freezes animation, no-backdrop-filter falls back to
+     solid ink, and every effect is decorative (aria-hidden) or
+     color-safe (AA contrast preserved by the ink ramp underneath).
+     ===================================================================== */
+
+  /* --- Glass chrome (floating bars, popovers, landing cards) ---------- */
+  .glass {
+    background: color-mix(in srgb, var(--ink-900) 68%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(1.35);
+    backdrop-filter: blur(14px) saturate(1.35);
+    border: 1px solid color-mix(in srgb, var(--hairline) 85%, transparent);
+  }
+  .glass-deep {
+    background: color-mix(in srgb, var(--ink-950) 72%, transparent);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    backdrop-filter: blur(16px) saturate(1.3);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass { background: var(--ink-900); }
+    .glass-deep { background: var(--ink-950); }
+  }
+
+  /* --- Light-emitting signal states ----------------------------------- */
+  .text-glow {
+    text-shadow: 0 0 16px rgba(45, 212, 191, 0.4), 0 0 44px rgba(45, 212, 191, 0.14);
+  }
+  .text-glow-amber {
+    text-shadow: 0 0 16px rgba(245, 165, 36, 0.4), 0 0 44px rgba(245, 165, 36, 0.12);
+  }
+  .text-glow-critical {
+    text-shadow: 0 0 16px rgba(255, 77, 106, 0.45), 0 0 44px rgba(255, 77, 106, 0.16);
+  }
+  .ring-glow {
+    box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.28), 0 0 28px -8px rgba(45, 212, 191, 0.45);
+  }
+  .hover-glow {
+    transition: box-shadow 220ms ease, border-color 220ms ease, background-color 220ms ease;
+  }
+  .hover-glow:hover {
+    border-color: rgba(45, 212, 191, 0.38);
+    box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.22), 0 0 32px -10px rgba(45, 212, 191, 0.5),
+      0 18px 40px -22px rgba(2, 6, 16, 0.9);
+  }
+  @media (hover: none) {
+    .hover-glow:hover {
+      border-color: var(--hairline);
+      box-shadow: none;
+    }
+  }
+
+  /* --- Engineered backgrounds (hero, bands, empty states) ------------- */
+  .bg-grid-faint {
+    background-image: linear-gradient(to right, rgba(45, 212, 191, 0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(45, 212, 191, 0.045) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+  .bg-grid-fine {
+    background-image: linear-gradient(to right, rgba(110, 231, 214, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(110, 231, 214, 0.05) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  .bg-dots-faint {
+    background-image: radial-gradient(rgba(110, 231, 214, 0.11) 1px, transparent 1.15px);
+    background-size: 22px 22px;
+  }
+  .bg-aurora-radial {
+    background:
+      radial-gradient(52rem 30rem at 18% -8%, rgba(45, 212, 191, 0.09), transparent 62%),
+      radial-gradient(44rem 26rem at 88% 4%, rgba(20, 184, 138, 0.07), transparent 60%),
+      radial-gradient(60rem 40rem at 50% 118%, rgba(45, 212, 191, 0.06), transparent 65%);
+  }
+  .mask-fade-y {
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 14%, #000 78%, transparent);
+    mask-image: linear-gradient(to bottom, transparent, #000 14%, #000 78%, transparent);
+  }
+  .mask-fade-b {
+    -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
+    mask-image: linear-gradient(to bottom, #000 55%, transparent);
+  }
+
+  /* --- Aurora accents -------------------------------------------------- */
+  .aurora-band {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(45, 212, 191, 0.05) 12%,
+      rgba(45, 212, 191, 0.75) 50%,
+      rgba(20, 184, 138, 0.45) 72%,
+      transparent
+    );
+  }
+  .aurora-text {
+    background-image: linear-gradient(
+      108deg,
+      #6fe6d6 0%,
+      #2dd4bf 22%,
+      #14b88a 45%,
+      #5eead4 68%,
+      #2dd4bf 88%,
+      #6fe6d6 100%
+    );
+    background-size: 220% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: aurora-slide 11s linear infinite;
+  }
+  .shiny-label {
+    background: linear-gradient(
+      110deg,
+      rgba(110, 231, 214, 0.75) 0%,
+      rgba(233, 238, 255, 0.95) 48%,
+      rgba(110, 231, 214, 0.75) 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: aurora-slide 4.5s linear infinite;
+  }
+
+  /* --- HUD framing: corner brackets on a panel ------------------------ */
+  .hud-corners {
+    position: relative;
+  }
+  .hud-corners::before {
+    content: "";
+    position: absolute;
+    inset: 7px;
+    pointer-events: none;
+    opacity: 0.55;
+    background:
+      linear-gradient(var(--aqua), var(--aqua)) left top / 12px 1.5px no-repeat,
+      linear-gradient(var(--aqua), var(--aqua)) left top / 1.5px 12px no-repeat,
+      linear-gradient(var(--aqua), var(--aqua)) right top / 12px 1.5px no-repeat,
+      linear-gradient(var(--aqua), var(--aqua)) right top / 1.5px 12px no-repeat,
+      linear-gradient(var(--aqua), var(--aqua)) left bottom / 12px 1.5px no-repeat,
+      linear-gradient(var(--aqua), var(--aqua)) left bottom / 1.5px 12px no-repeat,
+      linear-gradient(var(--aqua), var(--aqua)) right bottom / 12px 1.5px no-repeat,
+      linear-gradient(var(--aqua), var(--aqua)) right bottom / 1.5px 12px no-repeat;
+  }
+
+  /* --- Beam ring: animated light traveling a panel border (see fx/BorderBeam) */
+  .beam-ring {
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+  }
+
+  /* --- Scan sweep for live readout panels ------------------------------ */
+  .scanline {
+    position: relative;
+    overflow: hidden;
+  }
+  .scanline::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -90px;
+    height: 90px;
+    pointer-events: none;
+    background: linear-gradient(180deg, transparent, rgba(45, 212, 191, 0.055), transparent);
+    animation: scan-sweep 8s linear infinite;
+  }
+
+  /* --- Elevated panel: ink card with an inner top hairline glow -------- */
+  .panel-raised {
+    background:
+      linear-gradient(180deg, rgba(45, 212, 191, 0.05), transparent 88px),
+      var(--ink-900);
+    border: 1px solid var(--hairline);
   }
 }
 
 @keyframes shimmer-slide {
   0% { background-position: 150% 0; }
   100% { background-position: -50% 0; }
+}
+
+@keyframes aurora-slide {
+  0% { background-position: 0% center; }
+  100% { background-position: 220% center; }
+}
+
+@keyframes scan-sweep {
+  0% { top: -90px; }
+  100% { top: 110%; }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
 }
 
 /* --- scrollbars: thin, indigo ---------------------------------------------- */

@@ -128,7 +128,7 @@ export function NavRail() {
                       className={cn(
                         "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 xl:py-2 text-[0.84rem] font-medium transition-colors text-left touch-target",
                         active
-                          ? "text-aqua bg-aqua/10 ring-1 ring-aqua/25"
+                          ? "text-aqua bg-aqua/10 ring-1 ring-aqua/25 shadow-[0_0_28px_-12px_rgba(45,212,191,0.65)]"
                           : "text-white/60 hover:text-white hover:bg-white/6",
                         disabled && "opacity-35 cursor-not-allowed hover:bg-transparent hover:text-white/60"
                       )}
@@ -136,7 +136,7 @@ export function NavRail() {
                       {active && (
                         <motion.span
                           layoutId="nav-active-bar"
-                          className="absolute left-0 top-1.5 bottom-1.5 w-0.75 rounded-full bg-water-dim"
+                          className="absolute left-0 top-1.5 bottom-1.5 w-0.75 rounded-full bg-water-dim shadow-[0_0_10px_rgba(45,212,191,0.8)]"
                           transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 500, damping: 38 }}
                           aria-hidden
                         />
@@ -247,8 +247,9 @@ export function MobileNav() {
   return (
     <nav
       aria-label="Primary mobile"
-      className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-ink-950/95 backdrop-blur-md supports-backdrop-filter:bg-ink-950/80 border-t border-hairline safe-pb"
+      className="lg:hidden fixed bottom-0 inset-x-0 z-40 glass-deep border-t border-hairline safe-pb"
     >
+      <div aria-hidden className="aurora-band absolute inset-x-0 top-0 rotate-180" />
       <ul className="grid grid-cols-5 items-end max-w-130 mx-auto" role="list">
         {left.slice(0, 2).map((item) => (
           <MobileNavItem key={item.id} item={item} active={view === item.id} />
@@ -260,7 +261,7 @@ export function MobileNav() {
             aria-label="Report a waterlogging issue"
             aria-current={view === "report" ? "page" : undefined}
             className={cn(
-              "relative -mt-5 grid size-14 place-items-center rounded-full bg-aqua text-ink-950 shadow-lg shadow-ink-950/60 transition-all touch-target",
+              "relative -mt-5 grid size-14 place-items-center rounded-full bg-aqua text-ink-950 shadow-lg shadow-ink-950/60 shadow-aqua/30 transition-all touch-target",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aqua",
               view === "report" && "ring-2 ring-aqua ring-offset-2 ring-offset-ink-950"
             )}
