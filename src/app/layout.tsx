@@ -1,15 +1,21 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
+import { Public_Sans, IBM_Plex_Mono, Fraunces } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Providers } from "@/components/app/providers";
 
 import { SITE_URL, SITE_BASE_PATH } from "@/lib/site-config";
 
-const inter = Inter({
-  variable: "--font-inter",
+/* Typography is chosen, not defaulted (full rationale in globals.css):
+   • Public Sans — UI + body. Designed for government digital services;
+     best-in-class legibility at 12–14px. A civic face for a civic tool.
+   • Fraunces — display serif. Soft, wonky old-style curves that read like
+     a printed survey atlas; italic reserved for one poetic accent.
+   • IBM Plex Mono — data readouts: codes, coordinates, tabular numerals. */
+const publicSans = Public_Sans({
+  variable: "--font-public",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: "variable",
   display: "swap",
   preload: true,
   fallback: ["system-ui", "sans-serif"],
@@ -26,15 +32,15 @@ const plexMono = IBM_Plex_Mono({
   adjustFontFallback: true,
 });
 
-/* Display face for the futuristic identity: geometric, engineered
-   letterforms for headlines, KPI numerals and brand lockups. */
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-grotesk",
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: "variable",
+  style: ["normal", "italic"],
+  axes: ["opsz", "SOFT", "WONK"],
   display: "swap",
   preload: true,
-  fallback: ["var(--font-inter)", "system-ui", "sans-serif"],
+  fallback: ["Georgia", "serif"],
   adjustFontFallback: true,
 });
 
@@ -116,13 +122,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Tile & font origins — preconnect cuts map TTFB and CLS */}
+        {/* Tile origin — preconnect cuts map TTFB. (next/font self-hosts
+            all three faces; there are no third-party font requests.) */}
         <link rel="preconnect" href="https://services.arcgisonline.com" crossOrigin="" />
         <link rel="dns-prefetch" href="https://services.arcgisonline.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       </head>
       <body
-        className={`${inter.variable} ${plexMono.variable} ${spaceGrotesk.variable} antialiased bg-background text-foreground min-h-dvh`}
+        className={`${publicSans.variable} ${plexMono.variable} ${fraunces.variable} antialiased bg-background text-foreground min-h-dvh`}
       >
         {/* Skip link — keyboard users jump straight to the view */}
         <a

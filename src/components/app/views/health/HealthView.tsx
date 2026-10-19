@@ -228,7 +228,7 @@ export function HealthView() {
           </div>
           <button
             onClick={refetchAll}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 micro-label !text-[0.58rem] text-water hover:bg-blue-100 hover:border-blue-300 transition-colors"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 micro-label !text-[0.6rem] text-water hover:bg-blue-100 hover:border-blue-300 transition-colors"
           >
             <RefreshCw className={cn("size-3", (dataQ.isFetching || modelQ.isFetching || healthQ.isFetching) && "animate-spin")} aria-hidden />
             refresh all
@@ -322,7 +322,7 @@ export function HealthView() {
                     </p>
                   </div>
                 ) : (
-                  dh && <p className="micro-label !text-[0.55rem] text-slate-400 !tracking-[0.08em] normal-case">{clean(dh.note)}</p>
+                  dh && <p className="micro-label !text-[0.6rem] text-slate-600 !tracking-[0.08em] normal-case">{clean(dh.note)}</p>
                 )}
 
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
@@ -333,7 +333,7 @@ export function HealthView() {
                     </span>
                   )}
                   {hb.ai.fallback && (
-                    <span className="micro-label !text-[0.55rem] text-slate-500" title="Used when the remote model is unavailable">
+                    <span className="micro-label !text-[0.6rem] text-slate-500" title="Used when the remote model is unavailable">
                       fallback: {clean(hb.ai.fallback)}
                     </span>
                   )}
@@ -349,14 +349,14 @@ export function HealthView() {
             title={
               <span className="flex items-center gap-2">
                 Source Health
-                {dh && <span className="data-mono ml-1 !text-[0.62rem] !tracking-normal !normal-case font-normal text-slate-400">{dh.sources.length} sources</span>}
+                {dh && <span className="data-mono ml-1 !text-[0.62rem] !tracking-normal !normal-case font-normal text-slate-500">{dh.sources.length} sources</span>}
               </span>
             }
             icon={<Database />}
             actions={
               <button
                 onClick={() => dataQ.refetch()}
-                className="micro-label !text-[0.58rem] text-water hover:text-water-dim transition-colors"
+                className="micro-label !text-[0.6rem] text-water hover:text-water-dim transition-colors"
               >
                 refetch
               </button>
@@ -374,12 +374,12 @@ export function HealthView() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-ink-850/60 hover:bg-ink-850/60">
-                      <TableHead className="micro-label !text-[0.55rem] h-8" title="Which data feed this row comes from">Source</TableHead>
-                      <TableHead className="micro-label !text-[0.55rem] h-8 text-right">Records</TableHead>
-                      <TableHead className="micro-label !text-[0.55rem] h-8" title="When the newest record arrived">Freshness</TableHead>
-                      <TableHead className="micro-label !text-[0.55rem] h-8">Status</TableHead>
-                      <TableHead className="micro-label !text-[0.55rem] h-8" title="Which fields have no recorded values">Missingness</TableHead>
-                      <TableHead className="micro-label !text-[0.55rem] h-8 hidden md:table-cell" title="Where the data comes from">Provenance</TableHead>
+                      <TableHead className="micro-label !text-[0.6rem] h-8" title="Which data feed this row comes from">Source</TableHead>
+                      <TableHead className="micro-label !text-[0.6rem] h-8 text-right">Records</TableHead>
+                      <TableHead className="micro-label !text-[0.6rem] h-8" title="When the newest record arrived">Freshness</TableHead>
+                      <TableHead className="micro-label !text-[0.6rem] h-8">Status</TableHead>
+                      <TableHead className="micro-label !text-[0.6rem] h-8" title="Which fields have no recorded values">Missingness</TableHead>
+                      <TableHead className="micro-label !text-[0.6rem] h-8 hidden md:table-cell" title="Where the data comes from">Provenance</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -389,14 +389,14 @@ export function HealthView() {
                         <MotionRow key={s.key} variants={rowVariants} className="hover:bg-ink-850/50 border-b transition-colors">
                           <TableCell className="py-2">
                             <span className="text-xs text-slate-700">{s.label}</span>
-                            <span className="block data-mono text-[0.58rem] text-slate-400">{s.key}</span>
+                            <span className="block data-mono text-[0.6rem] text-slate-500">{s.key}</span>
                           </TableCell>
                           <TableCell className="py-2 text-right data-mono text-[0.72rem] text-slate-800">{s.records.toLocaleString("en-IN")}</TableCell>
                           <TableCell className="py-2">
                             {s.lastRecordAt ? (
                               <TimeAgo iso={s.lastRecordAt} />
                             ) : (
-                              <span className="data-mono text-[0.65rem] text-slate-400">never</span>
+                              <span className="data-mono text-[0.65rem] text-slate-500">never</span>
                             )}
                           </TableCell>
                           <TableCell className="py-2"><SourceStatusBadge status={s.status} /></TableCell>
@@ -406,11 +406,11 @@ export function HealthView() {
                                 {Object.entries(s.missingness).map(([k, v]) => `${k}: ${v}`).join(" · ")}
                               </span>
                             ) : (
-                              <span className="data-mono text-[0.62rem] text-slate-400">none</span>
+                              <span className="data-mono text-[0.62rem] text-slate-500">none</span>
                             )}
                           </TableCell>
                           <TableCell className="py-2 hidden md:table-cell">
-                            <span className="micro-label !text-[0.52rem] text-slate-500 !tracking-[0.06em]" title={s.sourceLabel}>
+                            <span className="micro-label !text-[0.6rem] text-slate-500 !tracking-[0.06em]" title={s.sourceLabel}>
                               {clean(s.sourceLabel)}
                             </span>
                           </TableCell>
@@ -429,7 +429,7 @@ export function HealthView() {
             title="Model & Provider"
             icon={<Cpu />}
             actions={
-              <button onClick={() => modelQ.refetch()} className="micro-label !text-[0.58rem] text-water hover:text-water-dim transition-colors">
+              <button onClick={() => modelQ.refetch()} className="micro-label !text-[0.6rem] text-water hover:text-water-dim transition-colors">
                 refetch
               </button>
             }
@@ -480,10 +480,10 @@ export function HealthView() {
                   </div>
 
                   <div className="rounded-xl border border-border bg-ink-850/50 px-3.5 py-3 space-y-1.5">
-                    <p className="micro-label !text-[0.55rem] text-slate-500 mb-1">Component Versions</p>
+                    <p className="micro-label !text-[0.6rem] text-slate-600 mb-1">Component Versions</p>
                     {Object.entries(mh.versions).map(([k, v]) => (
                       <div key={k} className="flex items-baseline justify-between gap-3">
-                        <span className="micro-label !text-[0.52rem] text-slate-500 !tracking-[0.08em]">{k}</span>
+                        <span className="micro-label !text-[0.6rem] text-slate-500 !tracking-[0.08em]">{k}</span>
                         <span className="data-mono text-[0.68rem] text-slate-800">{v}</span>
                       </div>
                     ))}
@@ -491,7 +491,7 @@ export function HealthView() {
                 </div>
 
                 <div className="rounded-xl border border-border bg-ink-850/50 px-3.5 py-3">
-                  <p className="micro-label !text-[0.55rem] text-slate-500 mb-2">Model Runs · Last 25</p>
+                  <p className="micro-label !text-[0.6rem] text-slate-600 mb-2">Model Runs · Last 25</p>
                   <div className="flex flex-wrap divide-x divide-border rounded-lg border border-border bg-ink-900">
                     <Segment label="Total" value={<CountUp value={mh.runsSummary.total} />} tone="plain" border={false} />
                     <Segment label="Succeeded" value={<CountUp value={mh.runsSummary.succeeded} />} tone="teal" border={false} />
@@ -505,7 +505,7 @@ export function HealthView() {
                   </div>
                 </div>
 
-                <p className="micro-label !text-[0.55rem] text-slate-400 !tracking-[0.08em] normal-case leading-relaxed">
+                <p className="micro-label !text-[0.6rem] text-slate-600 !tracking-[0.08em] normal-case leading-relaxed">
                   {clean(mh.note)}
                 </p>
               </div>
@@ -519,7 +519,7 @@ export function HealthView() {
             title={
               <span className="flex items-center gap-2">
                 Model Run Log
-                {mh && <span className="data-mono ml-1 !text-[0.62rem] !tracking-normal !normal-case font-normal text-slate-400">{Math.min(25, mh.runs.length)} of {mh.runsSummary.total}</span>}
+                {mh && <span className="data-mono ml-1 !text-[0.62rem] !tracking-normal !normal-case font-normal text-slate-500">{Math.min(25, mh.runs.length)} of {mh.runsSummary.total}</span>}
               </span>
             }
             icon={<History />}
@@ -536,13 +536,13 @@ export function HealthView() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-ink-850/60 hover:bg-ink-850/60">
-                      <TableHead className="micro-label !text-[0.55rem] h-8">Model</TableHead>
-                      <TableHead className="micro-label !text-[0.55rem] h-8">Provider</TableHead>
-                      <TableHead className="micro-label !text-[0.55rem] h-8">Status</TableHead>
-                      <TableHead className="micro-label !text-[0.55rem] h-8 text-right">In/Out</TableHead>
-                      <TableHead className="micro-label !text-[0.55rem] h-8 text-right">Latency</TableHead>
-                      <TableHead className="micro-label !text-[0.55rem] h-8">Started</TableHead>
-                      <TableHead className="micro-label !text-[0.55rem] h-8 hidden lg:table-cell">Notes / Error</TableHead>
+                      <TableHead className="micro-label !text-[0.6rem] h-8">Model</TableHead>
+                      <TableHead className="micro-label !text-[0.6rem] h-8">Provider</TableHead>
+                      <TableHead className="micro-label !text-[0.6rem] h-8">Status</TableHead>
+                      <TableHead className="micro-label !text-[0.6rem] h-8 text-right">In/Out</TableHead>
+                      <TableHead className="micro-label !text-[0.6rem] h-8 text-right">Latency</TableHead>
+                      <TableHead className="micro-label !text-[0.6rem] h-8">Started</TableHead>
+                      <TableHead className="micro-label !text-[0.6rem] h-8 hidden lg:table-cell">Notes / Error</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -550,12 +550,12 @@ export function HealthView() {
                       <TableRow key={r.id} className="hover:bg-ink-850/50">
                         <TableCell className="py-2">
                           <span className="data-mono text-[0.68rem] text-slate-700">{r.modelId}</span>
-                          <span className="block data-mono text-[0.55rem] text-slate-400">{r.version}</span>
+                          <span className="block data-mono text-[0.6rem] text-slate-500">{r.version}</span>
                         </TableCell>
                         <TableCell className="py-2 data-mono text-[0.65rem] text-slate-500">{r.provider}</TableCell>
                         <TableCell className="py-2"><RunStatusBadge status={r.status} /></TableCell>
                         <TableCell className="py-2 text-right data-mono text-[0.65rem] text-slate-500">
-                          {r.inputCount}<span className="text-slate-400">→</span>{r.outputCount}
+                          {r.inputCount}<span className="text-slate-500">→</span>{r.outputCount}
                         </TableCell>
                         <TableCell className="py-2 text-right data-mono text-[0.65rem] text-slate-500">
                           {r.latencyMs != null ? `${r.latencyMs} ms` : "-"}
@@ -618,10 +618,10 @@ export function HealthView() {
                   </ResponsiveContainer>
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
-                  <span className="flex items-center gap-1.5 micro-label !text-[0.52rem] text-slate-500">
+                  <span className="flex items-center gap-1.5 micro-label !text-[0.6rem] text-slate-600">
                     <span className="size-2.5 rounded-[2px]" style={{ background: BLUE }} aria-hidden /> At/Above Review Threshold
                   </span>
-                  <span className="flex items-center gap-1.5 micro-label !text-[0.52rem] text-slate-500">
+                  <span className="flex items-center gap-1.5 micro-label !text-[0.6rem] text-slate-600">
                     <span className="size-2.5 rounded-[2px]" style={{ background: AMBER }} aria-hidden /> Below Threshold · Flagged for Review
                   </span>
                   <span className="data-mono text-[0.65rem] text-slate-500 ml-auto">
@@ -630,13 +630,13 @@ export function HealthView() {
                     <span className="text-slate-800">{mh.confidenceDistribution.max.toFixed(2)}</span>
                   </span>
                 </div>
-                <p className="micro-label !text-[0.55rem] text-slate-400 !tracking-[0.08em] normal-case leading-relaxed">
+                <p className="micro-label !text-[0.6rem] text-slate-600 !tracking-[0.08em] normal-case leading-relaxed">
                   When the classifier is less than {mh.confidenceDistribution.lowConfidenceFlag} sure about a report, it is flagged for a
                   human to double-check (see the confidence chips in the event list). The 0.4-0.6 bucket sits across the
                   threshold, so its colour is only a guide.
                 </p>
                 <div className="hairline-t pt-2.5 flex flex-wrap items-center gap-2">
-                  <span className="micro-label !text-[0.55rem] text-slate-500">Classified Reports by Provider</span>
+                  <span className="micro-label !text-[0.6rem] text-slate-600">Classified Reports by Provider</span>
                   {Object.entries(mh.classificationProviders).map(([k, count]) => (
                     <span key={k} className="inline-flex items-center gap-1.5">
                       <ProviderChip provider={k} />
@@ -655,7 +655,7 @@ export function HealthView() {
             title={
               <span className="flex items-center gap-2">
                 API Endpoint Checks
-                <span className="micro-label !text-[0.5rem] text-slate-400">In-Browser · Static API</span>
+                <span className="micro-label !text-[0.6rem] text-slate-600">In-Browser · Static API</span>
               </span>
             }
             icon={<Server />}
@@ -670,7 +670,7 @@ export function HealthView() {
                 <button
                   onClick={() => runPings()}
                   disabled={pinging}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 micro-label !text-[0.58rem] text-water hover:bg-blue-100 hover:border-blue-300 transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 micro-label !text-[0.6rem] text-water hover:bg-blue-100 hover:border-blue-300 transition-colors disabled:opacity-50"
                 >
                   <RefreshCw className={cn("size-3", pinging && "animate-spin")} aria-hidden />
                   refresh checks
@@ -702,7 +702,7 @@ export function HealthView() {
                     </span>
                     <span
                       className={cn(
-                        "micro-label !text-[0.55rem] w-14 text-right shrink-0",
+                        "micro-label !text-[0.6rem] w-14 text-right shrink-0",
                         p.status === "ok" ? "text-verified" : p.status === "err" ? "text-sev-critical" : "text-slate-500"
                       )}
                     >
@@ -713,7 +713,7 @@ export function HealthView() {
                 </Stagger>
               </div>
             )}
-            <p className="micro-label !text-[0.55rem] text-slate-400 !tracking-[0.08em] normal-case leading-relaxed px-4 py-2.5 hairline-t">
+            <p className="micro-label !text-[0.6rem] text-slate-600 !tracking-[0.08em] normal-case leading-relaxed px-4 py-2.5 hairline-t">
               Response times are measured from this browser. The /api/health check also contacts the classifier provider, so it can
               take a few seconds.
             </p>
@@ -731,7 +731,7 @@ export function HealthView() {
                 <div key={g.term} className="rounded-xl border border-border bg-ink-900 px-3.5 py-2.5 shadow-xs">
                   <p className="text-xs leading-relaxed">
                     <span className="font-bold text-slate-800">{g.term}: </span>
-                    <span className="text-[0.68rem] text-slate-500">{g.definition}</span>
+                    <span className="text-[0.68rem] text-slate-600">{g.definition}</span>
                   </p>
                 </div>
               ))}
@@ -764,10 +764,10 @@ function StatCard({ tone = "plain", value, label, sub }: {
               tone === "ok" ? "bg-verified" : tone === "warn" ? "bg-sev-moderate" : "bg-water-dim"
             )}
           />
-          <span className="micro-label !text-[0.55rem]">{label}</span>
+          <span className="micro-label !text-[0.6rem]">{label}</span>
         </span>
         <p className="mt-3 font-display text-2xl font-bold tabular-nums text-slate-900 leading-none">{value}</p>
-        {sub && <p className="mt-2 data-mono text-[0.6rem] text-slate-400 leading-relaxed">{sub}</p>}
+        {sub && <p className="mt-2 data-mono text-[0.6rem] text-slate-600 leading-relaxed">{sub}</p>}
       </div>
     </HoverLift>
   );
@@ -776,7 +776,7 @@ function StatCard({ tone = "plain", value, label, sub }: {
 function Segment({ label, value, tone = "plain", border = true }: { label: string; value: ReactNode; tone?: "plain" | "teal" | "amber" | "red"; border?: boolean }) {
   return (
     <div className={cn("px-3.5 py-2 min-w-fit flex-1", border && "border-l border-border first:border-l-0")}>
-      <p className="micro-label !text-[0.5rem] text-slate-500 !tracking-[0.08em]">{label}</p>
+      <p className="micro-label !text-[0.6rem] text-slate-600 !tracking-[0.08em]">{label}</p>
       <p
         className={cn(
           "data-mono text-[0.72rem] mt-0.5",

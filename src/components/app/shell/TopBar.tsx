@@ -86,21 +86,21 @@ export function TopBar() {
           >
             <Bell className="size-[18px]" />
             {data && data.alerts.length > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 grid min-w-4 h-4 place-items-center rounded-full bg-sev-critical text-white data-mono text-[0.55rem] px-1 leading-none font-bold">
+              <span className="absolute -top-0.5 -right-0.5 grid min-w-4 h-4 place-items-center rounded-full bg-sev-critical text-ink-950 data-mono text-[0.6rem] px-1 leading-none font-bold">
                 {data.alerts.length > 9 ? "9+" : data.alerts.length}
               </span>
             )}
           </button>
 
           <span
-            className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 micro-label !text-[0.58rem] text-amber-700 whitespace-nowrap"
+            className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 micro-label !text-[0.6rem] text-amber-700 whitespace-nowrap"
             title="All pilot data in this prototype is synthetic. Live submissions are labelled separately."
           >
             synthetic demo data
           </span>
           {ai && (
             <span
-              className="hidden xl:inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 micro-label !text-[0.58rem] text-amber-400 whitespace-nowrap"
+              className="hidden xl:inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 micro-label !text-[0.6rem] text-amber-400 whitespace-nowrap"
               title={ai.available ? `Classifier: ${ai.modelId} (${ai.configuredBy})` : "Remote model unavailable, deterministic fallback active"}
             >
               <PulseDot size={6} color={ai.available ? "bg-emerald-500" : "bg-amber-500"} />
@@ -144,7 +144,7 @@ export function TopBar() {
 
       {/* Mobile view label + time */}
       <div className="lg:hidden hairline-t px-3 sm:px-4 py-1.5 flex items-center gap-2 min-w-0">
-        <span className="micro-label !text-[0.55rem] text-muted-foreground truncate">{label}</span>
+        <span className="micro-label !text-[0.6rem] text-muted-foreground truncate">{label}</span>
         <time className="ml-auto data-mono text-[0.65rem] text-muted-foreground whitespace-nowrap shrink-0" suppressHydrationWarning>
           {now.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour12: false, hour: "2-digit", minute: "2-digit" })} IST
         </time>
@@ -183,7 +183,7 @@ export function TopBar() {
                   ] as const
                 ).map((g) => (
                   <div key={g.key} className="mb-4 last:mb-0">
-                    <p className="px-3 py-2 micro-label !text-[0.56rem] !text-slate-400">{g.label}</p>
+                    <p className="px-3 py-2 micro-label !text-[0.6rem] !text-slate-600">{g.label}</p>
                     <ul className="space-y-0.5" role="list">
                       {NAV_ITEMS.filter((n) => n.group === g.key && n.id !== "event").map((item) => {
                         const active = view === item.id;
@@ -200,10 +200,10 @@ export function TopBar() {
                                 "flex w-full items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-left touch-target transition-colors",
                                 active
                                   ? "text-aqua bg-aqua/10 ring-1 ring-aqua/25 shadow-[0_0_24px_-10px_rgba(45,212,191,0.5)]"
-                                  : "text-slate-500 hover:bg-ink-850 hover:text-foreground active:bg-ink-800"
+                                  : "text-slate-600 hover:bg-ink-850 hover:text-foreground active:bg-ink-800"
                               )}
                             >
-                              <item.icon className={cn("size-4 shrink-0", active ? "text-aqua" : "text-slate-500")} aria-hidden />
+                              <item.icon className={cn("size-4 shrink-0", active ? "text-aqua" : "text-slate-600")} aria-hidden />
                               <span className="truncate">{item.label}</span>
                               <ChevronDown className="size-3.5 ml-auto -rotate-90 opacity-30 shrink-0" aria-hidden />
                             </button>
@@ -218,10 +218,10 @@ export function TopBar() {
                   <div className="flex items-center gap-2.5">
                     <span className="grid size-9 place-items-center rounded-full bg-aqua text-ink-950 text-xs font-bold shrink-0">AD</span>
                     <span className="min-w-0">
-                      <span className="block text-sm font-semibold text-slate-100 leading-none">Admin</span>
-                      <span className="block text-xs text-slate-400 leading-none mt-1">Monitoring Overview</span>
+                      <span className="block text-sm font-semibold text-foreground leading-none">Admin</span>
+                      <span className="block text-xs text-slate-600 leading-none mt-1">Monitoring Overview</span>
                     </span>
-                    <span className="ml-auto micro-label !text-[0.52rem] text-slate-500 hidden xs:inline">synthetic demo</span>
+                    <span className="ml-auto micro-label !text-[0.6rem] text-slate-500 hidden xs:inline">synthetic demo</span>
                 </div>
               </div>
             </motion.div>
@@ -329,7 +329,7 @@ function GlobalSearch({ autoFocus, onSelect }: { autoFocus?: boolean; onSelect?:
         placeholder="Search locations, events, reports…"
         className="w-full h-10 rounded-xl bg-white/[0.04] border border-hairline focus:border-aqua/50 focus:bg-ink-850 focus:ring-2 focus:ring-aqua/15 focus:shadow-[0_0_28px_-8px_rgba(45,212,191,0.5)] pl-10 pr-12 text-sm text-foreground placeholder:text-slate-500 outline-none transition-all"
       />
-      <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden lg:grid place-items-center data-mono text-[0.6rem] text-slate-400 border border-hairline rounded-md px-1.5 py-0.5 bg-white/[0.04] min-w-5 h-5">/</kbd>
+      <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden lg:grid place-items-center data-mono text-[0.6rem] text-slate-600 border border-hairline rounded-md px-1.5 py-0.5 bg-white/[0.04] min-w-5 h-5">/</kbd>
 
       <AnimatePresence>
         {open && active && (
@@ -343,11 +343,11 @@ function GlobalSearch({ autoFocus, onSelect }: { autoFocus?: boolean; onSelect?:
             aria-label="Search results"
           >
             {total === 0 ? (
-              <p className="px-4 py-4 text-sm text-slate-400 text-center">No events, reports or assets match “{q}”</p>
+              <p className="px-4 py-4 text-sm text-slate-600 text-center">No events, reports or assets match “{q}”</p>
             ) : (
               <ul className="overflow-y-auto flex-1 max-h-80">
                 {groups.events.length > 0 && (
-                  <li aria-hidden className="px-4 pt-2.5 pb-1 micro-label !text-[0.52rem] !text-slate-500">Events</li>
+                  <li aria-hidden className="px-4 pt-2.5 pb-1 micro-label !text-[0.6rem] !text-slate-600">Events</li>
                 )}
                 {groups.events.map((e) => {
                   const thumb = sceneThumb(e.category, e.title, e.code, e.riskScore);
@@ -371,10 +371,10 @@ function GlobalSearch({ autoFocus, onSelect }: { autoFocus?: boolean; onSelect?:
                         <span className="min-w-0 flex-1">
                           <span className="flex items-center gap-1.5 flex-wrap">
                             <span className="data-mono text-[0.7rem] font-semibold text-water">{e.code}</span>
-                            <StatusBadge status={e.status} className="!text-[0.55rem] !px-1.5" />
-                            <RiskBadge band={e.riskBand} score={e.riskScore} className="!text-[0.55rem]" />
+                            <StatusBadge status={e.status} className="!text-[0.6rem] !px-1.5" />
+                            <RiskBadge band={e.riskBand} score={e.riskScore} className="!text-[0.6rem]" />
                           </span>
-                          <span className="mt-0.5 block text-[0.78rem] text-slate-200 truncate">{e.title}</span>
+                          <span className="mt-0.5 block text-[0.78rem] text-foreground truncate">{e.title}</span>
                         </span>
                         <TimeAgo iso={e.lastActivityAt} />
                       </button>
@@ -382,7 +382,7 @@ function GlobalSearch({ autoFocus, onSelect }: { autoFocus?: boolean; onSelect?:
                   );
                 })}
                 {groups.reports.length > 0 && (
-                  <li aria-hidden className="px-4 pt-2.5 pb-1 micro-label !text-[0.52rem] !text-slate-500">Citizen reports</li>
+                  <li aria-hidden className="px-4 pt-2.5 pb-1 micro-label !text-[0.6rem] !text-slate-600">Citizen reports</li>
                 )}
                 {groups.reports.map((r) => {
                   const thumb = sceneThumb(r.category, r.description, r.publicRef, r.severityReported);
@@ -406,14 +406,14 @@ function GlobalSearch({ autoFocus, onSelect }: { autoFocus?: boolean; onSelect?:
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="data-mono text-[0.7rem] font-semibold text-water">{r.publicRef}</span>
-                          <span className="mt-0.5 block text-[0.78rem] text-slate-200 truncate">{r.description}</span>
+                          <span className="mt-0.5 block text-[0.78rem] text-foreground truncate">{r.description}</span>
                         </span>
                       </button>
                     </li>
                   );
                 })}
                 {groups.assets.length > 0 && (
-                  <li aria-hidden className="px-4 pt-2.5 pb-1 micro-label !text-[0.52rem] !text-slate-500">Infrastructure</li>
+                  <li aria-hidden className="px-4 pt-2.5 pb-1 micro-label !text-[0.6rem] !text-slate-600">Infrastructure</li>
                 )}
                 {groups.assets.map((a) => (
                   <li key={a.id}>
@@ -435,15 +435,15 @@ function GlobalSearch({ autoFocus, onSelect }: { autoFocus?: boolean; onSelect?:
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="data-mono text-[0.7rem] font-semibold text-water">{a.code}</span>
-                        <span className="mt-0.5 block text-[0.78rem] text-slate-200 truncate">{a.name} · {a.kind.toLowerCase()}</span>
+                        <span className="mt-0.5 block text-[0.78rem] text-foreground truncate">{a.name} · {a.kind.toLowerCase()}</span>
                       </span>
-                      <span className="micro-label !text-[0.52rem] !text-slate-500 shrink-0">{a.agencyCode}</span>
+                      <span className="micro-label !text-[0.6rem] !text-slate-500 shrink-0">{a.agencyCode}</span>
                     </button>
                   </li>
                 ))}
               </ul>
             )}
-            <p className="hairline-t px-4 py-2 micro-label !text-[0.55rem] text-muted-foreground/70 flex items-center gap-1.5 shrink-0">
+            <p className="hairline-t px-4 py-2 micro-label !text-[0.6rem] text-muted-foreground flex items-center gap-1.5 shrink-0">
               <MapIcon className="size-3 shrink-0" aria-hidden /> events · reports · assets · esc to close
             </p>
           </motion.div>
@@ -485,7 +485,7 @@ function TimeFilter() {
         aria-expanded={open}
         aria-haspopup="listbox"
         aria-label={`Time window: ${current.label}`}
-        className="flex items-center gap-2 h-9 rounded-xl border border-hairline bg-white/[0.04] px-3 text-[0.8rem] font-medium text-slate-300 hover:bg-white/[0.08] hover:border-aqua/40 active:bg-white/[0.1] transition-colors touch-target"
+        className="flex items-center gap-2 h-9 rounded-xl border border-hairline bg-white/[0.04] px-3 text-[0.8rem] font-medium text-foreground hover:bg-white/[0.08] hover:border-aqua/40 active:bg-white/[0.1] transition-colors touch-target"
       >
         <span className="data-mono text-[0.72rem] hidden lg:inline">{current.label}</span>
         <span className="data-mono text-xs lg:hidden">{current.shortLabel}</span>
@@ -512,14 +512,14 @@ function TimeFilter() {
                   }}
                   className={cn(
                     "w-full text-left px-3 py-2.5 rounded-lg text-[0.8rem] transition-colors touch-target",
-                    o.value === hours ? "bg-aqua/10 text-aqua font-medium" : "text-slate-300 hover:bg-white/[0.06] active:bg-white/[0.1]"
+                    o.value === hours ? "bg-aqua/10 text-aqua font-medium" : "text-slate-600 hover:bg-white/[0.06] active:bg-white/[0.1]"
                   )}
                 >
                   {o.label}
                 </button>
               </li>
             ))}
-            <li className="px-3 py-1.5 micro-label !text-[0.52rem] text-muted-foreground/70">filters map + field board</li>
+            <li className="px-3 py-1.5 micro-label !text-[0.6rem] text-muted-foreground">filters map + field board</li>
           </motion.ul>
         )}
       </AnimatePresence>
@@ -534,8 +534,8 @@ function LocationChip() {
     <span className="hidden xl:inline-flex items-center gap-2 rounded-xl border border-hairline bg-white/[0.04] pl-2.5 pr-3 h-9 whitespace-nowrap">
       <MapPin className="size-4 text-aqua shrink-0" aria-hidden />
       <span className="leading-tight text-left">
-        <span className="block text-[0.78rem] font-semibold text-slate-100 leading-none">Delhi</span>
-        <span className="block text-[0.56rem] text-slate-500 leading-none mt-0.5">3 jurisdictions</span>
+        <span className="block text-[0.78rem] font-semibold text-foreground leading-none">Delhi</span>
+        <span className="block text-[0.6rem] text-slate-500 leading-none mt-0.5">3 jurisdictions</span>
       </span>
     </span>
   );
@@ -545,8 +545,8 @@ function UserChip() {
   return (
     <span className="hidden sm:flex items-center gap-2.5 shrink-0">
       <span className="hidden lg:flex flex-col items-end leading-tight text-right">
-        <span className="text-[0.78rem] font-semibold text-slate-100 leading-none">Admin</span>
-        <span className="text-[0.56rem] text-slate-500 leading-none mt-1">Monitoring Overview</span>
+        <span className="text-[0.78rem] font-semibold text-foreground leading-none">Admin</span>
+        <span className="text-[0.6rem] text-slate-600 leading-none mt-1">Monitoring Overview</span>
       </span>
       <span
         className="grid size-9 place-items-center rounded-full bg-aqua text-ink-950 text-[0.72rem] font-bold shrink-0"

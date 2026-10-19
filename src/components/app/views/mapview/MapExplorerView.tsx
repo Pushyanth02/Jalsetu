@@ -90,10 +90,10 @@ export function MapExplorerView() {
           <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 pl-2.5 pr-3 py-1">
             <PulseDot color="bg-emerald-500" size={7} />
             <span className="text-[0.65rem] font-semibold text-emerald-700">Live Data</span>
-            <span className="data-mono text-[0.6rem] text-emerald-600/70">demo mode</span>
+            <span className="data-mono text-[0.6rem] text-emerald-600">demo mode</span>
           </span>
           {jurisdictionsQ.data && (
-            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 micro-label !text-[0.58rem] text-water">
+            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 micro-label !text-[0.6rem] text-water">
               <MapPin className="size-3" aria-hidden /> {jurisdictionsQ.data.length} jurisdictions
             </span>
           )}
@@ -105,7 +105,7 @@ export function MapExplorerView() {
         <button
           type="button"
           onClick={() => setSheetOpen(true)}
-          className="min-h-11 flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-ink-900 px-3 text-xs font-semibold text-slate-200 hover:bg-ink-800 transition-colors"
+          className="min-h-11 flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-ink-900 px-3 text-xs font-semibold text-foreground hover:bg-ink-800 transition-colors"
           aria-label="Open filters and layers"
           aria-expanded={sheetOpen}
         >
@@ -177,10 +177,6 @@ export function MapExplorerView() {
                 assets={assetsQ.data}
               />
             )}
-            {/* HUD frame — brackets must paint above the canvas, so the
-                hud-corners utility rides on an overlay sibling (the canvas
-                would otherwise cover a parent's ::before). Decorative only. */}
-            <div aria-hidden className="hud-corners pointer-events-none" style={{ position: "absolute", inset: 0 }} />
           </Reveal>
 
           <div className="h-64 lg:h-56 shrink-0 hairline-t bg-ink-900 overflow-y-auto cv-auto">
@@ -197,7 +193,7 @@ export function MapExplorerView() {
                   <div className="p-3">
                     <button
                       onClick={() => setPage({ key: filterKey, count: visibleCount + LIST_PAGE })}
-                      className="w-full rounded-lg border border-border px-3 py-2 micro-label !text-[0.58rem] text-slate-600 transition-colors hover:bg-ink-850 hover:text-slate-900"
+                      className="w-full rounded-lg border border-border px-3 py-2 micro-label !text-[0.6rem] text-slate-600 transition-colors hover:bg-ink-850 hover:text-slate-900"
                     >
                       show more · {remaining} remaining
                     </button>
@@ -222,7 +218,7 @@ export function MapExplorerView() {
               <CountUp value={eventsQ.data?.length ?? 0} className="text-slate-700" /> events shown
               {eventsQ.dataUpdatedAt ? <span> · updated <TimeAgo iso={new Date(eventsQ.dataUpdatedAt).toISOString()} title={false} /></span> : null}
             </span>
-            <button onClick={() => navigate("report")} className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 min-h-8 micro-label !text-[0.58rem] text-slate-600 hover:bg-ink-850 hover:text-slate-900 transition-colors">
+            <button onClick={() => navigate("report")} className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 min-h-8 micro-label !text-[0.6rem] text-slate-600 hover:bg-ink-850 hover:text-slate-900 transition-colors">
               report waterlogging →
             </button>
           </div>
@@ -267,17 +263,16 @@ function FilterRailContent({
               onClick={() => setFilters({ riskBand: b })}
               aria-pressed={filters.riskBand === b}
               className={cn(
-                "rounded-lg border micro-label !text-[0.55rem] py-2 lg:py-1.5 transition-colors",
+                "rounded-lg border micro-label !text-[0.6rem] py-2 lg:py-1.5 transition-colors",
                 filters.riskBand === b
                   ? cn(
                       b === "CRITICAL"
                         ? "border-red-200 bg-red-50 text-sev-critical"
                         : b === "HIGH"
                           ? "border-orange-200 bg-orange-50 text-sev-high"
-                          : "border-blue-200 bg-blue-50 text-water",
-                      "ring-glow"
+                          : "border-blue-200 bg-blue-50 text-water"
                     )
-                  : "border-border text-slate-500 hover:bg-ink-850 hover:text-slate-700"
+                  : "border-border text-slate-600 hover:bg-ink-850 hover:text-slate-700"
               )}
             >
               {b === "ALL" ? "all" : b.slice(0, 4).toLowerCase()}
@@ -294,10 +289,10 @@ function FilterRailContent({
               onClick={() => setFilters({ status: s })}
               aria-pressed={filters.status === s}
               className={cn(
-                "rounded-lg border micro-label !text-[0.55rem] px-2 py-1.5 lg:px-1.5 lg:py-1 transition-colors",
+                "rounded-lg border micro-label !text-[0.6rem] px-2 py-1.5 lg:px-1.5 lg:py-1 transition-colors",
                 filters.status === s
                   ? "border-blue-200 bg-blue-50 text-water"
-                  : "border-border text-slate-500 hover:bg-ink-850 hover:text-slate-700"
+                  : "border-border text-slate-600 hover:bg-ink-850 hover:text-slate-700"
               )}
             >
               {s === "IN_PROGRESS" ? "field" : s.toLowerCase()}
@@ -317,7 +312,7 @@ function FilterRailContent({
                 "rounded-lg border px-2.5 py-1.5 lg:py-1 text-[0.65rem] font-medium transition-colors",
                 filters.category === c
                   ? "border-blue-200 bg-blue-50 text-water"
-                  : "border-border text-slate-500 hover:bg-ink-850 hover:text-slate-700"
+                  : "border-border text-slate-600 hover:bg-ink-850 hover:text-slate-700"
               )}
             >
               {CATEGORY_LABELS[c]}
@@ -331,7 +326,7 @@ function FilterRailContent({
           <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-2">
             <MapPin className="size-3 text-water shrink-0" aria-hidden />
             <span className="text-xs text-water flex-1 leading-tight font-medium">{selectedJurisdiction.name}</span>
-            <button onClick={() => setFilters({ jurisdictionId: "ALL" })} aria-label="Clear jurisdiction filter" className="rounded-lg p-1 text-slate-400 hover:text-aqua hover:bg-white/[0.06] transition-colors">
+            <button onClick={() => setFilters({ jurisdictionId: "ALL" })} aria-label="Clear jurisdiction filter" className="rounded-lg p-1 text-slate-500 hover:text-aqua hover:bg-white/[0.06] transition-colors">
               <X className="size-3.5" />
             </button>
           </div>
@@ -396,8 +391,8 @@ function LayerToggle({ k, label, icon: Icon }: { k: keyof ReturnType<typeof useU
   return (
     <label className="flex min-h-9 items-center gap-2.5 py-1 px-1.5 -mx-1.5 rounded-lg cursor-pointer select-none hover:bg-ink-850/60 transition-colors">
       <Switch checked={layers[k]} onCheckedChange={() => toggleLayer(k)} aria-label={label} className="scale-90 data-[state=checked]:bg-water" />
-      <Icon className={cn("size-3.5", layers[k] ? "text-water" : "text-slate-400")} aria-hidden />
-      <span className={cn("text-xs", layers[k] ? "text-slate-700" : "text-slate-500")}>{label}</span>
+      <Icon className={cn("size-3.5", layers[k] ? "text-water" : "text-slate-500")} aria-hidden />
+      <span className={cn("text-xs", layers[k] ? "text-slate-700" : "text-slate-600")}>{label}</span>
     </label>
   );
 }

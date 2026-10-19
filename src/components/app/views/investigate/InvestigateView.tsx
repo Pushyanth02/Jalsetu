@@ -12,7 +12,6 @@ import {
 import {
   CountUp, Reveal, Stagger, StaggerItem, AnimatedProgress, HoverLift, PulseDot,
 } from "@/components/motion/kit";
-import { SpotlightCard } from "@/components/fx";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -186,6 +185,9 @@ export function InvestigateView() {
 
   return (
     <div className="flex flex-1 min-h-0 flex-col">
+      {/* One primary heading per view (screen readers + crawlers); this
+          workbench view has no visible title strip, so the h1 is sr-only. */}
+      <h1 className="sr-only">Investigation Tools</h1>
       {/* provider health summary strip */}
       <div className="hairline-b bg-ink-900 px-4 sm:px-5 py-2.5">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -196,11 +198,11 @@ export function InvestigateView() {
           {health ? (
             <>
               <ProviderChip provider={health.provider} model={health.modelId} />
-              <span className={cn("micro-label !text-[0.52rem] flex items-center gap-1.5", health.available ? "text-verified" : "text-sev-high")}>
+              <span className={cn("micro-label !text-[0.6rem] flex items-center gap-1.5", health.available ? "text-verified" : "text-sev-high")}>
                 {health.available ? <PulseDot color="bg-verified" size={6} /> : <span aria-hidden className="size-1.5 rounded-full bg-sev-high" />}
                 {health.available ? "available" : "unavailable"}
               </span>
-              <span className="micro-label !text-[0.52rem] text-muted-foreground/70 flex items-center gap-1.5">
+              <span className="micro-label !text-[0.6rem] text-muted-foreground flex items-center gap-1.5">
                 configured by {health.configuredBy.toLowerCase()}
                 {health.lastCheckedAt && <>· probed <TimeAgo iso={health.lastCheckedAt} /></>}
               </span>
@@ -211,11 +213,11 @@ export function InvestigateView() {
               )}
             </>
           ) : healthQ.isLoading ? (
-            <span className="micro-label !text-[0.52rem] text-muted-foreground/60">probing provider…</span>
+            <span className="micro-label !text-[0.6rem] text-muted-foreground">probing provider…</span>
           ) : (
-            <span className="micro-label !text-[0.52rem] text-sev-critical">Provider Health Unavailable</span>
+            <span className="micro-label !text-[0.6rem] text-sev-critical">Provider Health Unavailable</span>
           )}
-          <span className="micro-label ml-auto !text-[0.5rem] text-muted-foreground/60 hidden sm:inline">
+          <span className="micro-label ml-auto !text-[0.6rem] text-muted-foreground hidden sm:inline">
             structured output only · no chain-of-thought exposed
           </span>
         </div>
@@ -230,41 +232,39 @@ export function InvestigateView() {
               const active = tool === t.id;
               return (
                 <HoverLift key={t.id}>
-                  <SpotlightCard className="rounded-lg">
-                    <button
-                      onClick={() => setTool(t.id)}
-                      aria-pressed={active}
-                      className={cn(
-                        "relative w-full text-left rounded-lg border overflow-hidden p-2.5 lg:p-3 transition-colors hover-glow",
-                        active ? "border-water" : "border-border bg-ink-900 hover:bg-ink-850"
-                      )}
-                    >
-                      {active && (
-                        <motion.span
-                          layoutId="investigate-tool-highlight"
-                          className="absolute inset-0 rounded-[inherit] bg-blue-50"
-                          transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                          aria-hidden
-                        />
-                      )}
-                      <span className="relative flex items-center gap-2.5 lg:gap-3">
-                        <span
-                          className={cn(
-                            "grid size-9 lg:size-10 place-items-center rounded-lg shrink-0",
-                            active ? "bg-aqua/10 text-aqua shadow-sm" : "bg-ink-850 text-slate-400"
-                          )}
-                        >
-                          <t.icon className="size-4 lg:size-5" aria-hidden />
-                        </span>
-                        <span className="min-w-0">
-                          <span className={cn("block text-[0.7rem] lg:text-[0.78rem] font-semibold leading-tight", active ? "text-slate-900" : "text-slate-800")}>
-                            {t.label}
-                          </span>
-                          <span className="hidden lg:block mt-0.5 text-[0.62rem] text-slate-500 leading-snug">{t.hint}</span>
-                        </span>
+                  <button
+                    onClick={() => setTool(t.id)}
+                    aria-pressed={active}
+                    className={cn(
+                      "relative w-full text-left rounded-lg border overflow-hidden p-2.5 lg:p-3 transition-colors card-hover",
+                      active ? "border-water" : "border-border bg-ink-900 hover:bg-ink-850"
+                    )}
+                  >
+                    {active && (
+                      <motion.span
+                        layoutId="investigate-tool-highlight"
+                        className="absolute inset-0 rounded-[inherit] bg-blue-50"
+                        transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                        aria-hidden
+                      />
+                    )}
+                    <span className="relative flex items-center gap-2.5 lg:gap-3">
+                      <span
+                        className={cn(
+                          "grid size-9 lg:size-10 place-items-center rounded-lg shrink-0",
+                          active ? "bg-aqua/10 text-aqua shadow-sm" : "bg-ink-850 text-slate-500"
+                        )}
+                      >
+                        <t.icon className="size-4 lg:size-5" aria-hidden />
                       </span>
-                    </button>
-                  </SpotlightCard>
+                      <span className="min-w-0">
+                        <span className={cn("block text-[0.7rem] lg:text-[0.78rem] font-semibold leading-tight", active ? "text-slate-900" : "text-slate-800")}>
+                          {t.label}
+                        </span>
+                        <span className="hidden lg:block mt-0.5 text-[0.62rem] text-slate-600 leading-snug">{t.hint}</span>
+                      </span>
+                    </span>
+                  </button>
                 </HoverLift>
               );
             })}
@@ -315,8 +315,8 @@ function ClassifyInput({ classify }: { classify: ClassifyMutation }) {
             aria-selected={mode === m}
             onClick={() => setMode(m)}
             className={cn(
-              "flex-1 rounded-md micro-label !text-[0.55rem] py-1.5 transition-colors",
-              mode === m ? "bg-ink-900 text-water shadow-sm" : "text-slate-500 hover:text-slate-700"
+              "flex-1 rounded-md micro-label !text-[0.6rem] py-1.5 transition-colors",
+              mode === m ? "bg-ink-900 text-water shadow-sm" : "text-slate-600 hover:text-slate-700"
             )}
           >
             {m === "queue" ? "Report Queue" : "Ad-Hoc Text"}
@@ -339,7 +339,7 @@ function ClassifyInput({ classify }: { classify: ClassifyMutation }) {
               className="bg-ink-900 border-border text-xs leading-relaxed"
               maxLength={600}
             />
-            <p className="text-[0.6rem] text-muted-foreground/70">At least 12 characters · please do not include personal details</p>
+            <p className="text-[0.6rem] text-muted-foreground">At least 12 characters · please do not include personal details</p>
           </div>
           <div className="grid grid-cols-3 gap-2">
             <div className="space-y-1">
@@ -376,14 +376,14 @@ function ClassifyInput({ classify }: { classify: ClassifyMutation }) {
             <Tags className={cn("size-3.5", pending && "animate-pulse")} aria-hidden />
             {pending ? "Classifying…" : "Classify text"}
           </Button>
-          <p className="text-[0.6rem] text-muted-foreground/70 leading-relaxed">
+          <p className="text-[0.6rem] text-muted-foreground leading-relaxed">
             Only Delhi locations are accepted: latitude 28.3 to 28.9, longitude 76.8 to 77.6. Anything outside Delhi is rejected.
           </p>
         </div>
       )}
 
       {classify.isError && (
-        <p className="micro-label !text-[0.52rem] text-sev-critical" role="alert">
+        <p className="micro-label !text-[0.6rem] text-sev-critical" role="alert">
           last run failed: {classify.error.message}
         </p>
       )}
@@ -408,7 +408,7 @@ function ReportQueue({ pending, onClassify }: { pending: boolean; onClassify: (r
 
   return (
     <div>
-      <p className="micro-label !text-[0.52rem] text-muted-foreground/70 mb-2">
+      <p className="micro-label !text-[0.6rem] text-muted-foreground mb-2">
         Recent Reports · Newest First · {reports.length}
       </p>
       <Stagger>
@@ -416,9 +416,9 @@ function ReportQueue({ pending, onClassify }: { pending: boolean; onClassify: (r
           <StaggerItem key={r.id} className="hairline-b last:border-0 py-2.5 first:pt-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="data-mono text-[0.65rem] font-semibold text-water">{r.publicRef}</span>
-              <span className="micro-label !text-[0.5rem]">{r.channel.toLowerCase()}</span>
-              <span className={cn("micro-label !text-[0.5rem]", sevTone(r.severityReported))}>{r.severityReported.toLowerCase()}</span>
-              {r.isDuplicate && <span className="micro-label !text-[0.5rem] text-sev-moderate">merged</span>}
+              <span className="micro-label !text-[0.6rem]">{r.channel.toLowerCase()}</span>
+              <span className={cn("micro-label !text-[0.6rem]", sevTone(r.severityReported))}>{r.severityReported.toLowerCase()}</span>
+              {r.isDuplicate && <span className="micro-label !text-[0.6rem] text-sev-moderate">merged</span>}
               <TimeAgo iso={r.submittedAt} />
             </div>
             <p className="mt-0.5 text-[0.72rem] text-slate-600 leading-snug line-clamp-2">{r.description}</p>
@@ -448,7 +448,7 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
     return (
       <Panel title="Classification · Result" icon={<Tags />} className="panel-raised">
         <LoadingRows rows={5} />
-        <p className="micro-label !text-[0.52rem] text-muted-foreground/60 mt-2">
+        <p className="micro-label !text-[0.6rem] text-muted-foreground mt-2">
           running provider call for {m.variables?.reportRef ?? "ad-hoc text"}…
         </p>
       </Panel>
@@ -492,7 +492,7 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
         >
           {/* verdict headline */}
           <div className="rounded-lg border border-blue-100 bg-blue-50/70 px-3.5 py-2.5 mb-3">
-            <p className="micro-label !text-[0.5rem] text-water">Analysis Result</p>
+            <p className="micro-label !text-[0.6rem] text-water">Analysis Result</p>
             <p className="mt-0.5 text-[0.95rem] font-semibold text-slate-900 leading-snug">
               {cl.category.toLowerCase().replace(/_/g, " ")}
             </p>
@@ -527,10 +527,10 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
                 {cl.duplicateReason ? `: ${cl.duplicateReason}` : ""}
               </span>
             ) : (
-              <span className="micro-label !text-[0.52rem] text-muted-foreground">No duplicate suspected by model</span>
+              <span className="micro-label !text-[0.6rem] text-muted-foreground">No duplicate suspected by model</span>
             )}
           </div>
-          <p className="mt-3 micro-label !text-[0.5rem] text-muted-foreground/60">
+          <p className="mt-3 micro-label !text-[0.6rem] text-muted-foreground">
             Structured output only. No chain-of-thought exposed.
           </p>
         </Panel>
@@ -545,7 +545,7 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
             <FactRow label="Version"><span className="data-mono text-[0.62rem]">{prov.version}</span></FactRow>
             <FactRow label="Latency"><span className="data-mono text-[0.62rem]">{prov.latencyMs} ms</span></FactRow>
             <FactRow label="Fallback">
-              <span className={cn("micro-label !text-[0.55rem]", prov.fallbackUsed ? "text-sev-moderate" : "text-verified")}>
+              <span className={cn("micro-label !text-[0.6rem]", prov.fallbackUsed ? "text-sev-moderate" : "text-verified")}>
                 {prov.fallbackUsed ? "used" : "not used"}
               </span>
             </FactRow>
@@ -555,9 +555,9 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
               </p>
             )}
             <div className="hairline-t pt-2.5 space-y-2">
-              <p className="micro-label !text-[0.5rem] text-muted-foreground/60">Provider Health at Run Time</p>
+              <p className="micro-label !text-[0.6rem] text-muted-foreground">Provider Health at Run Time</p>
               <FactRow label="Status">
-                <span className={cn("micro-label !text-[0.55rem] flex items-center gap-1.5", prov.providerHealth.available ? "text-verified" : "text-sev-high")}>
+                <span className={cn("micro-label !text-[0.6rem] flex items-center gap-1.5", prov.providerHealth.available ? "text-verified" : "text-sev-high")}>
                   <span aria-hidden className={cn("size-1.5 rounded-full", prov.providerHealth.available ? "bg-verified" : "bg-sev-high")} />
                   {prov.providerHealth.provider} {prov.providerHealth.available ? "available" : "unavailable"}
                 </span>
@@ -593,7 +593,7 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
           </ul>
           {r.context.nearestAssets.length > 0 && (
             <div className="mt-3 hairline-t pt-2.5">
-              <p className="micro-label !text-[0.5rem] text-muted-foreground/60 mb-1.5">Nearest Assets</p>
+              <p className="micro-label !text-[0.6rem] text-muted-foreground mb-1.5">Nearest Assets</p>
               <ul className="space-y-1.5">
                 {r.context.nearestAssets.map((a) => (
                   <li key={a.code} className="flex items-baseline gap-2.5 text-xs">
@@ -621,7 +621,7 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
                     {d.code}
                   </button>
                   <span className="data-mono text-[0.62rem] text-slate-500">{Math.round(d.distanceM)}m · {d.hoursApart.toFixed(1)}h apart</span>
-                  {d.recurrence && <span className="rounded-full bg-red-50 border border-red-200 px-2 py-0.5 micro-label !text-[0.5rem] text-sev-high" title="The same spot has flooded again">Recurrence</span>}
+                  {d.recurrence && <span className="rounded-full bg-red-50 border border-red-200 px-2 py-0.5 micro-label !text-[0.6rem] text-sev-high" title="The same spot has flooded again">Recurrence</span>}
                   <span className="flex-1 min-w-40 text-slate-600">{d.reason}</span>
                 </li>
               ))}
@@ -647,10 +647,10 @@ function ClusterInput({ cluster, radius, setRadius }: { cluster: ClusterMutation
               onClick={() => setRadius(rm)}
               aria-pressed={radius === rm}
               className={cn(
-                "rounded-lg border micro-label !text-[0.58rem] py-1.5 transition-colors data-mono !tracking-normal !normal-case font-medium",
+                "rounded-lg border micro-label !text-[0.6rem] py-1.5 transition-colors data-mono !tracking-normal !normal-case font-medium",
                 radius === rm
                   ? "border-blue-200 bg-blue-50 text-water"
-                  : "border-border bg-ink-900 text-slate-500 hover:bg-ink-850 hover:text-slate-700"
+                  : "border-border bg-ink-900 text-slate-600 hover:bg-ink-850 hover:text-slate-700"
               )}
             >
               {rm}
@@ -667,11 +667,11 @@ function ClusterInput({ cluster, radius, setRadius }: { cluster: ClusterMutation
         <GitMerge className={cn("size-3.5", cluster.isPending && "animate-pulse")} aria-hidden />
         {cluster.isPending ? "Clustering…" : "Run clustering"}
       </Button>
-      <p className="text-[0.6rem] text-muted-foreground/70 leading-relaxed">
+      <p className="text-[0.6rem] text-muted-foreground leading-relaxed">
         Looks at all reports from the last 72 hours. It uses a fixed, deterministic method with no network call, so the same inputs always produce the same groups.
       </p>
       {cluster.isError && (
-        <p className="micro-label !text-[0.52rem] text-sev-critical" role="alert">
+        <p className="micro-label !text-[0.6rem] text-sev-critical" role="alert">
           last run failed: {cluster.error.message}
         </p>
       )}
@@ -684,7 +684,7 @@ function ClusterResults({ m }: { m: ClusterMutation }) {
     return (
       <Panel title="Duplicate Clustering · Result" icon={<GitMerge />} className="panel-raised">
         <LoadingRows rows={5} />
-        <p className="micro-label !text-[0.52rem] text-muted-foreground/60 mt-2">union-find over last-72h reports…</p>
+        <p className="micro-label !text-[0.6rem] text-muted-foreground mt-2">union-find over last-72h reports…</p>
       </Panel>
     );
   }
@@ -722,7 +722,7 @@ function ClusterResults({ m }: { m: ClusterMutation }) {
           </span>
         }
       >
-        <p className="micro-label !text-[0.5rem] text-muted-foreground/70 mb-3">
+        <p className="micro-label !text-[0.6rem] text-muted-foreground mb-3">
           {String(meta.method ?? `union-find proximity clustering, radius ${radius}m`)} · {String(meta.version ?? "cluster-1.1-demo")}
         </p>
         {data.clusters.length === 0 ? (
@@ -737,7 +737,7 @@ function ClusterResults({ m }: { m: ClusterMutation }) {
                     <span className="data-mono text-[0.62rem] text-slate-500">
                       {c.size} reports · spread {c.spatialDiameterM}m
                     </span>
-                    <span className="ml-auto data-mono text-[0.6rem] text-slate-400 hidden sm:inline" title="Cluster centroid">
+                    <span className="ml-auto data-mono text-[0.6rem] text-slate-500 hidden sm:inline" title="Cluster centroid">
                       {c.centroid.lat.toFixed(4)}, {c.centroid.lng.toFixed(4)}
                     </span>
                   </div>
@@ -746,8 +746,8 @@ function ClusterResults({ m }: { m: ClusterMutation }) {
                       <li key={mem.id} className="px-3 py-2 hairline-b last:border-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="data-mono text-[0.62rem] font-medium text-slate-800">{mem.publicRef}</span>
-                          <span className={cn("micro-label !text-[0.5rem]", sevTone(mem.severityReported))}>{mem.severityReported.toLowerCase()}</span>
-                          <span className="micro-label !text-[0.5rem] text-muted-foreground/70">{mem.category.toLowerCase().replace(/_/g, " ")}</span>
+                          <span className={cn("micro-label !text-[0.6rem]", sevTone(mem.severityReported))}>{mem.severityReported.toLowerCase()}</span>
+                          <span className="micro-label !text-[0.6rem] text-muted-foreground">{mem.category.toLowerCase().replace(/_/g, " ")}</span>
                           <TimeAgo iso={mem.submittedAt} />
                           {mem.urbanEventId && (
                             <Button
@@ -760,7 +760,7 @@ function ClusterResults({ m }: { m: ClusterMutation }) {
                             </Button>
                           )}
                         </div>
-                        <p className="mt-0.5 text-[0.68rem] text-slate-500 leading-snug line-clamp-1" title={mem.description}>{mem.description}</p>
+                        <p className="mt-0.5 text-[0.68rem] text-slate-600 leading-snug line-clamp-1" title={mem.description}>{mem.description}</p>
                       </li>
                     ))}
                   </ul>
@@ -837,9 +837,9 @@ function RiskInput({ risk }: { risk: RiskMutation }) {
                     <span className="flex items-center gap-2 flex-wrap">
                       <span className="data-mono text-[0.62rem] font-semibold text-water">{e.code}</span>
                       <RiskBadge band={e.riskBand} score={e.riskScore} />
-                      <span className="micro-label !text-[0.5rem] text-muted-foreground/70">{e.reportCount} rep</span>
+                      <span className="micro-label !text-[0.6rem] text-muted-foreground">{e.reportCount} rep</span>
                     </span>
-                    <span className="block mt-0.5 text-[0.68rem] text-slate-500 leading-snug line-clamp-1">{e.title}</span>
+                    <span className="block mt-0.5 text-[0.68rem] text-slate-700 leading-snug line-clamp-1">{e.title}</span>
                   </button>
                 </li>
               );
@@ -853,7 +853,7 @@ function RiskInput({ risk }: { risk: RiskMutation }) {
           <div className="flex items-center gap-2 flex-wrap">
             <span className="data-mono text-[0.65rem] font-semibold text-water">{selectedEvent.code}</span>
             <RiskBadge band={selectedEvent.riskBand} score={selectedEvent.riskScore} />
-            <span className="micro-label !text-[0.5rem] text-muted-foreground">{selectedEvent.reportCount} reports</span>
+            <span className="micro-label !text-[0.6rem] text-muted-foreground">{selectedEvent.reportCount} reports</span>
           </div>
           <p className="mt-0.5 text-[0.68rem] text-slate-600 line-clamp-1">{selectedEvent.title}</p>
         </div>
@@ -868,11 +868,11 @@ function RiskInput({ risk }: { risk: RiskMutation }) {
         <Gauge className={cn("size-3.5", risk.isPending && "animate-pulse")} aria-hidden />
         {risk.isPending ? "Assessing…" : "Assess risk"}
       </Button>
-      <p className="text-[0.6rem] text-muted-foreground/70 leading-relaxed">
+      <p className="text-[0.6rem] text-muted-foreground leading-relaxed">
         Re-scores the incident with the transparent 7-factor risk engine and generates a structured advisory (a written second opinion) from the active provider. The result is saved to the event dossier.
       </p>
       {risk.isError && (
-        <p className="micro-label !text-[0.52rem] text-sev-critical" role="alert">
+        <p className="micro-label !text-[0.6rem] text-sev-critical" role="alert">
           last run failed: {risk.error.message}
         </p>
       )}
@@ -885,7 +885,7 @@ function RiskResults({ m }: { m: RiskMutation }) {
     return (
       <Panel title="Risk Assessment · Result" icon={<Gauge />} className="panel-raised">
         <LoadingRows rows={5} />
-        <p className="micro-label !text-[0.52rem] text-muted-foreground/60 mt-2">computing factors + advisory…</p>
+        <p className="micro-label !text-[0.6rem] text-muted-foreground mt-2">computing factors + advisory…</p>
       </Panel>
     );
   }
@@ -921,7 +921,7 @@ function RiskResults({ m }: { m: RiskMutation }) {
         <Panel
           title={`Risk Assessment · ${r.event.code}`}
           icon={<Gauge />}
-          actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/70">{r.risk.modelVersion}</span>}
+          actions={<span className="micro-label !text-[0.6rem] text-muted-foreground">{r.risk.modelVersion}</span>}
           className="panel-raised"
         >
           <div className="flex items-center gap-4 flex-wrap mb-4">
@@ -949,7 +949,7 @@ function RiskResults({ m }: { m: RiskMutation }) {
               </div>
             ))}
           </div>
-          <p className="mt-3 text-[0.68rem] text-slate-500">
+          <p className="mt-3 text-[0.68rem] text-slate-600">
             The score adds up each factor (value × weight) and scales the total to 0–100. Every factor, weight and contribution is returned by the engine: no black boxes.
           </p>
         </Panel>
@@ -988,11 +988,11 @@ function RiskResults({ m }: { m: RiskMutation }) {
           )}
           {r.advisory.output.recommendedInvestigation && (
             <p className="mt-3 text-xs text-water">
-              <span className="micro-label !text-[0.55rem] mr-1.5">Recommended</span>{" "}
+              <span className="micro-label !text-[0.6rem] mr-1.5">Recommended</span>{" "}
               {r.advisory.output.recommendedInvestigation}
             </p>
           )}
-          <p className="mt-3 micro-label !text-[0.5rem] text-muted-foreground/60">
+          <p className="mt-3 micro-label !text-[0.6rem] text-muted-foreground">
             Structured output only. No chain-of-thought exposed.
           </p>
         </Panel>
@@ -1004,7 +1004,7 @@ function RiskResults({ m }: { m: RiskMutation }) {
             <FactRow label="Risk Engine"><span className="data-mono text-[0.62rem]">{r.provenance.riskModelVersion}</span></FactRow>
             <FactRow label="Advisory Provider"><ProviderChip provider={r.advisory.provider} model={r.advisory.modelId} /></FactRow>
             <FactRow label="Fallback">
-              <span className={cn("micro-label !text-[0.55rem]", r.advisory.fallbackUsed ? "text-sev-moderate" : "text-verified")}>
+              <span className={cn("micro-label !text-[0.6rem]", r.advisory.fallbackUsed ? "text-sev-moderate" : "text-verified")}>
                 {r.advisory.fallbackUsed ? "used" : "not used"}
               </span>
             </FactRow>
@@ -1027,7 +1027,7 @@ function EvidenceCheck({ label, children }: { label: string; children: React.Rea
     <li className="flex items-start gap-2.5">
       <CheckCircle2 className="size-4 shrink-0 text-water mt-0.5" aria-hidden />
       <div className="flex-1 min-w-0">
-        <span className="micro-label !text-[0.5rem]">{label}</span>
+        <span className="micro-label !text-[0.6rem]">{label}</span>
         <p className="data-mono text-[0.72rem] text-slate-700 mt-0.5">{children}</p>
       </div>
     </li>
@@ -1037,7 +1037,7 @@ function EvidenceCheck({ label, children }: { label: string; children: React.Rea
 function Readout({ label, value, tone }: { label: string; value: React.ReactNode; tone?: string }) {
   return (
     <div className="rounded-lg border border-border bg-slate-50 px-3 py-2.5">
-      <p className="micro-label !text-[0.5rem]">{label}</p>
+      <p className="micro-label !text-[0.6rem]">{label}</p>
       <div className={cn("data-mono text-sm mt-1", tone ?? "text-slate-900")}>{value}</div>
     </div>
   );
@@ -1046,12 +1046,12 @@ function Readout({ label, value, tone }: { label: string; value: React.ReactNode
 function FactRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <dt className="micro-label !text-[0.55rem]">{label}</dt>
+      <dt className="micro-label !text-[0.6rem]">{label}</dt>
       <dd className="flex items-center text-right">{children}</dd>
     </div>
   );
 }
 
 function sevTone(s: string): string {
-  return s === "CRITICAL" ? "text-sev-critical" : s === "HIGH" ? "text-sev-high" : s === "MEDIUM" || s === "MODERATE" ? "text-sev-moderate" : "text-slate-500";
+  return s === "CRITICAL" ? "text-sev-critical" : s === "HIGH" ? "text-sev-high" : s === "MEDIUM" || s === "MODERATE" ? "text-sev-moderate" : "text-slate-600";
 }

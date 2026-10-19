@@ -178,14 +178,14 @@ export function AnalyticsView() {
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="font-display text-lg font-bold tracking-tight text-slate-900 leading-tight">Baseline vs Proposed</h1>
-              <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 micro-label !text-[0.58rem] text-water">
+              <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 micro-label !text-[0.6rem] text-water">
                 <Scale className="size-3" aria-hidden /> Research Evaluation
               </span>
             </div>
             <p className="text-[0.7rem] text-muted-foreground mt-0.5">
               Does combining many kinds of evidence find flooding hotspots better than counting complaints alone?
               {snapshotAt && (
-                <span className="data-mono ml-1.5 text-slate-400">
+                <span className="data-mono ml-1.5 text-slate-500">
                   snapshot <TimeAgo iso={snapshotAt} />
                 </span>
               )}
@@ -202,7 +202,7 @@ export function AnalyticsView() {
                 baselineQ.refetch();
                 proposedQ.refetch();
               }}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 micro-label !text-[0.58rem] text-water hover:bg-blue-100 hover:border-blue-300 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 micro-label !text-[0.6rem] text-water hover:bg-blue-100 hover:border-blue-300 transition-colors"
             >
               <RefreshCw className={cn("size-3", (baselineQ.isFetching || proposedQ.isFetching) && "animate-spin")} aria-hidden />
               refetch
@@ -267,10 +267,10 @@ export function AnalyticsView() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-ink-850/60 hover:bg-ink-850/60">
-                        <TableHead className="micro-label !text-[0.55rem] h-8">Metric</TableHead>
-                        <TableHead className="micro-label !text-[0.55rem] h-8 text-right">Baseline</TableHead>
-                        <TableHead className="micro-label !text-[0.55rem] h-8 text-right">Proposed</TableHead>
-                        <TableHead className="micro-label !text-[0.55rem] h-8 text-right">Delta</TableHead>
+                        <TableHead className="micro-label !text-[0.6rem] h-8">Metric</TableHead>
+                        <TableHead className="micro-label !text-[0.6rem] h-8 text-right">Baseline</TableHead>
+                        <TableHead className="micro-label !text-[0.6rem] h-8 text-right">Proposed</TableHead>
+                        <TableHead className="micro-label !text-[0.6rem] h-8 text-right">Delta</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -282,7 +282,7 @@ export function AnalyticsView() {
                           <TableRow key={row.key} className="hover:bg-ink-850/50">
                             <TableCell className="py-2.5">
                               <span className="text-xs font-medium text-slate-700" title={row.hint}>{row.label}</span>
-                              <span className="block micro-label !text-[0.5rem] text-slate-400 !tracking-[0.08em] mt-0.5 normal-case">{row.hint}</span>
+                              <span className="block micro-label !text-[0.6rem] text-slate-600 !tracking-[0.08em] mt-0.5 normal-case">{row.hint}</span>
                             </TableCell>
                             <TableCell className="py-2.5 text-right data-mono text-[0.72rem] text-slate-600">
                               <CountUp value={b} decimals={3} />
@@ -294,7 +294,7 @@ export function AnalyticsView() {
                               <span
                                 className={cn(
                                   "inline-flex items-center gap-1 data-mono text-[0.72rem] font-medium",
-                                  delta > 0.0005 ? "text-verified" : delta < -0.0005 ? "text-sev-high" : "text-slate-400"
+                                  delta > 0.0005 ? "text-verified" : delta < -0.0005 ? "text-sev-high" : "text-slate-600"
                                 )}
                               >
                                 {delta > 0.0005 ? (
@@ -320,7 +320,7 @@ export function AnalyticsView() {
                   {whatThisMeans(baseline, proposed).map((para, i) => (
                     <p key={i} className="text-xs leading-relaxed text-slate-600">{clean(para)}</p>
                   ))}
-                  <p className="micro-label !text-[0.55rem] text-slate-400 !tracking-[0.08em] normal-case pt-1">
+                  <p className="micro-label !text-[0.6rem] text-slate-600 !tracking-[0.08em] normal-case pt-1">
                     {clean(proposed.comparison.note)}
                   </p>
                 </Panel>
@@ -338,7 +338,7 @@ export function AnalyticsView() {
                   className="panel-raised"
                 >
                   <div>
-                    <p className="micro-label !text-[0.55rem] text-slate-500 mb-2">Hotspot-Level F1 at Top-K</p>
+                    <p className="micro-label !text-[0.6rem] text-slate-600 mb-2">Hotspot-Level F1 at Top-K</p>
                     <div className="h-44">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={byKRows} margin={{ top: 4, right: 8, left: 0, bottom: 0 }} barGap={3}>
@@ -358,7 +358,7 @@ export function AnalyticsView() {
                     </div>
                   </div>
                   <div className="hairline-t pt-3">
-                    <p className="micro-label !text-[0.55rem] text-slate-500 mb-2">Spatial Hit Rate at Top-K</p>
+                    <p className="micro-label !text-[0.6rem] text-slate-600 mb-2">Spatial Hit Rate at Top-K</p>
                     <div className="h-40">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={byKRows} margin={{ top: 4, right: 8, left: 0, bottom: 0 }} barGap={3}>
@@ -377,7 +377,7 @@ export function AnalyticsView() {
                       </ResponsiveContainer>
                     </div>
                   </div>
-                  <p className="micro-label !text-[0.55rem] text-slate-400 !tracking-[0.08em] normal-case leading-relaxed">
+                  <p className="micro-label !text-[0.6rem] text-slate-600 !tracking-[0.08em] normal-case leading-relaxed">
                     Prediction lists are non-maximum-suppressed at 400m (one prediction per physical location, applied
                     equally to both approaches) and matched to ground truth symmetrically within 250m.
                   </p>
@@ -410,7 +410,7 @@ export function AnalyticsView() {
                       <span className="data-mono text-2xl font-semibold text-slate-900">
                         <CountUp value={proposed.duplicateClustering.ari} decimals={3} />
                       </span>
-                      <span className="micro-label !text-[0.55rem] text-slate-500" title="A score for how well the found groups match the real groups (1.0 = perfect match)">Adjusted Rand Index (ARI)</span>
+                      <span className="micro-label !text-[0.6rem] text-slate-600" title="A score for how well the found groups match the real groups (1.0 = perfect match)">Adjusted Rand Index (ARI)</span>
                     </div>
                     <AnimatedProgress
                       value={proposed.duplicateClustering.ari}
@@ -436,7 +436,7 @@ export function AnalyticsView() {
                       <span className="data-mono text-2xl font-semibold text-slate-900">
                         <CountUp value={proposed.responsibilityRouting.accuracy * 100} decimals={1} suffix="%" />
                       </span>
-                      <span className="micro-label !text-[0.55rem] text-slate-500">
+                      <span className="micro-label !text-[0.6rem] text-slate-600">
                         Routing Accuracy · {proposed.responsibilityRouting.evaluated} Events Evaluated
                       </span>
                     </div>
@@ -445,9 +445,9 @@ export function AnalyticsView() {
                         <Table>
                           <TableHeader>
                             <TableRow className="bg-ink-850/60 hover:bg-ink-850/60">
-                              <TableHead className="micro-label !text-[0.5rem] h-7">Event</TableHead>
-                              <TableHead className="micro-label !text-[0.5rem] h-7">Expected</TableHead>
-                              <TableHead className="micro-label !text-[0.5rem] h-7">Assigned</TableHead>
+                              <TableHead className="micro-label !text-[0.6rem] h-7">Event</TableHead>
+                              <TableHead className="micro-label !text-[0.6rem] h-7">Expected</TableHead>
+                              <TableHead className="micro-label !text-[0.6rem] h-7">Assigned</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -456,7 +456,7 @@ export function AnalyticsView() {
                                 <TableCell className="py-1.5 data-mono text-[0.68rem] text-slate-700">{m.eventCode}</TableCell>
                                 <TableCell className="py-1.5 data-mono text-[0.68rem] text-verified">{m.expected}</TableCell>
                                 <TableCell className="py-1.5 data-mono text-[0.68rem] text-sev-moderate">
-                                  {m.assigned} <span className="text-slate-400" aria-hidden>(mismatch)</span>
+                                  {m.assigned} <span className="text-slate-500" aria-hidden>(mismatch)</span>
                                 </TableCell>
                               </TableRow>
                             ))}
@@ -464,7 +464,7 @@ export function AnalyticsView() {
                         </Table>
                       </div>
                     ) : (
-                      <p className="text-xs text-slate-500">No routing mismatches in the evaluated set.</p>
+                      <p className="text-xs text-slate-600">No routing mismatches in the evaluated set.</p>
                     )}
                     <p className="text-[0.7rem] leading-relaxed text-slate-600">
                       Expected agencies are synthetic ground-truth labels assigned by the seed dataset, not adjudicated
@@ -512,8 +512,8 @@ export function AnalyticsView() {
                             <CountUp value={proposed.verifiedResolution.rate * 100} suffix="%" />
                           </span>
                         </div>
-                        <p className="micro-label !text-[0.55rem] text-slate-500 mt-0.5">Verified-Resolution Rate</p>
-                        <p className="data-mono text-[0.65rem] text-slate-500 mt-1">
+                        <p className="micro-label !text-[0.6rem] text-slate-600 mt-0.5">Verified-Resolution Rate</p>
+                        <p className="data-mono text-[0.65rem] text-slate-600 mt-1">
                           {proposed.verifiedResolution.verifiedClosures} verified of {proposed.verifiedResolution.closed} closed
                         </p>
                       </div>
@@ -523,10 +523,10 @@ export function AnalyticsView() {
                             <CountUp value={proposed.recurrenceAfterClosure.rate * 100} suffix="%" />
                           </span>
                         </div>
-                        <p className="micro-label !text-[0.55rem] text-slate-500 mt-0.5 flex items-center gap-1">
+                        <p className="micro-label !text-[0.6rem] text-slate-600 mt-0.5 flex items-center gap-1">
                           <RotateCcw className="size-2.5" aria-hidden /> Recurrence After Closure
                         </p>
-                        <p className="data-mono text-[0.65rem] text-slate-500 mt-1">
+                        <p className="data-mono text-[0.65rem] text-slate-600 mt-1">
                           {proposed.recurrenceAfterClosure.reopened} reopened of {proposed.recurrenceAfterClosure.closedWithRecurrenceWatch} watched
                         </p>
                       </div>
@@ -571,7 +571,7 @@ export function AnalyticsView() {
               <Reveal delay={0.1}>
                 <Panel title="Research Traceability" icon={<Scale />} bodyClassName="space-y-3">
                   <div>
-                    <p className="micro-label !text-[0.55rem] text-water mb-1">Research Question</p>
+                    <p className="micro-label !text-[0.6rem] text-water mb-1">Research Question</p>
                     <p className="text-sm leading-relaxed text-slate-800 font-display">
                       Can heterogeneous spatial-temporal evidence produce better hotspot identification, responsibility
                       routing and intervention verification than complaint frequency alone?
@@ -602,7 +602,7 @@ export function AnalyticsView() {
                   title="Computed Hotspots vs Ground Truth"
                   icon={<MapPin />}
                   actions={
-                    <span className="micro-label !text-[0.55rem] text-slate-500">
+                    <span className="micro-label !text-[0.6rem] text-slate-600">
                       {hotspotMatch.covered}/{hotspotMatch.groundTruth.length} GT sites covered · match {MATCH_RADIUS_M}m
                     </span>
                   }
@@ -619,7 +619,7 @@ export function AnalyticsView() {
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         {/* computed */}
                         <div>
-                          <p className="micro-label !text-[0.55rem] text-slate-500 mb-2 flex items-center gap-2">
+                          <p className="micro-label !text-[0.6rem] text-slate-600 mb-2 flex items-center gap-2">
                             <span className="size-2 rounded-[2px] bg-water" aria-hidden /> Computed · Engine Risk Grid (NMS 400m)
                           </p>
                           <div className="rounded-xl border border-border overflow-hidden">
@@ -639,11 +639,11 @@ export function AnalyticsView() {
                                     />
                                     <span className="data-mono text-[0.6rem] text-slate-500">{c.eventCount} events</span>
                                     {c.nearestD != null ? (
-                                      <span className={cn("micro-label !text-[0.5rem] !tracking-[0.08em]", c.nearestD <= MATCH_RADIUS_M ? "text-verified" : "text-slate-400")}>
+                                      <span className={cn("micro-label !text-[0.6rem] !tracking-[0.08em]", c.nearestD <= MATCH_RADIUS_M ? "text-verified" : "text-slate-600")}>
                                         {c.nearestD <= MATCH_RADIUS_M ? `match ${c.nearest?.code} · ${Math.round(c.nearestD)}m` : `nearest GT ${Math.round(c.nearestD)}m`}
                                       </span>
                                     ) : (
-                                      <span className="micro-label !text-[0.5rem] text-slate-400">no GT</span>
+                                      <span className="micro-label !text-[0.6rem] text-slate-600">no GT</span>
                                     )}
                                   </div>
                                 </StaggerItem>
@@ -654,7 +654,7 @@ export function AnalyticsView() {
 
                         {/* ground truth */}
                         <div>
-                          <p className="micro-label !text-[0.55rem] text-slate-500 mb-2 flex items-center gap-2">
+                          <p className="micro-label !text-[0.6rem] text-slate-600 mb-2 flex items-center gap-2">
                             <span className="size-2 rounded-[2px] bg-sev-moderate" aria-hidden /> Ground Truth · Seeded Known Sites
                           </p>
                           <div className="rounded-xl border border-border overflow-hidden">
@@ -668,13 +668,13 @@ export function AnalyticsView() {
                                   <div className="mt-1 flex items-center gap-2.5 flex-wrap">
                                     <span className="data-mono text-[0.6rem] text-slate-500">radius {Math.round(g.radiusM)}m</span>
                                     {g.nearestD != null ? (
-                                      <span className={cn("micro-label !text-[0.5rem] !tracking-[0.08em]", g.nearestD <= MATCH_RADIUS_M ? "text-verified" : "text-sev-moderate")}>
+                                      <span className={cn("micro-label !text-[0.6rem] !tracking-[0.08em]", g.nearestD <= MATCH_RADIUS_M ? "text-verified" : "text-sev-moderate")}>
                                         {g.nearestD <= MATCH_RADIUS_M
                                           ? `covered · nearest prediction ${Math.round(g.nearestD)}m`
                                           : `not covered · nearest ${Math.round(g.nearestD)}m`}
                                       </span>
                                     ) : (
-                                      <span className="micro-label !text-[0.5rem] text-sev-moderate">not covered · no predictions</span>
+                                      <span className="micro-label !text-[0.6rem] text-sev-moderate">not covered · no predictions</span>
                                     )}
                                   </div>
                                 </StaggerItem>
@@ -683,7 +683,7 @@ export function AnalyticsView() {
                           </div>
                         </div>
                       </div>
-                      <p className="micro-label !text-[0.55rem] text-slate-400 !tracking-[0.08em] normal-case leading-relaxed">
+                      <p className="micro-label !text-[0.6rem] text-slate-600 !tracking-[0.08em] normal-case leading-relaxed">
                         Distances computed client-side with the haversine helper; a computed hotspot counts as covering a
                         ground-truth site when within {MATCH_RADIUS_M}m. For the spatial map open Map Explorer and enable
                         the ground-truth layer. Computed source: {clean(hotspotMatch.computed[0]?.dataLabel ?? "MODEL_OUTPUT")}.
@@ -725,7 +725,7 @@ function ApproachCard({ tone, label, name, body, metrics }: {
               {proposed ? <Layers className="size-5" /> : <BarChart3 className="size-5" />}
             </span>
             <div className="min-w-0">
-              <p className={cn("micro-label !text-[0.55rem]", proposed ? "text-water" : "text-slate-500")}>{label}</p>
+              <p className={cn("micro-label !text-[0.6rem]", proposed ? "text-water" : "text-slate-600")}>{label}</p>
               <p className="text-sm font-semibold text-slate-800 mt-0.5 leading-snug">{name}</p>
             </div>
           </div>
@@ -744,7 +744,7 @@ function ApproachCard({ tone, label, name, body, metrics }: {
 function MetricStat({ label, value, accent }: { label: string; value: number; accent?: boolean }) {
   return (
     <div>
-      <p className="micro-label !text-[0.5rem] text-slate-400 !tracking-[0.08em]">{label}</p>
+      <p className="micro-label !text-[0.6rem] text-slate-600 !tracking-[0.08em]">{label}</p>
       <p className={cn("data-mono text-sm font-semibold tabular-nums mt-0.5", accent ? "text-water" : "text-slate-700")}>
         <CountUp value={value} decimals={3} />
       </p>
@@ -755,10 +755,10 @@ function MetricStat({ label, value, accent }: { label: string; value: number; ac
 function LegendSwatches() {
   return (
     <span className="flex items-center gap-4">
-      <span className="flex items-center gap-1.5 micro-label !text-[0.52rem] text-slate-500">
+      <span className="flex items-center gap-1.5 micro-label !text-[0.6rem] text-slate-600">
         <span className="size-2.5 rounded-[2px]" style={{ background: SLATE_BAR }} aria-hidden /> Baseline
       </span>
-      <span className="flex items-center gap-1.5 micro-label !text-[0.52rem] text-slate-500">
+      <span className="flex items-center gap-1.5 micro-label !text-[0.6rem] text-slate-600">
         <span className="size-2.5 rounded-[2px]" style={{ background: BLUE }} aria-hidden /> Proposed
       </span>
     </span>
@@ -768,7 +768,7 @@ function LegendSwatches() {
 function MiniStat({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="rounded-lg border border-border/70 bg-ink-850/40 px-2.5 py-2">
-      <p className="micro-label !text-[0.5rem] text-slate-500 !tracking-[0.08em]">{label}</p>
+      <p className="micro-label !text-[0.6rem] text-slate-600 !tracking-[0.08em]">{label}</p>
       <p className="data-mono text-[0.72rem] text-slate-800 mt-0.5">{value}</p>
     </div>
   );
@@ -778,7 +778,7 @@ function DelayRow({ label, value, max, barClass }: { label: string; value: numbe
   return (
     <div>
       <div className="flex items-baseline justify-between mb-1.5">
-        <span className="micro-label !text-[0.55rem] text-slate-500">{label}</span>
+        <span className="micro-label !text-[0.6rem] text-slate-600">{label}</span>
         <span className="data-mono text-[0.72rem] text-slate-700">
           <CountUp value={value} decimals={1} suffix=" h" />
         </span>
@@ -791,7 +791,7 @@ function DelayRow({ label, value, max, barClass }: { label: string; value: numbe
 function TraceRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start gap-2.5 rounded-xl border border-border bg-ink-850/40 px-3.5 py-2.5">
-      <span className="micro-label !text-[0.52rem] text-water !tracking-[0.08em] w-40 shrink-0 pt-0.5">{label}</span>
+      <span className="micro-label !text-[0.6rem] text-water !tracking-[0.08em] w-40 shrink-0 pt-0.5">{label}</span>
       <ArrowRight className="size-3 text-slate-400 shrink-0 mt-0.5" aria-hidden />
       <span className="text-[0.72rem] leading-relaxed text-slate-600">{value}</span>
     </div>
@@ -801,7 +801,7 @@ function TraceRow({ label, value }: { label: string; value: string }) {
 function DatasetStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="px-4 py-2.5 flex-1 min-w-fit">
-      <p className="micro-label !text-[0.52rem] text-slate-500 !tracking-[0.08em]">{label}</p>
+      <p className="micro-label !text-[0.6rem] text-slate-600 !tracking-[0.08em]">{label}</p>
       <p className="data-mono text-sm text-slate-800 mt-0.5">{value}</p>
     </div>
   );

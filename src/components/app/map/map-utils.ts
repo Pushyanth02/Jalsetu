@@ -155,7 +155,7 @@ export function eventPopupHTML(e: EventSummary, now = Date.now()): string {
   <p class="mt-2 text-[0.62rem] text-slate-500 leading-snug">${e.reportCount} citizen report${e.reportCount === 1 ? "" : "s"} · updated ${updated}</p>
   <div class="mt-3 flex gap-2">
     <button type="button" data-open-event="${escapeHtml(e.code)}" class="flex-1 rounded-lg text-[0.65rem] font-semibold tracking-wide py-2" style="background:${PALETTE.aqua};color:${PALETTE.canvas}">Open Full Dossier</button>
-    <button type="button" data-zoom-event="${escapeHtml(e.code)}" class="rounded-lg border border-slate-200 text-slate-600 px-3 py-2 text-[0.65rem] font-medium" title="Zoom to this location">Zoom</button>
+    <button type="button" data-zoom-event="${escapeHtml(e.code)}" class="rounded-lg border border-slate-500 text-slate-600 px-3 py-2 text-[0.65rem] font-medium" title="Zoom to this location">Zoom</button>
   </div>
   </div>
 </div>`.trim();

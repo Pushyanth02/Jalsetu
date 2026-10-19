@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { MapPinOff, MapIcon, Flag, BarChart3, Activity, Home } from "lucide-react";
 
@@ -5,6 +6,12 @@ import { MapPinOff, MapIcon, Flag, BarChart3, Activity, Home } from "lucide-reac
  * Custom 404: plain-language explanation and clear recovery pathways back to
  * the core experiences. Rendered inside the root layout (fonts + providers).
  */
+export const metadata: Metadata = {
+  title: "Page Not Found",
+  description:
+    "That page does not exist on JalSetu. Everything important — the waterlogging map, citizen reporting, field verification and research analytics — is one click away.",
+  robots: { index: false, follow: true },
+};
 export default function NotFound() {
   const pathways = [
     {
@@ -42,11 +49,11 @@ export default function NotFound() {
               <path d="M12 3c2.6 3.6 4.7 6 4.7 8.4a4.7 4.7 0 1 1-9.4 0C7.3 9 9.4 6.6 12 3z" className="fill-ink-950" />
             </svg>
           </span>
-          <span className="font-display font-bold text-slate-100 text-sm">JalSetu</span>
+          <span className="font-display font-bold text-foreground text-sm">JalSetu</span>
           <span className="text-[0.62rem] text-slate-500 hidden sm:inline">Delhi Waterlogging Intelligence</span>
           <Link
             href="/"
-            className="ml-auto inline-flex items-center gap-1.5 min-h-11 rounded-lg border border-border px-3.5 text-xs font-semibold text-slate-300 hover:border-aqua/40 hover:text-aqua hover:bg-white/[0.04] transition-colors"
+            className="ml-auto inline-flex items-center gap-1.5 min-h-11 rounded-lg border border-border px-3.5 text-xs font-semibold text-foreground hover:border-aqua/40 hover:text-aqua hover:bg-white/[0.04] transition-colors"
           >
             <Home className="size-3.5" aria-hidden />
             Back To Home
@@ -60,10 +67,10 @@ export default function NotFound() {
             <div className="mx-auto size-12 grid place-items-center rounded-xl border border-aqua/25 bg-aqua/10 text-aqua">
               <MapPinOff className="size-6" aria-hidden />
             </div>
-            <h1 className="mt-4 font-display text-xl font-bold tracking-tight text-slate-100">
+            <h1 className="mt-4 font-display text-xl font-bold tracking-tight text-foreground">
               Page Not Found
             </h1>
-            <p className="mt-2 text-sm text-slate-400 leading-relaxed max-w-md mx-auto">
+            <p className="mt-2 text-sm text-slate-700 leading-relaxed max-w-md mx-auto">
               The page you asked for does not exist on this site. It may have been moved,
               or the link may be incomplete. Everything important lives one click away.
             </p>
@@ -78,7 +85,7 @@ export default function NotFound() {
                 >
                   <span className="flex items-center gap-2">
                     <Icon className="size-4 text-aqua" aria-hidden />
-                    <span className="text-xs font-semibold text-slate-200 group-hover:text-aqua">{label}</span>
+                    <span className="text-xs font-semibold text-slate-900 group-hover:text-aqua">{label}</span>
                   </span>
                   <span className="mt-1 block text-[0.68rem] text-slate-500 leading-snug">{hint}</span>
                 </Link>

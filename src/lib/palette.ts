@@ -12,7 +12,7 @@ export const PALETTE = {
   raised: "#101a33", // --ink-850
   chip: "#16213f", // --ink-800
   hairline: "#1a2440", // --hairline
-  input: "#26325a", // --input
+  input: "#33406e", // --input (3:1 perceived affordance)
 
   // signal (mirror --aqua / --water)
   aqua: "#2dd4bf",
@@ -21,17 +21,17 @@ export const PALETTE = {
   aquaMid: "#17a892", // blue-500 ramp (drains, corridors)
 
   // severity (mirror --sev-* / --verified)
-  sevLow: "#8794c2",
+  sevLow: "#9dabe0",
   sevModerate: "#f5a524",
   sevHigh: "#fb8f3c",
   sevCritical: "#ff4d6a",
   verified: "#14b88a",
 
-  // text ramp (mirror inverted slate ramp)
-  foreground: "#e9eeff",
-  textMuted: "#8794c2", // slate-600
-  textDim: "#7a88b8", // slate-500
-  textFaint: "#5b6893", // slate-400
+  // text ramp (mirror inverted slate ramp; text floors are AA-safe)
+  foreground: "#eef2ff",
+  textMuted: "#9dabe0", // slate-600
+  textDim: "#94a3cf", // slate-500
+  textFaint: "#8291c4", // AA floor for quiet text/markers (was 2.6:1 — invisible)
 
   // overlays (mirror --popover)
   popover: "#0c142b",

@@ -8,7 +8,6 @@ import { assetPath, assetSrcSet } from "@/lib/client/assets";
 import { pickScene, weatherScene, SCENE_HERO } from "@/lib/client/media";
 import { apiGet, type OverviewResponse, type HotspotResponse } from "@/lib/client/api";
 import { Reveal, Stagger, StaggerItem, CountUp, PulseDot, AnimatedProgress } from "@/components/motion/kit";
-import { BorderBeam, Meteors, SpotlightCard } from "@/components/fx";
 import { RISK_META } from "@/components/app/shared/domain";
 
 /**
@@ -198,9 +197,7 @@ export function LandingView() {
       </header>
 
       {/* ---------------- hero ---------------- */}
-      <section className="relative overflow-hidden border-b border-hairline bg-aurora-radial">
-        <div aria-hidden className="absolute inset-0 bg-grid-faint mask-fade-b" />
-        <Meteors number={4} />
+      <section className="relative overflow-hidden border-b border-hairline bg-atlas">
         <div className="content-wrap relative grid items-start gap-12 px-4 pb-16 pt-14 sm:px-6 sm:pb-20 sm:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
           <div>
             <Reveal>
@@ -211,14 +208,15 @@ export function LandingView() {
             </Reveal>
 
             <Reveal delay={0.06}>
-              <h1 className="mt-6 font-display text-[2.6rem] font-bold leading-[1.03] tracking-[-0.03em] text-foreground sm:text-6xl lg:text-[4.1rem]">
+              <h1 className="mt-6 font-display text-[2.7rem] font-semibold leading-[1.08] tracking-[-0.02em] text-foreground sm:text-[3.8rem] lg:text-[4.3rem]">
                 Every flooded street in Delhi,{" "}
-                <span className="aurora-text">scored and routed</span> before the water rises.
+                <em className="text-signal italic">scored and routed</em> before
+                the water rises.
               </h1>
             </Reveal>
 
             <Reveal delay={0.12}>
-              <p className="mt-6 max-w-xl text-[1.02rem] leading-relaxed text-slate-600 sm:text-lg">
+              <p className="mt-6 max-w-xl text-[1.02rem] leading-relaxed text-slate-700 sm:text-lg">
                 JalSetu turns scattered citizen complaints, rainfall gauges, drainage
                 assets and field reports into explainable urban events, routes each one
                 to the agency that can actually fix it, and verifies the fix on the
@@ -230,14 +228,14 @@ export function LandingView() {
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <button
                   onClick={() => go("command")}
-                  className="inline-flex h-12 items-center gap-2 rounded-xl bg-aqua px-6 text-[0.92rem] font-semibold text-ink-950 transition-[background-color,box-shadow] hover:bg-aqua-dim hover:shadow-[0_0_24px_-6px_rgba(45,212,191,0.55)]"
+                  className="inline-flex h-12 items-center gap-2 rounded-xl bg-aqua px-6 text-[0.92rem] font-semibold text-ink-950 transition-colors hover:bg-aqua-dim"
                 >
                   Open the command center
                   <ArrowRight className="size-4" aria-hidden />
                 </button>
                 <button
                   onClick={() => go("map")}
-                  className="inline-flex h-12 items-center gap-2 rounded-xl border border-hairline bg-ink-900 px-6 text-[0.92rem] font-semibold text-foreground transition-[background-color,border-color,box-shadow] hover:border-aqua/40 hover:bg-ink-850 hover:shadow-[0_0_20px_-8px_rgba(45,212,191,0.45)]"
+                  className="inline-flex h-12 items-center gap-2 rounded-xl border border-hairline bg-ink-900 px-6 text-[0.92rem] font-semibold text-foreground transition-colors hover:border-aqua/40 hover:bg-ink-850"
                 >
                   <MapPin className="size-4 text-aqua" aria-hidden />
                   Explore the map
@@ -257,23 +255,25 @@ export function LandingView() {
           </Reveal>
         </div>
 
-        {/* illustrative monsoon skyline panorama, faded into the section background */}
+        {/* illustrative monsoon skyline panorama, feathered into the canvas —
+            the atlas way of mounting a photograph: no hard cuts, no overlay
+            sandwich, the image simply dissolves above and below. */}
         <div className="relative mt-2 h-32 sm:h-44 lg:h-56" aria-hidden>
-          <picture>
-            <source srcSet={assetSrcSet(`${SCENE_HERO.avif} 1280w`)} type="image/avif" sizes="100vw" />
-            <source srcSet={assetSrcSet(`${SCENE_HERO.webp} 1280w`)} type="image/webp" sizes="100vw" />
-            <img
-              src={SCENE_HERO.png}
-              alt=""
-              width={1280}
-              height={512}
-              loading="lazy"
-              decoding="async"
-              className="absolute inset-0 size-full object-cover object-center opacity-75"
-            />
-          </picture>
-          <div className="absolute inset-0 bg-gradient-to-b from-background via-background/20 to-background" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background" />
+          <div className="feather-y absolute inset-0">
+            <picture>
+              <source srcSet={assetSrcSet(`${SCENE_HERO.avif} 1280w`)} type="image/avif" sizes="100vw" />
+              <source srcSet={assetSrcSet(`${SCENE_HERO.webp} 1280w`)} type="image/webp" sizes="100vw" />
+              <img
+                src={SCENE_HERO.png}
+                alt=""
+                width={1280}
+                height={512}
+                loading="lazy"
+                decoding="async"
+                className="size-full object-cover object-center opacity-90"
+              />
+            </picture>
+          </div>
         </div>
       </section>
 
@@ -297,7 +297,7 @@ export function LandingView() {
             >
               <span className="data-mono text-[0.72rem] text-aqua/70">{String(i + 1).padStart(2, "0")}</span>
               <h3 className="font-display text-[1.05rem] font-semibold text-foreground">{c.title}</h3>
-              <p className="text-[0.9rem] leading-relaxed text-slate-600">{c.body}</p>
+              <p className="text-[0.9rem] leading-relaxed text-slate-700">{c.body}</p>
             </StaggerItem>
           ))}
         </Stagger>
@@ -311,7 +311,7 @@ export function LandingView() {
             <h2 className="mt-4 max-w-2xl font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.4rem]">
               Seven steps from a doorstep complaint to a verified fix.
             </h2>
-            <p className="mt-4 max-w-xl text-[0.95rem] leading-relaxed text-slate-600">
+            <p className="mt-4 max-w-xl text-[0.95rem] leading-relaxed text-slate-700">
               Every step is a screen in the console. Nothing is a black box: the
               classification, the clustering, the risk factors and the routing
               decision are all inspectable.
@@ -323,12 +323,12 @@ export function LandingView() {
               <StaggerItem key={p.step} className="bg-ink-900 p-6">
                 <span className="data-mono text-[0.72rem] text-aqua">{p.step}</span>
                 <h3 className="mt-3 font-display text-[0.98rem] font-semibold text-foreground">{p.title}</h3>
-                <p className="mt-1.5 text-[0.84rem] leading-relaxed text-slate-600">{p.body}</p>
+                <p className="mt-1.5 text-[0.84rem] leading-relaxed text-slate-700">{p.body}</p>
               </StaggerItem>
             ))}
             <StaggerItem className="flex flex-col justify-center bg-ink-900 p-6">
               <p className="font-display text-[0.98rem] font-semibold text-foreground">Then it loops.</p>
-              <p className="mt-1.5 text-[0.84rem] leading-relaxed text-slate-600">
+              <p className="mt-1.5 text-[0.84rem] leading-relaxed text-slate-700">
                 A verified closure that floods again reopens the same event with its
                 full history intact.
               </p>
@@ -359,7 +359,7 @@ export function LandingView() {
               <Stagger className="mt-5 space-y-3">
                 {VIEWS.filter((v) => v.group === group).map((v) => (
                   <StaggerItem key={v.id}>
-                    <SpotlightCard className="panel hover-glow rounded-xl">
+                    <div className="panel card-hover overflow-hidden rounded-xl">
                       <button
                         onClick={() => go(v.id)}
                         className="group block w-full rounded-xl px-4 py-3.5 text-left"
@@ -374,7 +374,7 @@ export function LandingView() {
                         </span>
                         <span className="mt-1 block text-[0.82rem] leading-relaxed text-slate-600">{v.body}</span>
                       </button>
-                    </SpotlightCard>
+                    </div>
                   </StaggerItem>
                 ))}
               </Stagger>
@@ -391,7 +391,7 @@ export function LandingView() {
             <h2 className="mt-4 max-w-2xl font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.4rem]">
               What the classifier actually sees.
             </h2>
-            <p className="mt-4 max-w-xl text-[0.95rem] leading-relaxed text-slate-600">
+            <p className="mt-4 max-w-xl text-[0.95rem] leading-relaxed text-slate-700">
               Report photos arrive as evidence and are sorted into the same
               categories the console uses. These are illustrative synthetic
               images from the demo dataset. No real citizens or streets.
@@ -442,7 +442,7 @@ export function LandingView() {
           <h2 className="mt-4 font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.4rem]">
             We measured it instead of claiming it.
           </h2>
-          <p className="mt-4 text-[0.95rem] leading-relaxed text-slate-600">
+          <p className="mt-4 text-[0.95rem] leading-relaxed text-slate-700">
             The console scores hotspots two ways against the same seeded ground
             truth: the current common practice of ranking by complaint frequency,
             and the proposed evidence-integrated ranking. Same candidates, same
@@ -460,7 +460,7 @@ export function LandingView() {
 
           <button
             onClick={() => go("analytics")}
-            className="mt-7 inline-flex h-11 items-center gap-2 rounded-xl border border-hairline bg-ink-900 px-5 text-[0.88rem] font-semibold text-foreground transition-[background-color,border-color,box-shadow] hover:border-aqua/40 hover:bg-ink-850 hover:shadow-[0_0_20px_-8px_rgba(45,212,191,0.45)]"
+            className="mt-7 inline-flex h-11 items-center gap-2 rounded-xl border border-hairline bg-ink-900 px-5 text-[0.88rem] font-semibold text-foreground transition-colors hover:border-aqua/40 hover:bg-ink-850"
           >
             Read the evaluation
             <ArrowRight className="size-4 text-aqua" aria-hidden />
@@ -481,7 +481,7 @@ export function LandingView() {
                 <h2 className="max-w-2xl font-display text-3xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-[2.6rem]">
                   See standing water on your street right now?
                 </h2>
-                <p className="mt-4 max-w-xl text-[1rem] leading-relaxed text-slate-600">
+                <p className="mt-4 max-w-xl text-[1rem] leading-relaxed text-slate-700">
                   File a report in under a minute, then follow it as it is classified,
                   merged, routed and verified. No account needed.
                 </p>
@@ -489,14 +489,14 @@ export function LandingView() {
               <div className="flex flex-wrap items-center gap-3 lg:justify-end">
                 <button
                   onClick={() => go("report")}
-                  className="inline-flex h-12 items-center gap-2 rounded-xl bg-aqua px-6 text-[0.92rem] font-semibold text-ink-950 transition-[background-color,box-shadow] hover:bg-aqua-dim hover:shadow-[0_0_24px_-6px_rgba(45,212,191,0.55)]"
+                  className="inline-flex h-12 items-center gap-2 rounded-xl bg-aqua px-6 text-[0.92rem] font-semibold text-ink-950 transition-colors hover:bg-aqua-dim"
                 >
                   <Flag className="size-4" aria-hidden />
                   Report waterlogging
                 </button>
                 <button
                   onClick={() => go("command")}
-                  className="inline-flex h-12 items-center gap-2 rounded-xl border border-hairline bg-ink-900 px-6 text-[0.92rem] font-semibold text-foreground transition-[background-color,border-color,box-shadow] hover:border-aqua/40 hover:bg-ink-850 hover:shadow-[0_0_20px_-8px_rgba(45,212,191,0.45)]"
+                  className="inline-flex h-12 items-center gap-2 rounded-xl border border-hairline bg-ink-900 px-6 text-[0.92rem] font-semibold text-foreground transition-colors hover:border-aqua/40 hover:bg-ink-850"
                 >
                   Open the console
                   <ArrowRight className="size-4 text-aqua" aria-hidden />
@@ -540,19 +540,18 @@ function LiveReadout() {
     .slice(0, 4);
 
   return (
-    <div className="panel-raised hud-corners scanline relative overflow-hidden rounded-xl">
-      <BorderBeam duration={9} />
+    <div className="panel-raised relative overflow-hidden rounded-xl">
       <div className="flex items-center gap-2.5 border-b border-hairline px-4 py-3">
         <PulseDot size={6} color="bg-aqua" />
-        <span className="micro-label !text-[0.55rem] !text-aqua-dim">Delhi pilot · live readout</span>
-        <span className="ml-auto data-mono text-[0.55rem] text-slate-500">/api/overview</span>
+        <span className="micro-label !text-aqua-dim">Delhi pilot · live readout</span>
+        <span className="ml-auto data-mono text-[0.6rem] text-slate-500">/api/overview</span>
       </div>
 
       <div className="grid grid-cols-2 gap-px bg-hairline">
         {bands.map((b) => (
           <div key={b.label} className="bg-ink-900 px-4 py-4">
-            <p className="micro-label !text-[0.53rem]">{b.label}</p>
-            <p className="mt-1.5 flex items-baseline gap-1 font-display text-2xl font-bold text-foreground text-glow">
+            <p className="micro-label">{b.label}</p>
+            <p className="mt-1.5 flex items-baseline gap-1 font-display text-2xl font-semibold text-foreground">
               {b.value == null ? (
                 <span className="inline-block h-7 w-12 rounded shimmer" />
               ) : (
@@ -565,7 +564,7 @@ function LiveReadout() {
       </div>
 
       <div className="border-t border-hairline px-4 py-3.5">
-        <p className="micro-label !text-[0.53rem]">Highest risk right now</p>
+        <p className="micro-label">Highest risk right now</p>
 
         <ul className="mt-3 space-y-3">
           {data == null &&
@@ -592,7 +591,7 @@ function LiveReadout() {
       </div>
 
       <div className="border-t border-hairline px-4 py-2.5">
-        <p className="data-mono text-[0.56rem] leading-relaxed text-slate-500">
+        <p className="data-mono text-[0.6rem] leading-relaxed text-slate-500">
           {data ? `${data.dataLabel} · snapshot ${data.generatedAt.slice(0, 10)}` : "loading dataset"}
         </p>
       </div>
@@ -627,7 +626,7 @@ function LiveBand() {
       <div className="content-wrap grid grid-cols-2 gap-px bg-hairline sm:grid-cols-3 lg:grid-cols-5">
         {stats.map((s, i) => (
           <Reveal key={s.label} delay={i * 0.05} className="bg-ink-900 px-5 py-7 text-center">
-            <p className="font-display text-3xl font-bold text-foreground text-glow">
+            <p className="font-display text-3xl font-semibold text-foreground">
               {s.value == null ? (
                 <span className="inline-block h-8 w-10 rounded shimmer align-middle" />
               ) : (
@@ -668,7 +667,7 @@ function EvidenceCard() {
           <p className="font-display text-[0.95rem] font-semibold text-foreground">Hotspot detection</p>
           <p className="mt-0.5 text-[0.74rem] text-slate-500">Complaint counting vs. evidence fusion</p>
         </div>
-        <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 micro-label !text-[0.52rem] !text-amber-600">
+        <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 micro-label !text-amber-600">
           synthetic demo eval
         </span>
       </div>
@@ -682,8 +681,8 @@ function EvidenceCard() {
                 <span className="text-[0.82rem] font-medium text-slate-700">{r.key}</span>
                 <span className="data-mono text-[0.78rem] text-slate-500">
                   {r.base != null ? r.base.toFixed(3) : "n/a"}{" "}
-                  <span className="px-1 text-slate-400">→</span>{" "}
-                  <span className="text-aqua text-glow">{r.prop != null ? r.prop.toFixed(3) : "n/a"}</span>
+                  <span className="px-1 text-slate-500" aria-hidden>→</span>{" "}
+                  <span className="text-aqua">{r.prop != null ? r.prop.toFixed(3) : "n/a"}</span>
                 </span>
               </div>
               <div className="mt-2 space-y-1.5">
@@ -762,7 +761,7 @@ function LandingFooter({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
             <img src={assetPath("/img/jalsetu-mark.svg")} alt="" width={30} height={30} className="size-[30px] rounded-lg" />
             <span className="font-display text-[0.95rem] font-bold text-foreground">JalSetu</span>
           </div>
-          <p className="mt-3 max-w-xs text-[0.82rem] leading-relaxed text-slate-600">
+          <p className="mt-3 max-w-xs text-[0.82rem] leading-relaxed text-slate-700">
             Cross-agency waterlogging intelligence for a bounded Delhi pilot.
             A research prototype, built to show what explainable urban event
             intelligence looks like end to end.
@@ -797,8 +796,8 @@ function LandingFooter({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       <div className="border-t border-hairline">
         <div className="content-wrap grid gap-3 px-4 py-5 sm:px-6 lg:grid-cols-2">
           <div>
-            <p className="micro-label !text-[0.55rem]">Data &amp; privacy</p>
-            <p className="mt-1.5 text-[0.72rem] leading-relaxed text-slate-500">
+            <p className="micro-label">Data &amp; privacy</p>
+            <p className="mt-1.5 text-[0.72rem] leading-relaxed text-slate-600">
               No backend, no accounts, no analytics and no cookies. A report you file
               is computed and held in this browser tab only, and is cleared when you
               close or reload it. The datasets shipped with this prototype are
@@ -806,8 +805,8 @@ function LandingFooter({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
             </p>
           </div>
           <div>
-            <p className="micro-label !text-[0.55rem]">Terms of use</p>
-            <p className="mt-1.5 text-[0.72rem] leading-relaxed text-slate-500">
+            <p className="micro-label">Terms of use</p>
+            <p className="mt-1.5 text-[0.72rem] leading-relaxed text-slate-600">
               Provided as-is for research and demonstration, without warranty. Risk
               scores, routing and metrics are illustrative outputs of a prototype and
               must not drive operational decisions. In an emergency, contact the
@@ -820,8 +819,14 @@ function LandingFooter({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
       <div className="border-t border-hairline">
         <div className="content-wrap flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-5 text-[0.7rem] text-slate-500 sm:px-6">
           <span>© 2026 JalSetu Research Prototype</span>
-          <span className="text-slate-400">Delhi, India</span>
+          <span className="text-slate-500">Delhi, India</span>
           <span className="hidden xs:inline">Datasets licensed CC-BY-4.0</span>
+          <a href="#/terms" className="rounded px-1 py-1 transition-colors hover:text-aqua">
+            Terms of Service
+          </a>
+          <a href="#/privacy" className="rounded px-1 py-1 transition-colors hover:text-aqua">
+            Privacy Policy
+          </a>
           <a
             href={assetPath("/llms.txt")}
             target="_blank"

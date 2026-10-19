@@ -36,6 +36,8 @@ const VerificationView = dynamic(() => import("../views/verification/Verificatio
 const ReportView = dynamic(() => import("../views/report/ReportView").then((m) => m.ReportView), { ssr: false, loading: ViewSkeleton });
 const AnalyticsView = dynamic(() => import("../views/analytics/AnalyticsView").then((m) => m.AnalyticsView), { ssr: false, loading: ViewSkeleton });
 const HealthView = dynamic(() => import("../views/health/HealthView").then((m) => m.HealthView), { ssr: false, loading: ViewSkeleton });
+const TermsView = dynamic(() => import("../views/legal/TermsView").then((m) => m.TermsView), { ssr: false, loading: ViewSkeleton });
+const PrivacyView = dynamic(() => import("../views/legal/PrivacyView").then((m) => m.PrivacyView), { ssr: false, loading: ViewSkeleton });
 
 export function AppRoot() {
   useHashRouter();
@@ -77,6 +79,8 @@ export function AppRoot() {
             {view === "report" && <ReportView />}
             {view === "analytics" && <AnalyticsView />}
             {view === "health" && <HealthView />}
+            {view === "terms" && <TermsView />}
+            {view === "privacy" && <PrivacyView />}
             <AppFooter />
           </motion.div>
         </main>
@@ -103,13 +107,13 @@ function AppFooter() {
         </span>
         <span className="sm:hidden flex items-center gap-2">
           <img src={assetPath("/img/jalsetu-mark.svg")} alt="" width={22} height={22} className="size-5.5 rounded-md shrink-0" aria-hidden />
-          <span className="font-display font-bold text-slate-100 text-xs">JalSetu</span>
+          <span className="font-display font-bold text-foreground text-xs">JalSetu</span>
         </span>
-        <span className="hidden md:inline text-slate-400 font-medium">Urban Event Intelligence · Delhi pilot</span>
-        <span className="text-slate-400 hidden xs:inline text-[0.62rem] leading-tight">Research prototype · synthetic demo data · not a deployed government system</span>
-        <span className="xs:hidden text-slate-400 text-[0.62rem]">Synthetic demo · not live</span>
+        <span className="hidden md:inline text-slate-600 font-medium">Urban Event Intelligence · Delhi pilot</span>
+        <span className="text-slate-600 hidden xs:inline text-[0.62rem] leading-tight">Research prototype · synthetic demo data · not a deployed government system</span>
+        <span className="xs:hidden text-slate-600 text-[0.62rem]">Synthetic demo · not live</span>
         {data && (
-          <span className="data-mono ml-auto hidden lg:inline text-slate-400 text-[0.62rem] break-safe">
+          <span className="data-mono ml-auto hidden lg:inline text-slate-600 text-[0.62rem] break-safe">
             {data.riskEngine} · {data.classification} · {data.routingRules}
           </span>
         )}
@@ -120,6 +124,8 @@ function AppFooter() {
         <FooterLink href="#/verify" label="Field Verification" />
         <FooterLink href="#/analytics" label="Research & Analytics" />
         <FooterLink href="#/health" label="Data & Model Health" />
+        <FooterLink href="#/terms" label="Terms of Service" />
+        <FooterLink href="#/privacy" label="Privacy Policy" />
         <span className="hidden sm:inline text-slate-600" aria-hidden>·</span>
         <FooterLink href={assetPath("/llms.txt")} label="For AI Assistants" external />
         <FooterLink href={assetPath("/sitemap.xml")} label="Sitemap" external />
@@ -133,7 +139,7 @@ function FooterLink({ href, label, external }: { href: string; label: string; ex
     <a
       href={href}
       {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-      className="rounded-lg px-2 py-1.5 -mx-1 text-slate-400 hover:text-aqua hover:bg-white/[0.06] active:bg-white/[0.1] transition-colors touch-target inline-flex items-center"
+      className="rounded-lg px-2 py-1.5 -mx-1 text-slate-600 hover:text-aqua hover:bg-white/[0.06] active:bg-white/[0.1] transition-colors touch-target inline-flex items-center"
     >
       {label}
     </a>

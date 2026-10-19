@@ -61,6 +61,16 @@ export const VIEW_SEO: Record<ViewId, { title: string; description: string }> = 
     description:
       "Source freshness, classifier state, model run log and API checks for the Delhi waterlogging intelligence prototype, with a plain-language glossary.",
   },
+  terms: {
+    title: "Terms of Service",
+    description:
+      "Terms of use for the JalSetu research prototype: what this synthetic-data demo is, permitted research use, the no-operational-use rule, licences (CC-BY-4.0 datasets, MIT code) and limits of liability.",
+  },
+  privacy: {
+    title: "Privacy Policy",
+    description:
+      "JalSetu collects nothing: no accounts, no cookies, no analytics, no server, no personal data. What stays in your browser tab, the Esri map-tile requests your browser makes, and how to reach us.",
+  },
 };
 
 const SITE_NAME = "JalSetu";

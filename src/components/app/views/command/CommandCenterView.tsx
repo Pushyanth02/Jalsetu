@@ -10,7 +10,6 @@ import { AlertTriangle, ChevronRight, Umbrella, CheckCircle2, Layers, Radio, Dro
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { CountUp, Stagger, StaggerItem, Reveal, PulseDot, HoverLift } from "@/components/motion/kit";
-import { BorderBeam } from "@/components/fx";
 import { memo, useState, useMemo } from "react";
 import { assetPath } from "@/lib/client/assets";
 import { sceneThumb } from "@/lib/client/media";
@@ -46,22 +45,22 @@ export function CommandCenterView() {
   return (
     <div className="flex flex-col min-h-0 flex-1">
       {/* page header */}
-      <div className="hairline-b bg-ink-900 bg-grid-faint">
+      <div className="hairline-b bg-ink-900">
         <div className="px-4 sm:px-6 py-3.5 flex flex-wrap items-center gap-x-4 gap-y-2">
           <div>
             <h1 className="font-display text-lg font-bold tracking-tight text-slate-900 leading-tight">Command Center</h1>
             <p className="text-[0.7rem] text-muted-foreground mt-0.5">
               One shared screen for every agency handling waterlogging · live pilot view
-              {d && <span className="data-mono ml-1.5 text-slate-400">updated {timeAgo(d.generatedAt)}</span>}
+              {d && <span className="data-mono ml-1.5 text-slate-500">updated {timeAgo(d.generatedAt)}</span>}
             </p>
           </div>
           <div className="ml-auto flex items-center gap-2.5">
             <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 pl-2.5 pr-3 py-1">
               <PulseDot color="bg-emerald-500" size={7} />
               <span className="text-[0.65rem] font-semibold text-emerald-700">Live Data</span>
-              <span className="data-mono text-[0.6rem] text-emerald-600/70">demo mode</span>
+              <span className="data-mono text-[0.6rem] text-emerald-600">demo mode</span>
             </span>
-            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 micro-label text-[0.58rem]! text-water">
+            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 micro-label text-[0.6rem]! text-water">
               <Radio className="size-3" aria-hidden /> 3 pilot jurisdictions
             </span>
           </div>
@@ -162,7 +161,7 @@ export function CommandCenterView() {
                       <li key={a.code} className="flex items-center gap-3 px-4 py-2.5 hairline-b last:border-0 hover:bg-ink-850/60 transition-colors">
                         <span className="data-mono text-xs font-semibold text-water w-10 shrink-0">{a.code}</span>
                         <span className="text-xs text-slate-600 flex-1 truncate">{a.name}</span>
-                        <span className="data-mono text-[0.65rem] text-slate-500" title="Active events right now">{a.active}<span className="text-slate-400"> act</span></span>
+                        <span className="data-mono text-[0.65rem] text-slate-500" title="Active events right now">{a.active}<span className="text-slate-500"> act</span></span>
                         <span className="data-mono text-[0.65rem] text-verified flex items-center gap-1" title="Verified or closed events">
                           <CheckCircle2 className="size-3" aria-hidden />{a.verified}
                         </span>
@@ -214,19 +213,15 @@ function KpiCard({ label, value, delta, icon, tint, to, filterRisk, hint, critic
             {delta !== null && <DeltaPill delta={delta} />}
           </span>
           <motion.span
-            className={cn(
-              "block mt-3 font-display text-3xl sm:text-[2.1rem] font-bold tabular-nums text-slate-900 leading-none",
-              critical ? "text-glow-critical" : "text-glow"
-            )}
+            className="block mt-3 font-display text-3xl sm:text-[2.1rem] font-bold tabular-nums text-slate-900 leading-none"
             initial={reduce ? { opacity: 0 } : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.4 }}
           >
             <CountUp value={value} />
           </motion.span>
-          <span className="block mt-1.5 text-[0.72rem] font-medium text-slate-500 leading-snug">{label}</span>
+          <span className="block mt-1.5 text-[0.72rem] font-medium text-slate-600 leading-snug">{label}</span>
         </button>
-        {critical && <BorderBeam size={56} duration={8} colorFrom="#ff4d6a" colorTo="#fb8f3c" />}
       </div>
     </HoverLift>
   );
@@ -239,7 +234,7 @@ function DeltaPill({ delta }: { delta: number }) {
     <span
       className={cn(
         "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.6rem] font-semibold",
-        flat ? "bg-slate-100 text-slate-500" : up ? "bg-red-50 text-sev-critical" : "bg-emerald-50 text-verified"
+        flat ? "bg-slate-100 text-slate-600" : up ? "bg-red-50 text-sev-critical" : "bg-emerald-50 text-verified"
       )}
       title="Change in new incidents over the last 24 hours compared with the day before (computed from pilot data)"
     >
@@ -303,10 +298,10 @@ function LayersPanel() {
             aria-label="Map layers"
           >
             <div className="flex items-center justify-between mb-2">
-              <p className="micro-label text-[0.56rem]! text-slate-500 flex items-center gap-1.5">
+              <p className="micro-label text-[0.6rem]! text-slate-600 flex items-center gap-1.5">
                 <Layers className="size-3" aria-hidden /> Layers
               </p>
-              <button onClick={() => setOpen(false)} className="micro-label text-[0.55rem]! text-slate-400 hover:text-slate-600" aria-label="Hide layers panel">
+              <button onClick={() => setOpen(false)} className="micro-label text-[0.6rem]! text-slate-600 hover:text-aqua" aria-label="Hide layers panel">
                 hide
               </button>
             </div>
@@ -333,7 +328,7 @@ function LayersPanel() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setOpen(true)}
-            className="panel rounded-lg px-2.5 py-1.5 micro-label text-[0.58rem]! text-slate-600 flex items-center gap-1.5"
+            className="panel rounded-lg px-2.5 py-1.5 micro-label text-[0.6rem]! text-slate-600 flex items-center gap-1.5"
             aria-label="Show layers panel"
           >
             <Layers className="size-3" aria-hidden /> layers
@@ -348,10 +343,10 @@ function LayersPanel() {
 function DemoModeBadge() {
   return (
     <div className="absolute z-20 bottom-7.5 right-3 pointer-events-none">
-      <span className="inline-flex items-center gap-2 rounded-full bg-sb-900/90 backdrop-blur px-3 py-1.5 shadow-lg">
+      <span className="inline-flex items-center gap-2 rounded-full bg-ink-800/90 border border-hairline backdrop-blur px-3 py-1.5 shadow-lg">
         <PulseDot color="bg-emerald-400" size={7} />
-        <span className="text-[0.62rem] font-semibold text-white/90">Live Data</span>
-        <span className="data-mono text-[0.58rem] text-amber-300/90">demo mode</span>
+        <span className="text-[0.62rem] font-semibold text-white">Live Data</span>
+        <span className="data-mono text-[0.6rem] text-amber-400">demo mode</span>
       </span>
     </div>
   );
@@ -405,7 +400,7 @@ function RecentReportsPanel() {
       title="Recent Reports"
       icon={<Droplets />}
       actions={
-        <button onClick={() => navigate("report")} className="micro-label text-[0.58rem]! text-water hover:text-water-dim transition-colors">
+        <button onClick={() => navigate("report")} className="micro-label text-[0.6rem]! text-water hover:text-water-dim transition-colors">
           view all →
         </button>
       }
@@ -454,10 +449,10 @@ function RecentReportsPanel() {
                           <span className="flex items-center gap-2">
                             <span className="data-mono text-[0.68rem] font-semibold text-water">{r.publicRef}</span>
                             <SeverityPill severity={r.severityReported} />
-                            {r.isDuplicate && <span className="micro-label text-[0.55rem]! text-slate-400">merged</span>}
+                            {r.isDuplicate && <span className="micro-label text-[0.6rem]! text-slate-600">merged</span>}
                           </span>
                           <span className="mt-0.5 block text-[0.76rem] text-slate-600 leading-snug line-clamp-1">{r.description}</span>
-                          <span className="mt-1 flex items-center gap-2 text-[0.62rem] text-slate-400">
+                          <span className="mt-1 flex items-center gap-2 text-[0.62rem] text-slate-600">
                             <span className="data-mono">{r.channel.toLowerCase()}</span>
                             <TimeAgo iso={r.submittedAt} />
                           </span>
@@ -470,7 +465,7 @@ function RecentReportsPanel() {
               })}
             </Stagger>
           </ul>
-          <p className="hairline-t px-4 py-2 micro-label text-[0.52rem]! text-muted-foreground/70">
+          <p className="hairline-t px-4 py-2 micro-label text-[0.6rem]! text-muted-foreground">
             thumbnails are illustrative · report photos never faked
           </p>
         </>
@@ -487,7 +482,7 @@ function SeverityPill({ severity }: { severity: string }) {
     : severity === "HIGH" ? "bg-orange-50 text-orange-700 border-orange-200"
     : severity === "MEDIUM" ? "bg-amber-50 text-amber-700 border-amber-200"
     : "bg-emerald-50 text-emerald-700 border-emerald-200";
-  return <span className={cn("inline-flex rounded-full border px-1.5 py-0.5 micro-label text-[0.55rem]!", cls)}>{severity.toLowerCase()}</span>;
+  return <span className={cn("inline-flex rounded-full border px-1.5 py-0.5 micro-label text-[0.6rem]!", cls)}>{severity.toLowerCase()}</span>;
 }
 
 /* ---------------------------------------------------- operational alerts */
@@ -505,7 +500,7 @@ function OperationalAlertsPanel() {
     <Panel
       title="Operational Alerts"
       icon={<AlertTriangle />}
-      actions={<span className="micro-label text-[0.55rem]! text-muted-foreground">{d ? `${d.alerts.length} active` : ""}</span>}
+      actions={<span className="micro-label text-[0.6rem]! text-muted-foreground">{d ? `${d.alerts.length} active` : ""}</span>}
       dense
       className="panel-raised overflow-hidden"
     >
@@ -520,7 +515,7 @@ function OperationalAlertsPanel() {
               <li key={i} className="hairline-b last:border-0">
                 <button
                   className={cn(
-                    "w-full flex items-start gap-3 px-4 py-2.5 text-left hover:bg-ink-850/70 hover-glow transition-colors group",
+                    "w-full flex items-start gap-3 px-4 py-2.5 text-left hover:bg-ink-850/70 card-hover transition-colors group",
                     i === 0 && "animate-in fade-in slide-in-from-bottom-1 duration-300"
                   )}
                   onClick={() => a.eventCode && navigate("event", a.eventCode)}
@@ -556,12 +551,12 @@ function ActiveEventQueue({ eventsQ, total }: { eventsQ: { data?: EventSummary[]
       title={
         <span className="flex items-center gap-2">
           Active Event Queue
-          {total != null && <span className="data-mono ml-1 text-[0.65rem] font-normal text-slate-400">{total}</span>}
+          {total != null && <span className="data-mono ml-1 text-[0.65rem] font-normal text-slate-500">{total}</span>}
         </span>
       }
       icon={<Radio />}
       actions={
-        <button onClick={() => navigate("map")} className="micro-label text-[0.58rem]! text-water hover:text-water-dim transition-colors">
+        <button onClick={() => navigate("map")} className="micro-label text-[0.6rem]! text-water hover:text-water-dim transition-colors">
           open map →
         </button>
       }
@@ -598,7 +593,7 @@ export const EventRow = memo(function EventRow({ event }: { event: EventSummary 
     <li className="hairline-r hairline-b last:border-0">
       <button
         onClick={() => openEvent(event.code)}
-        className="w-full text-left px-4 py-3 hover:bg-ink-850/70 hover-glow transition-colors group focus:bg-ink-850"
+        className="w-full text-left px-4 py-3 hover:bg-ink-850/70 card-hover transition-colors group focus:bg-ink-850"
         aria-label={`${event.code}: ${event.title}`}
       >
         <div className="flex items-start gap-3">
@@ -626,7 +621,7 @@ export const EventRow = memo(function EventRow({ event }: { event: EventSummary 
               <StatusBadge status={event.status} />
               <RiskBadge band={event.riskBand} score={event.riskScore} />
               {event.recurrenceCount > 0 && (
-                <span className="micro-label text-[0.55rem]! text-sev-high" title={`recurred ${event.recurrenceCount}×`}>
+                <span className="micro-label text-[0.6rem]! text-sev-high" title={`recurred ${event.recurrenceCount}×`}>
                   ↻{event.recurrenceCount}
                 </span>
               )}
@@ -635,8 +630,8 @@ export const EventRow = memo(function EventRow({ event }: { event: EventSummary 
             <p className="mt-1 text-[0.8rem] text-slate-700 leading-snug line-clamp-1">{event.title}</p>
             <div className="mt-1.5 flex items-center gap-3 flex-wrap">
               <SeverityTicks severity={event.severity} />
-              <span className="data-mono text-[0.62rem] text-slate-400">{event.reportCount} rep</span>
-              <span className="data-mono text-[0.62rem] text-slate-400">{event.agencyCode ?? "-"}</span>
+              <span className="data-mono text-[0.66rem] text-slate-600">{event.reportCount} rep</span>
+              <span className="data-mono text-[0.66rem] text-slate-600">{event.agencyCode ?? "-"}</span>
               <ConfidenceChip confidence={event.confidence} note={event.confidenceNote} />
             </div>
           </div>
@@ -657,7 +652,7 @@ function RainfallStrip({ weatherQ, nearest }: { weatherQ: { data?: WeatherRespon
       icon={<Umbrella />}
       actions={
         nearest && (
-          <span className="micro-label text-[0.55rem]! text-slate-400">
+          <span className="micro-label text-[0.6rem]! text-slate-600">
             nearest: {nearest.name} · {(nearest.distanceM / 1000).toFixed(1)}km
           </span>
         )
@@ -696,7 +691,7 @@ function RainfallStrip({ weatherQ, nearest }: { weatherQ: { data?: WeatherRespon
               </span>
             ))}
             <SourceBadge source="SYNTHETIC_DEMO" />
-            <span className="micro-label text-[0.5rem]! text-slate-400">window 72h</span>
+            <span className="micro-label text-[0.6rem]! text-slate-500">window 72h</span>
           </div>
         </>
       ) : (

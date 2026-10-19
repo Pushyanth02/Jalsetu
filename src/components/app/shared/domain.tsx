@@ -17,7 +17,7 @@ const STATUS_META: Record<string, { label: string; cls: string; dot: string }> =
   ASSIGNED: { label: "Assigned", cls: "text-blue-700 bg-blue-50 border-blue-200", dot: "bg-blue-500" },
   IN_PROGRESS: { label: "In Field", cls: "text-water bg-blue-50 border-blue-200", dot: "bg-water-dim" },
   VERIFIED: { label: "Verified", cls: "text-emerald-700 bg-emerald-50 border-emerald-200", dot: "bg-verified" },
-  CLOSED: { label: "Closed", cls: "text-slate-500 bg-slate-50 border-slate-200", dot: "bg-slate-400" },
+  CLOSED: { label: "Closed", cls: "text-slate-600 bg-slate-50 border-slate-200", dot: "bg-slate-400" },
   REOPENED: { label: "Reopened", cls: "text-red-700 bg-red-50 border-red-200", dot: "bg-sev-critical" },
 };
 
@@ -64,12 +64,10 @@ export function RiskBadge({ band, score, className }: { band: string; score?: nu
 
 export function RiskMeter({ score, band, className }: { score: number; band: string; className?: string }) {
   const m = RISK_META[band] ?? RISK_META.LOW;
-  // Key numbers emit light: the score halo follows the band colour.
-  const glow = band === "CRITICAL" || band === "HIGH" ? "text-glow-critical" : band === "MODERATE" ? "text-glow-amber" : "text-glow";
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <AnimatedProgress value={score} max={100} className="w-24" fillClassName={m.bar} />
-      <span className={cn("data-mono text-xs text-foreground", glow)}>{score}</span>
+      <span className="data-mono text-xs text-foreground">{score}</span>
     </div>
   );
 }
@@ -112,7 +110,7 @@ export function SourceBadge({ source, className }: { source: string; className?:
     MANUAL: { label: "manual", cls: "text-slate-600 border-slate-200 bg-slate-50" },
   };
   const m = meta[source] ?? { label: source.toLowerCase(), cls: "text-slate-600 border-slate-200 bg-slate-50" };
-  return <span className={cn("inline-flex rounded-full border px-2 py-0.5 micro-label !text-[0.58rem]", m.cls, className)}>{m.label}</span>;
+  return <span className={cn("inline-flex rounded-full border px-2 py-0.5 micro-label !text-[0.6rem]", m.cls, className)}>{m.label}</span>;
 }
 
 export function ProviderChip({ provider, model, className }: { provider: string; model?: string | null; className?: string }) {
@@ -128,7 +126,7 @@ export function ProviderChip({ provider, model, className }: { provider: string;
     >
       <span aria-hidden className={cn("size-1.5 rounded-full", isGlm ? "bg-water-dim" : "bg-slate-400")} />
       {provider === "GLM" ? "GLM" : provider === "MOCK" ? "deterministic" : provider.toLowerCase()}
-      {model && <span className="data-mono !text-[0.56rem] text-muted-foreground !tracking-normal !normal-case max-w-44 truncate">{model.split("/")[0]}</span>}
+      {model && <span className="data-mono !text-[0.6rem] text-muted-foreground !tracking-normal !normal-case max-w-44 truncate">{model.split("/")[0]}</span>}
     </span>
   );
 }
@@ -157,7 +155,7 @@ export function Panel({ title, actions, children, className, bodyClassName, dens
     <section className={cn("panel rounded-xl flex flex-col min-h-0", className)} aria-label={typeof title === "string" ? title : undefined}>
       {(title || actions) && (
         <header className="flex items-center justify-between gap-3 hairline-b px-4 py-3 shrink-0">
-          <h2 className="flex items-center gap-2 text-[0.82rem] font-semibold text-slate-200 leading-none">
+          <h2 className="flex items-center gap-2 text-[0.82rem] font-semibold text-foreground leading-none">
             {icon && <span className="text-aqua-dim [&>svg]:size-4" aria-hidden>{icon}</span>}
             {title}
           </h2>
@@ -172,9 +170,9 @@ export function Panel({ title, actions, children, className, bodyClassName, dens
 export function EmptyState({ icon, title, hint, action }: { icon?: ReactNode; title: string; hint?: string; action?: ReactNode }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 py-10 px-6 text-center min-h-40">
-      {icon && <div className="text-slate-500 [&>svg]:size-8" aria-hidden>{icon}</div>}
-      <p className="text-sm font-medium text-slate-300">{title}</p>
-      {hint && <p className="text-xs text-muted-foreground/80 max-w-sm">{hint}</p>}
+      {icon && <div className="text-slate-600 [&>svg]:size-8" aria-hidden>{icon}</div>}
+      <p className="text-sm font-medium text-foreground">{title}</p>
+      {hint && <p className="text-xs text-muted-foreground max-w-sm">{hint}</p>}
       {action}
     </div>
   );
@@ -240,5 +238,5 @@ export function TimeAgo({ iso, title = true }: { iso: string; title?: boolean })
 
 export const SEV_ORDER = ["LOW", "MODERATE", "HIGH", "CRITICAL"] as const;
 export function severityColor(s: string): string {
-  return s === "CRITICAL" ? "text-sev-critical" : s === "HIGH" ? "text-sev-high" : s === "MODERATE" ? "text-sev-moderate" : "text-slate-500";
+  return s === "CRITICAL" ? "text-sev-critical" : s === "HIGH" ? "text-sev-high" : s === "MODERATE" ? "text-sev-moderate" : "text-slate-600";
 }

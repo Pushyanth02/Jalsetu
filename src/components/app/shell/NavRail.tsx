@@ -71,9 +71,9 @@ export function BrandLockupLight({ compact = false }: { compact?: boolean }) {
         className="shrink-0 rounded-xl size-7 object-contain"
       />
       <span className="min-w-0 text-left">
-        <span className="block font-display text-sm font-bold leading-none text-slate-100">JalSetu</span>
+        <span className="block font-display text-sm font-bold leading-none text-foreground">JalSetu</span>
         {!compact && (
-          <span className="hidden xs:block mt-0.5 text-[0.6rem] leading-tight text-slate-500 truncate">Delhi Waterlogging Intelligence</span>
+          <span className="hidden xs:block mt-0.5 text-[0.6rem] leading-tight text-slate-600 truncate">Delhi Waterlogging Intelligence</span>
         )}
       </span>
     </span>
@@ -114,7 +114,7 @@ export function NavRail() {
       <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-4 space-y-5">
         {groups.map((g) => (
           <div key={g.key}>
-            <p className="px-3 pb-2 micro-label text-[0.56rem]! text-aqua/60! tracking-[0.14em]">{g.label}</p>
+            <p className="px-3 pb-2 micro-label text-[0.6rem]! text-aqua! tracking-[0.14em]">{g.label}</p>
             <ul className="space-y-0.5" role="list">
               {NAV_ITEMS.filter((n) => n.group === g.key).map((item) => {
                 const active = view === item.id;
@@ -130,8 +130,8 @@ export function NavRail() {
                         "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 xl:py-2 text-[0.84rem] font-medium transition-colors text-left touch-target",
                         active
                           ? "text-aqua bg-aqua/10 ring-1 ring-aqua/25 shadow-[0_0_28px_-12px_rgba(45,212,191,0.65)]"
-                          : "text-white/60 hover:text-white hover:bg-white/6",
-                        disabled && "opacity-35 cursor-not-allowed hover:bg-transparent hover:text-white/60"
+                          : "text-slate-600 hover:text-white hover:bg-white/6",
+                        disabled && "opacity-35 cursor-not-allowed hover:bg-transparent hover:text-slate-600"
                       )}
                     >
                       {active && (
@@ -142,10 +142,10 @@ export function NavRail() {
                           aria-hidden
                         />
                       )}
-                      <item.icon className={cn("size-4 shrink-0", active ? "text-water-dim" : "text-white/45")} aria-hidden />
+                      <item.icon className={cn("size-4 shrink-0", active ? "text-water-dim" : "text-slate-500")} aria-hidden />
                       <span className="truncate">{item.label}</span>
                       {item.id === "command" && data && (
-                        <span className="ml-auto data-mono text-[0.62rem] text-white/40 tabular-nums">{data.counts.activeEvents}</span>
+                        <span className="ml-auto data-mono text-[0.62rem] text-slate-500 tabular-nums">{data.counts.activeEvents}</span>
                       )}
                     </button>
                   </li>
@@ -208,9 +208,9 @@ function WeatherWidget() {
               <span className="font-display text-2xl font-bold text-white tabular-nums">
                 {data ? <CountUp value={mm} decimals={mm % 1 ? 1 : 0} /> : mm}
               </span>
-              <span className="text-[0.6rem] font-medium text-white/55">mm/24h</span>
+              <span className="text-[0.6rem] font-medium text-white">mm/24h</span>
             </p>
-            <p className="mt-1 flex items-center gap-1.5 text-[0.65rem] text-white/70">
+            <p className="mt-1 flex items-center gap-1.5 text-[0.65rem] text-white">
               <Umbrella className="size-3 text-water-dim shrink-0" aria-hidden />
               <span className="truncate">{condition} · pilot gauges</span>
             </p>
@@ -219,8 +219,8 @@ function WeatherWidget() {
         </div>
       </div>
       <div className="mt-2.5 flex items-center justify-between gap-2">
-        <span className="data-mono text-[0.6rem] text-white/45 truncate" suppressHydrationWarning>{dateLabel}</span>
-        <span className="micro-label text-[0.52rem]! text-white/30! shrink-0">synthetic</span>
+        <span className="data-mono text-[0.6rem] text-slate-500 truncate" suppressHydrationWarning>{dateLabel}</span>
+        <span className="micro-label text-[0.6rem]! text-slate-500! shrink-0">synthetic</span>
       </div>
     </div>
   );
@@ -271,7 +271,7 @@ export function MobileNav() {
           >
             <Plus className="size-6" aria-hidden />
           </motion.button>
-          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 micro-label text-[0.52rem]! text-water! font-semibold pointer-events-none">
+          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 micro-label text-[0.6rem]! text-water! font-semibold pointer-events-none">
             Report
           </span>
         </li>
@@ -293,7 +293,7 @@ function MobileNavItem({ item, active }: { item: NavItem; active: boolean }) {
         className={cn(
           "flex w-full flex-col items-center justify-center gap-1 py-2.5 touch-target transition-colors",
           "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-aqua rounded-lg",
-          active ? "text-aqua" : "text-slate-400 hover:text-slate-100"
+          active ? "text-aqua" : "text-slate-600 hover:text-white"
         )}
       >
         <item.icon className="size-5 shrink-0" aria-hidden />

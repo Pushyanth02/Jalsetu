@@ -18,7 +18,6 @@ import { sceneThumb } from "@/lib/client/media";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { AnimatedProgress, CountUp, HoverLift, PulseDot, Reveal, Stagger, StaggerItem } from "@/components/motion/kit";
-import { BorderBeam } from "@/components/fx";
 import {
   AlertTriangle, Camera, Check, ChevronLeft, ChevronRight, Copy, FileCheck, Flag, LocateFixed, MapPin, Search, X,
 } from "lucide-react";
@@ -177,7 +176,7 @@ function TrackReport() {
     <Panel
       title="Track a Report"
       icon={<Search />}
-      actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/70">Public Reference</span>}
+      actions={<span className="micro-label !text-[0.6rem] text-muted-foreground">Public Reference</span>}
     >
       <form
         className="flex gap-2"
@@ -210,7 +209,6 @@ function TrackReport() {
 
       {found && (
         <div className="relative mt-3 rounded-xl border border-border/70 bg-slate-50/70 p-3" aria-live="polite">
-          <BorderBeam size={56} duration={8} colorFrom="#2dd4bf" colorTo="#14b88a" />
           <div className="flex gap-3">
             {(() => {
               const thumb = sceneThumb(found.category, found.description, found.publicRef, found.severityReported);
@@ -232,7 +230,7 @@ function TrackReport() {
                       }}
                     />
                   </picture>
-                  <span aria-hidden className="absolute bottom-1 left-1 rounded bg-ink-950/80 px-1 py-px text-[0.45rem] font-semibold tracking-wide text-aqua-dim">SCENE</span>
+                  <span aria-hidden className="absolute bottom-1 left-1 rounded bg-ink-950/80 px-1 py-px text-[0.6rem] font-semibold tracking-wide text-aqua-dim">SCENE</span>
                 </div>
               );
             })()}
@@ -240,17 +238,17 @@ function TrackReport() {
           <div className="flex items-center gap-2 flex-wrap">
             <span className="data-mono text-sm font-semibold text-water">{found.publicRef}</span>
             {rStatus && (
-              <span className={cn("inline-flex rounded-full border px-2 py-0.5 micro-label !text-[0.58rem]", rStatus.cls)}>{rStatus.label}</span>
+              <span className={cn("inline-flex rounded-full border px-2 py-0.5 micro-label !text-[0.6rem]", rStatus.cls)}>{rStatus.label}</span>
             )}
             <SourceBadge source={found.source} />
-            <span className="ml-auto micro-label !text-[0.52rem] text-muted-foreground" title={fmtDateTime(found.submittedAt)}>
+            <span className="ml-auto micro-label !text-[0.6rem] text-muted-foreground" title={fmtDateTime(found.submittedAt)}>
               {fmtDateTime(found.submittedAt)} · {found.channel.toLowerCase()}
             </span>
           </div>
 
           <p className="mt-1.5 text-[0.82rem] text-slate-700 leading-relaxed line-clamp-2">{found.description}</p>
 
-          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.68rem] text-slate-500">
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.68rem] text-slate-600">
             <span className="data-mono">{found.lat.toFixed(4)}, {found.lng.toFixed(4)}</span>
             <span>reported severity <span className="text-slate-700">{found.severityReported.toLowerCase()}</span></span>
             {found.classification && (
@@ -265,10 +263,10 @@ function TrackReport() {
 
           {found.urbanEvent ? (
             <div className="mt-3 pt-3 hairline-t flex items-center gap-3 flex-wrap">
-              <span className="micro-label !text-[0.52rem] text-muted-foreground">linked event</span>
+              <span className="micro-label !text-[0.6rem] text-muted-foreground">linked event</span>
               <span className="data-mono text-[0.72rem] font-semibold text-water">{found.urbanEvent.code}</span>
               <RiskBadge band={found.urbanEvent.riskBand} score={found.urbanEvent.riskScore} />
-              <span className="micro-label !text-[0.52rem] text-muted-foreground">{found.urbanEvent.title}</span>
+              <span className="micro-label !text-[0.6rem] text-muted-foreground">{found.urbanEvent.title}</span>
               <Button
                 size="sm"
                 variant="outline"
@@ -465,7 +463,7 @@ function ReportWizard() {
     <Panel
       title="File a New Report"
       icon={<Flag />}
-      actions={<span className="micro-label !text-[0.5rem] text-muted-foreground/70">Public · Web Channel</span>}
+      actions={<span className="micro-label !text-[0.6rem] text-muted-foreground">Public · Web Channel</span>}
       className="panel-raised"
     >
       {/* step progress: numbered circles, completed shows a check */}
@@ -490,7 +488,7 @@ function ReportWizard() {
                 <span
                   className={cn(
                     "grid size-8 place-items-center rounded-full font-semibold data-mono !text-[0.72rem] !tracking-normal transition-colors",
-                    done ? (current ? "bg-aqua text-ink-950" : "bg-blue-50 text-aqua") : current ? "bg-aqua text-ink-950" : "bg-ink-850 text-slate-400"
+                    done ? (current ? "bg-aqua text-ink-950" : "bg-blue-50 text-aqua") : current ? "bg-aqua text-ink-950" : "bg-ink-850 text-slate-600"
                   )}
                   aria-hidden
                 >
@@ -499,7 +497,7 @@ function ReportWizard() {
                 <span
                   className={cn(
                     "text-[0.7rem] font-medium",
-                    current ? "text-slate-900" : done ? "text-slate-600" : "text-slate-400"
+                    current ? "text-slate-900" : done ? "text-slate-700" : "text-slate-600"
                   )}
                 >
                   {label}
@@ -602,7 +600,7 @@ function ReportWizard() {
           <Button type="button" variant="outline" size="sm" className="rounded-lg border-border text-slate-600 hover:bg-ink-850" disabled={step === 0} onClick={() => goTo(Math.max(0, step - 1))}>
             <ChevronLeft className="size-3.5" aria-hidden /> Back
           </Button>
-          <span className="micro-label !text-[0.52rem] text-muted-foreground">
+          <span className="micro-label !text-[0.6rem] text-muted-foreground">
             {step < 3 ? `${step + 1} of 4` : "Final Check"}
           </span>
           {step < 3 ? (
@@ -650,13 +648,10 @@ function StepLocation(p: {
       <div className="relative h-52 sm:h-60 rounded-xl overflow-hidden border border-border/70 shadow-sm">
         <MapView events={[]} interactive className="size-full" />
         <div className="absolute inset-x-0 bottom-0 bg-ink-950/92 backdrop-blur-sm border-t border-hairline p-2.5 pointer-events-none">
-          <p className="micro-label !text-[0.52rem] text-slate-500">
+          <p className="micro-label !text-[0.6rem] text-slate-600">
             Pilot area: central Delhi · place your report using coordinates, GPS or an area below
           </p>
         </div>
-        {/* HUD frame — brackets ride on an overlay sibling so they paint above
-            the map canvas (a parent's ::before would be covered by it). */}
-        <div aria-hidden className="hud-corners pointer-events-none" style={{ position: "absolute", inset: 0 }} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -816,7 +811,7 @@ function StepIssue(p: {
                   <RadioGroupItem value={c.value} className="mt-0.5 data-[state=checked]:border-water" />
                   <span className="min-w-0">
                     <span className="block text-sm font-medium text-slate-800">{c.value.toLowerCase().replace(/_/g, " ")}</span>
-                    <span className="block mt-0.5 text-[0.68rem] text-slate-500 leading-snug">{c.helper}</span>
+                    <span className="block mt-0.5 text-[0.68rem] text-slate-600 leading-snug">{c.helper}</span>
                   </span>
                 </OptionCard>
               </StaggerItem>
@@ -835,7 +830,7 @@ function StepIssue(p: {
                   <RadioGroupItem value={s.value} className="mt-0.5 data-[state=checked]:border-water" />
                   <span className="min-w-0">
                     <span className="block text-sm font-medium text-slate-800">{s.value.toLowerCase()}</span>
-                    <span className="block mt-0.5 text-[0.62rem] text-slate-500 leading-snug">{s.helper}</span>
+                    <span className="block mt-0.5 text-[0.62rem] text-slate-600 leading-snug">{s.helper}</span>
                   </span>
                 </OptionCard>
               </StaggerItem>
@@ -912,11 +907,11 @@ function StepEvidence(props: StepEvidenceProps) {
             <Camera className="size-3.5" aria-hidden /> {photoBusy ? "Processing…" : photo ? "Replace photo" : "Select photo"}
           </Button>
           {photo && (
-            <Button type="button" variant="ghost" size="sm" className="h-7 text-[0.65rem] text-slate-500" onClick={onRemovePhoto}>
+            <Button type="button" variant="ghost" size="sm" className="h-7 text-[0.65rem] text-slate-600" onClick={onRemovePhoto}>
               <X className="size-3" aria-hidden /> Remove
             </Button>
           )}
-          <span className="text-[0.62rem] text-slate-500">Photos are shrunk to at most 1024px jpeg and stored in the demo database.</span>
+          <span className="text-[0.62rem] text-slate-600">Photos are shrunk to at most 1024px jpeg and stored in the demo database.</span>
         </div>
         {photoErr && <p className="mt-1.5 text-[0.62rem] text-sev-high" role="alert">{photoErr}</p>}
         {photo && (
@@ -924,8 +919,8 @@ function StepEvidence(props: StepEvidenceProps) {
             <div className="relative rounded-lg overflow-hidden border border-border/60 size-20 shrink-0 bg-slate-100">
               <img src={photo.dataUrl} alt="Report photo preview" className="size-full object-cover" />
             </div>
-            <figcaption className="min-w-0 text-[0.65rem] text-slate-500">
-              <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 text-water px-2 py-0.5 micro-label !text-[0.52rem]">uploaded</span>
+            <figcaption className="min-w-0 text-[0.65rem] text-slate-600">
+              <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 text-water px-2 py-0.5 micro-label !text-[0.6rem]">uploaded</span>
               <span className="block mt-1 truncate">{photo.name}</span>
               <span className="data-mono block mt-0.5">{dataUrlKb(photo.dataUrl)} KB · jpeg</span>
             </figcaption>
@@ -961,7 +956,7 @@ function StepEvidence(props: StepEvidenceProps) {
           <Checkbox id="rep-consent" checked={consent} onCheckedChange={(v) => onConsent(v === true)} className="mt-0.5 data-[state=checked]:bg-aqua data-[state=checked]:border-aqua data-[state=checked]:text-ink-950" />
           <span className="text-xs leading-relaxed text-slate-600">
             <span className="text-slate-800 font-medium">I consent to this report being processed.</span>
-            <span className="block mt-0.5 text-slate-500">
+            <span className="block mt-0.5 text-slate-600">
               Location and photo are used only for this report and its event. Phone is optional and stored hashed. This is a research demo, not a deployed government service.
             </span>
           </span>
@@ -1005,7 +1000,7 @@ function StepReview(p: {
         <ReviewRow label="Photo" value={p.photo ? `attached (${p.photo.name}, ${dataUrlKb(p.photo.dataUrl)} KB jpeg)` : "none"} />
         <ReviewRow label="Phone" value={p.phone ? "provided (stored hashed)" : "not provided"} />
       </dl>
-      <p className="text-[0.65rem] text-slate-500">
+      <p className="text-[0.65rem] text-slate-600">
         When you submit, the system reads your report, checks for duplicates within 150m and the last 48 hours, scores the risk and routes it to the right agencies. Keep your tracking reference to follow the outcome.
       </p>
       {p.submitError && <ErrorNote message={p.submitError} />}
@@ -1021,7 +1016,7 @@ function StepReview(p: {
 function ReviewRow({ label, value, multiline }: { label: string; value: string; multiline?: boolean }) {
   return (
     <div className="flex items-start gap-3 px-3.5 py-2.5">
-      <dt className="micro-label !text-[0.52rem] w-32 shrink-0 pt-0.5">{label}</dt>
+      <dt className="micro-label !text-[0.6rem] w-32 shrink-0 pt-0.5">{label}</dt>
       <dd className={cn("data-mono !text-[0.72rem] text-slate-700 min-w-0", multiline ? "whitespace-pre-wrap leading-relaxed" : "truncate")}>{value}</dd>
     </div>
   );
@@ -1051,7 +1046,7 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
     <div className="space-y-4" aria-live="polite">
       <Reveal>
         <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
-          <p className="micro-label !text-[0.55rem] text-water flex items-center gap-2">
+          <p className="micro-label !text-[0.6rem] text-water flex items-center gap-2">
             <PulseDot color="bg-emerald-500" size={7} />
             Report Submitted · Tracking Reference
           </p>
@@ -1062,13 +1057,13 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
               {copied ? "Copied" : "Copy"}
             </Button>
           </div>
-          <p className="mt-1.5 text-[0.65rem] text-slate-500">Save this reference. Use the lookup above to follow the report at any time.</p>
+          <p className="mt-1.5 text-[0.65rem] text-slate-600">Save this reference. Use the lookup above to follow the report at any time.</p>
         </div>
       </Reveal>
 
       <Reveal delay={0.08}>
         <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="micro-label !text-[0.52rem] text-muted-foreground">Pipeline Outcome</span>
+          <span className="micro-label !text-[0.6rem] text-muted-foreground">Pipeline Outcome</span>
           <span className={cn("inline-flex rounded-full border px-2.5 py-1 micro-label !text-[0.6rem]", pipe.cls)}>{pipe.label}</span>
         </div>
         <p className="mt-2 text-xs text-slate-600 leading-relaxed">{pipe.explain(outcome)}</p>
@@ -1078,26 +1073,26 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="rounded-xl border border-border/70 bg-ink-900 p-3.5 shadow-xs">
             <div className="flex items-center justify-between gap-2">
-              <p className="micro-label !text-[0.52rem]">Classification</p>
+              <p className="micro-label !text-[0.6rem]">Classification</p>
               <ProviderChip provider={outcome.classification.provider} model={outcome.classification.modelId} />
             </div>
             <dl className="mt-2.5 space-y-1.5 text-xs">
               <div className="flex justify-between gap-2">
-                <dt className="text-slate-500">Category</dt>
+                <dt className="text-slate-600">Category</dt>
                 <dd className="data-mono text-slate-800">{outcome.classification.category.toLowerCase().replace(/_/g, " ")}</dd>
               </div>
               <div className="flex justify-between gap-2">
-                <dt className="text-slate-500">Severity</dt>
+                <dt className="text-slate-600">Severity</dt>
                 <dd className="data-mono text-slate-800">{outcome.classification.severity.toLowerCase()}</dd>
               </div>
               <div className="flex justify-between gap-2">
-                <dt className="text-slate-500">Confidence</dt>
+                <dt className="text-slate-600">Confidence</dt>
                 <dd className="text-slate-800">
                   <CountUp value={Math.round(outcome.classification.confidence * 100)} suffix="%" />
                 </dd>
               </div>
             </dl>
-            <p className="mt-2.5 text-[0.65rem] text-slate-500 leading-relaxed border-l-2 border-blue-200 pl-2.5">
+            <p className="mt-2.5 text-[0.65rem] text-slate-600 leading-relaxed border-l-2 border-blue-200 pl-2.5">
               {outcome.classification.summary}
             </p>
             {outcome.classification.fallbackUsed && (
@@ -1106,20 +1101,20 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
           </div>
 
           <div className="rounded-xl border border-border/70 bg-ink-900 p-3.5 shadow-xs">
-            <p className="micro-label !text-[0.52rem]">Risk &amp; Routing</p>
+            <p className="micro-label !text-[0.6rem]">Risk &amp; Routing</p>
             <div className="mt-2.5 flex items-center gap-2">
               <RiskBadge band={outcome.risk.band} score={outcome.risk.score} />
-              <span className="text-[0.65rem] text-slate-500">risk score out of 100 · explainable 7-factor model</span>
+              <span className="text-[0.65rem] text-slate-600">risk score out of 100 · explainable 7-factor model</span>
             </div>
             <AnimatedProgress className="mt-3" value={outcome.risk.score} max={100} fillClassName={RISK_META[outcome.risk.band]?.bar ?? "bg-water-dim"} />
             <ul className="mt-3 space-y-1">
               {outcome.routing.length === 0 ? (
-                <li className="text-xs text-slate-500">No agency links recorded.</li>
+                <li className="text-xs text-slate-600">No agency links recorded.</li>
               ) : (
                 outcome.routing.map((r) => (
                   <li key={`${r.agency}-${r.role}`} className="flex items-center gap-2 text-xs">
                     <span className="data-mono font-semibold text-water">{r.agency}</span>
-                    <span className="micro-label !text-[0.5rem] text-slate-500">{r.role.toLowerCase()}</span>
+                    <span className="micro-label !text-[0.6rem] text-slate-600">{r.role.toLowerCase()}</span>
                   </li>
                 ))
               )}
@@ -1130,9 +1125,9 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
 
       <Reveal delay={0.2}>
         <div className="rounded-xl border border-border/70 bg-ink-900 p-3.5 shadow-xs flex items-center gap-3 flex-wrap">
-          <span className="micro-label !text-[0.52rem] text-muted-foreground">Urban Event</span>
+          <span className="micro-label !text-[0.6rem] text-muted-foreground">Urban Event</span>
           <span className="data-mono text-sm font-semibold text-water">{outcome.event.code}</span>
-          <span className="micro-label !text-[0.52rem] text-muted-foreground">Status {outcome.event.status.toLowerCase().replace(/_/g, " ")}</span>
+          <span className="micro-label !text-[0.6rem] text-muted-foreground">Status {outcome.event.status.toLowerCase().replace(/_/g, " ")}</span>
           <Button size="sm" className="ml-auto rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim" onClick={() => navigate("event", outcome.event.code)}>
             Open event dossier <ChevronRight className="size-3.5" aria-hidden />
           </Button>
@@ -1141,7 +1136,7 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
 
       <Reveal delay={0.26}>
         <div className="flex items-center justify-between gap-2 pt-1">
-          <p className="text-[0.62rem] text-slate-500">The form locks after submitting so each flow files exactly one report.</p>
+          <p className="text-[0.62rem] text-slate-600">The form locks after submitting so each flow files exactly one report.</p>
           <Button variant="outline" size="sm" className="rounded-lg border-border text-slate-600 hover:bg-ink-850" onClick={onReset}>
             File another report
           </Button>

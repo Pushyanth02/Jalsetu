@@ -102,7 +102,7 @@ export function MapLocateControl({ events }: { events: EventSummary[] }) {
           onClick={() => openEvent(nearest.code)}
           className="panel rounded-xl px-3 py-2 shadow-md max-w-full text-left group animate-in fade-in slide-in-from-right-2 duration-200"
         >
-          <span className="micro-label !text-[0.52rem] block text-muted-foreground">nearest waterlogging</span>
+          <span className="micro-label !text-[0.6rem] block text-muted-foreground">nearest waterlogging</span>
           <span className="mt-0.5 flex items-center gap-1.5">
             <span className="data-mono text-[0.68rem] font-semibold text-water group-hover:text-water-dim truncate">
               {nearest.code}

@@ -16,7 +16,9 @@ export type ViewId =
   | "verify"
   | "report"
   | "analytics"
-  | "health";
+  | "health"
+  | "terms"
+  | "privacy";
 
 export interface MapFilters {
   status: string | "ALL";
@@ -85,7 +87,7 @@ export function parseHash(hash: string): { view: ViewId; eventId: string | null 
   const clean = hash.replace(/^#\/?/, "");
   if (!clean) return { view: "landing", eventId: null };
   const [head, param] = clean.split("/");
-  const views: ViewId[] = ["landing", "command", "map", "event", "investigate", "responsibility", "verify", "report", "analytics", "health"];
+  const views: ViewId[] = ["landing", "command", "map", "event", "investigate", "responsibility", "verify", "report", "analytics", "health", "terms", "privacy"];
   if (head === "events" && param) return { view: "event", eventId: param };
   if (views.includes(head as ViewId)) return { view: head as ViewId, eventId: param ?? null };
   return { view: "landing", eventId: null };

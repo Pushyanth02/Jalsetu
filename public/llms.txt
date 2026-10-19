@@ -54,6 +54,8 @@
 - /#/report - Citizen Report: 3-step guided submission with tracking reference
 - /#/analytics - Research & Analytics: baseline vs proposed, methodology, traceability
 - /#/health - Data & Model Health: source freshness, model runs, endpoint checks, glossary
+- /#/terms - Terms of Service: scope of the research prototype, permitted research use, prohibited operational use, synthetic-data disclaimer, licences (CC-BY-4.0 datasets, MIT code), liability
+- /#/privacy - Privacy Policy: no accounts, no cookies, no analytics, no server; session-only state held in the tab; third-party Esri map tiles; AI-generated illustrative imagery
 
 ## Data Provenance (integrity rules)
 

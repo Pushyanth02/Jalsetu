@@ -1,13 +1,21 @@
 "use client";
 
-import { useUi, navigate } from "@/lib/client/store";
+import { useUi, navigate, type ViewId } from "@/lib/client/store";
 import { NAV_ITEMS } from "./NavRail";
 import { ChevronRight, Home } from "lucide-react";
+
+// Labels for hash views that are not part of the primary navigation rail.
+// Legal pages are reached from the landing footer / app footer, not NavRail,
+// so they carry their breadcrumb names here instead of NAV_ITEMS.
+const EXTRA_VIEW_LABELS: Partial<Record<ViewId, string>> = {
+  terms: "Terms of Service",
+  privacy: "Privacy Policy",
+};
 
 export function ViewBreadcrumb() {
   const view = useUi((s) => s.view);
   const eventId = useUi((s) => s.eventId);
-  const label = NAV_ITEMS.find((n) => n.id === view)?.label ?? "Command Center";
+  const label = EXTRA_VIEW_LABELS[view] ?? NAV_ITEMS.find((n) => n.id === view)?.label ?? "Command Center";
   const isHome = view === "command" && !eventId;
 
   // Home in the breadcrumb is the public landing page, not the console.
@@ -48,7 +56,7 @@ export function ViewBreadcrumb() {
                   {label}
                 </a>
               ) : (
-                <span aria-current="page" className="font-medium text-slate-200 truncate inline-block max-w-[40vw] sm:max-w-none px-1 py-1">
+                <span aria-current="page" className="font-medium text-slate-600 truncate inline-block max-w-[40vw] sm:max-w-none px-1 py-1">
                   {label}
                 </span>
               )}
