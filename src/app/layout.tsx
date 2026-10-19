@@ -5,6 +5,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Providers } from "@/components/app/providers";
 
 import { SITE_URL, SITE_BASE_PATH } from "@/lib/site-config";
+// metadataBase is origin + base path (e.g. https://owner.github.io/Jalsetu)
+// so relative alternates/OG urls (canonical: "/", og:url: "/") resolve to the
+// real deployment URL. SITE_URL alone is the origin; the base path lives in
+// SITE_BASE_PATH (set by the Pages workflow; empty on Vercel/custom domains).
+const METADATA_BASE = `${SITE_URL}${SITE_BASE_PATH}`;
 
 /* Typography is chosen, not defaulted (full rationale in globals.css):
    • Public Sans — UI + body. Designed for government digital services;
@@ -49,7 +54,7 @@ const DESCRIPTION =
   "Interactive research prototype for Delhi monsoon flooding: report waterlogging, watch deterministic rules fuse citizen reports, rainfall, drains and infrastructure into risk-scored events, and track field verification to closure. Bounded Delhi pilot with clearly labelled synthetic demo data.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
+  metadataBase: new URL(METADATA_BASE),
   title: {
     default: TITLE,
     template: "%s · JalSetu",
