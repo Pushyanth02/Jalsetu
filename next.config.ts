@@ -37,7 +37,11 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react", "recharts", "framer-motion"],
   },
-  // Cache immutable assets aggressively (static export)
+  // Security headers (preview-compatible: the app must remain embeddable in
+  // the sandbox Preview Panel iframe). CSP `frame-ancestors` is the modern
+  // clickjacking guard and takes precedence over X-Frame-Options in
+  // CSP-capable browsers; X-Frame-Options: SAMEORIGIN stays as a legacy
+  // fallback that still permits same-origin embedding (gateway preview).
   async headers() {
     if (isStaticExport) return [];
     return [
@@ -45,8 +49,12 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: [
           { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Content-Security-Policy",
+            value: "frame-ancestors 'self' https: http://localhost:* http://127.0.0.1:*",
+          },
         ],
       },
       {

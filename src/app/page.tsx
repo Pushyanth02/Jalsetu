@@ -104,7 +104,9 @@ export default function Page() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        // `</` is escaped to prevent a `</script>` breakout inside the inline
+        // JSON payload (defense-in-depth: content here is static today).
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
       />
       <AppRoot />
     </>

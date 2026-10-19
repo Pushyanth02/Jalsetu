@@ -111,9 +111,13 @@ function escapeHtml(s: string): string {
  */
 export function eventPopupHTML(e: EventSummary, now = Date.now()): string {
   const statusHex = STATUS_HEX[e.status] ?? PALETTE.textFaint;
-  const statusPlain = STATUS_PLAIN[e.status] ?? e.status.toLowerCase().replace(/_/g, " ");
+  // escapeHtml on the fallback paths too: status/riskBand are app-controlled
+  // enums today, but a future data source must never be able to break out of
+  // the popup markup (defense-in-depth against stored XSS).
+  const statusPlain = STATUS_PLAIN[e.status] ?? escapeHtml(e.status.toLowerCase().replace(/_/g, " "));
   const riskHex = RISK_HEX[e.riskBand] ?? PALETTE.textFaint;
   const riskPlain = RISK_PLAIN[e.riskBand] ?? "";
+  const riskBand = escapeHtml(e.riskBand);
   const updated = e.lastActivityAt ? timeAgoText(e.lastActivityAt, now) : "unknown";
 
   return `
@@ -121,7 +125,7 @@ export function eventPopupHTML(e: EventSummary, now = Date.now()): string {
   <div class="flex items-center gap-1.5 flex-wrap">
     <span class="data-mono text-[0.7rem] font-semibold" style="color:${PALETTE.aqua}">${escapeHtml(e.code)}</span>
     <span class="rounded-full px-2 py-0.5 text-[0.58rem] font-semibold tracking-wide uppercase" style="color:${statusHex};background:${statusHex}14;border:1px solid ${statusHex}33">${statusPlain}</span>
-    <span class="rounded-full px-2 py-0.5 text-[0.58rem] font-semibold tracking-wide uppercase" style="color:${riskHex};background:${riskHex}14;border:1px solid ${riskHex}33">${e.riskBand} RISK</span>
+    <span class="rounded-full px-2 py-0.5 text-[0.58rem] font-semibold tracking-wide uppercase" style="color:${riskHex};background:${riskHex}14;border:1px solid ${riskHex}33">${riskBand} RISK</span>
   </div>
   <h3 class="mt-1.5 text-[0.82rem] font-semibold leading-snug text-slate-900">${escapeHtml(e.title)}</h3>
   <p class="mt-0.5 text-[0.66rem] text-slate-500 leading-snug">${escapeHtml(e.locationText)}</p>
