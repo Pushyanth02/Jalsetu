@@ -1,0 +1,10 @@
+# Normalize all text files to LF in the repo, check out as-is on clone.
+* text=auto eol=lf
+
+# Binaries — never diff/merge, never normalize.
+*.png binary
+*.jpg binary
+*.ico binary
+*.db binary
+*.woff binary
+*.woff2 binary

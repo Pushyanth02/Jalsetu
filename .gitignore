@@ -1,2 +1,46 @@
-skills/
+# --- Dependencies ----------------------------------------------------------
 node_modules/
+
+# --- Build output ----------------------------------------------------------
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# --- Logs ------------------------------------------------------------------
+dev.log
+server.log
+
+# --- Environment / secrets (committed: .env.example only) -------------------
+.env
+.env*.local
+.env.*.local
+*.pem
+
+# --- Database (SQLite is local-only; snapshot.json is the shipped dataset) --
+db/*.db
+db/*.db-journal
+
+# --- Sandbox / local tooling (never ship) -----------------------------------
+tool-results/
+upload/
+qa/
+.zscripts/
+Caddyfile
+mini-services/
+skills/
+worklog.md
+.vscode/chrome-profile/
+
+# --- OS / editor noise ------------------------------------------------------
+.DS_Store
+
+# --- Deployment / test artifacts ---------------------------------------------
+.vercel
+coverage/
+
+# NOTE: these MUST stay tracked (do not add ignore rules for them):
+#   .env.example            – documented env template
+#   bun.lock                – lockfile for reproducible installs
+#   src/data/snapshot.json  – committed synthetic demo dataset
