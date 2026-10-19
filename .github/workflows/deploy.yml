@@ -39,15 +39,25 @@ jobs:
         env:
           MANUAL_SITE_URL: ${{ github.event.inputs.site_url }}
         run: |
-          # Root repos (owner.github.io) serve at / ; project pages at /<repo>
-          if [[ "${{ github.repository }}" == *.github.io ]]; then
+          # Canonical lowercase host (github.io serves as pushyanth02.github.io)
+          OWNER_LC="${{ github.repository_owner }}"
+          ORIGIN="https://${OWNER_LC,,}.github.io"
+          # SITE_URL is the ORIGIN ONLY (no base path) — site-config.ts
+          # concatenates SITE_URL + SITE_BASE_PATH, so baking the base path
+          # into SITE_URL would double it in every canonical URL.
+          # Custom domains (workflow_dispatch) serve at the domain root.
+          if [[ -n "$MANUAL_SITE_URL" ]]; then
             BASE=""
-            DEFAULT_URL="https://${{ github.repository_owner }}.github.io"
+            SITE_URL="${MANUAL_SITE_URL%/}"
+          elif [[ "${{ github.repository }}" == *.github.io ]]; then
+            # Root repo (owner.github.io): serves at /
+            BASE=""
+            SITE_URL="$ORIGIN"
           else
+            # Project page: serves at /<repo-name>
             BASE="/${{ github.event.repository.name }}"
-            DEFAULT_URL="https://${{ github.repository_owner }}.github.io${BASE}"
+            SITE_URL="$ORIGIN"
           fi
-          SITE_URL="${MANUAL_SITE_URL:-$DEFAULT_URL}"
           echo "base=$BASE" >> "$GITHUB_OUTPUT"
           echo "site_url=$SITE_URL" >> "$GITHUB_OUTPUT"
           echo "Building with BASE='$BASE' SITE_URL='$SITE_URL'"
