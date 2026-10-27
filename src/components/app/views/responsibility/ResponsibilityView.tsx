@@ -64,12 +64,12 @@ export function ResponsibilityView() {
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
           <span className="flex items-center gap-2">
             <Network className="size-3.5 text-water" aria-hidden />
-            <span className="micro-label !text-[0.62rem] text-slate-600">Responsibility Model</span>
+            <span className="micro-label !text-[0.7rem] text-slate-600">Responsibility Model</span>
           </span>
-          <span className="text-[0.65rem] text-muted-foreground" title="How responsibility is traced from an incident to the agency that must act">
+          <span className="text-[0.7rem] text-muted-foreground" title="How responsibility is traced from an incident to the agency that must act">
             event → asset → jurisdiction → agency → action → escalation
           </span>
-          <span className="micro-label ml-auto !text-[0.6rem] text-muted-foreground">
+          <span className="micro-label ml-auto !text-[0.7rem] text-muted-foreground">
             routing-rules v1.2-demo · synthetic demo dataset
           </span>
         </div>
@@ -146,7 +146,7 @@ function CrossAgencyRegister() {
           size="sm"
           variant="outline"
           onClick={() => setSortDesc((d) => !d)}
-          className="h-7 text-[0.62rem] rounded-lg border-border text-slate-600 hover:bg-ink-850"
+          className="h-7 text-[0.7rem] rounded-lg border-border text-slate-600 hover:bg-ink-850"
           aria-label={sortDesc ? "Sort by risk ascending" : "Sort by risk descending"}
         >
           {sortDesc ? <ArrowDownWideNarrow className="size-3" aria-hidden /> : <ArrowUpNarrowWide className="size-3" aria-hidden />}
@@ -162,7 +162,7 @@ function CrossAgencyRegister() {
         <>
           {/* filters */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-3">
-            <span className="micro-label !text-[0.6rem] text-muted-foreground">Agency</span>
+            <span className="micro-label !text-[0.7rem] text-muted-foreground">Agency</span>
             <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by agency">
               {AGENCY_CODES.map((a) => {
                 const on = agencyFilter.has(a);
@@ -172,7 +172,7 @@ function CrossAgencyRegister() {
                     onClick={() => toggleAgency(a)}
                     aria-pressed={on}
                     className={cn(
-                      "rounded-full border micro-label !text-[0.6rem] px-2.5 py-1 transition-colors data-mono !tracking-normal !normal-case font-medium",
+                      "rounded-full border micro-label !text-[0.7rem] px-2.5 py-1 transition-colors data-mono !tracking-normal !normal-case font-medium",
                       on
                         ? "bg-blue-50 text-water border-blue-200"
                         : "border-border bg-ink-900 text-slate-600 hover:bg-ink-850 hover:text-slate-700"
@@ -183,14 +183,14 @@ function CrossAgencyRegister() {
                 );
               })}
               {agencyFilter.size > 0 && (
-                <button onClick={() => setAgencyFilter(new Set())} className="micro-label !text-[0.6rem] text-muted-foreground hover:text-water transition-colors px-1">
+                <button onClick={() => setAgencyFilter(new Set())} className="micro-label !text-[0.7rem] text-muted-foreground hover:text-water transition-colors px-1">
                   clear
                 </button>
               )}
             </div>
             <span className="flex items-center gap-2">
               <Switch id="escalated-only" checked={escalatedOnly} onCheckedChange={setEscalatedOnly} aria-label="Escalated events only" />
-              <label htmlFor="escalated-only" className="micro-label !text-[0.6rem] text-muted-foreground cursor-pointer select-none">
+              <label htmlFor="escalated-only" className="micro-label !text-[0.7rem] text-muted-foreground cursor-pointer select-none">
                 escalated only (critical or reopened)
               </label>
             </span>
@@ -198,20 +198,20 @@ function CrossAgencyRegister() {
 
           {/* group header stats: events per agency */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mb-3 hairline-t hairline-b py-2">
-            <span className="micro-label !text-[0.6rem] text-muted-foreground">Events per Agency</span>
+            <span className="micro-label !text-[0.7rem] text-muted-foreground">Events per Agency</span>
             {AGENCY_CODES.filter((a) => perAgency.has(a)).map((a) => (
-              <span key={a} className="data-mono text-[0.62rem]">
+              <span key={a} className="data-mono text-[0.7rem]">
                 <span className="text-water">{a}</span>
                 <span className="text-muted-foreground"> {perAgency.get(a)}</span>
               </span>
             ))}
             {perAgency.has("unassigned") && (
-              <span className="data-mono text-[0.62rem]">
+              <span className="data-mono text-[0.7rem]">
                 <span className="text-muted-foreground">unassigned </span>
                 <span className="text-muted-foreground">{perAgency.get("unassigned")}</span>
               </span>
             )}
-            {filtered.length === 0 && <span className="text-[0.62rem] text-muted-foreground">no events match</span>}
+            {filtered.length === 0 && <span className="text-[0.7rem] text-muted-foreground">no events match</span>}
           </div>
 
           {/* rows */}
@@ -228,18 +228,18 @@ function CrossAgencyRegister() {
                   >
                     {/* line 1: code + badges */}
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="data-mono text-[0.68rem] font-semibold text-water group-hover:text-water-dim">{e.code}</span>
+                      <span className="data-mono text-[0.7rem] font-semibold text-water group-hover:text-water-dim">{e.code}</span>
                       <RiskBadge band={e.riskBand} score={e.riskScore} />
                       <StatusBadge status={e.status} />
-                      <span className="data-mono text-[0.62rem] text-muted-foreground">{e.reportCount} rep</span>
+                      <span className="data-mono text-[0.7rem] text-muted-foreground">{e.reportCount} rep</span>
                       <ChevronRight className="size-3.5 text-slate-400 group-hover:text-water ml-auto shrink-0" aria-hidden />
                     </div>
                     {/* line 2: title */}
                     <p className="mt-1 text-[0.78rem] text-slate-700 leading-snug line-clamp-1">{e.title}</p>
                     {/* line 3: jurisdiction + agency */}
                     <div className="mt-1 flex items-center gap-x-3 gap-y-1 flex-wrap">
-                      <span className="data-mono text-[0.62rem] text-water">{e.agencyCode ?? "unassigned"}</span>
-                      <span className="text-[0.62rem] text-muted-foreground truncate max-w-72">
+                      <span className="data-mono text-[0.7rem] text-water">{e.agencyCode ?? "unassigned"}</span>
+                      <span className="text-[0.7rem] text-muted-foreground truncate max-w-72">
                         {e.jurisdictionId ? (jurisName.get(e.jurisdictionId) ?? "jurisdiction") : "outside pilot"}
                       </span>
                       {e.groundTruthHotspotId != null && <SourceBadge source="SYNTHETIC_DEMO" />}
@@ -292,7 +292,7 @@ function AgencyWorkload() {
     <Panel
       title={`Agency Workload · ${agencies.length} Agencies`}
       icon={<Activity />}
-      actions={overviewQ.isError ? <span className="micro-label !text-[0.6rem] text-sev-moderate">verified counts unavailable</span> : undefined}
+      actions={overviewQ.isError ? <span className="micro-label !text-[0.7rem] text-sev-moderate">verified counts unavailable</span> : undefined}
     >
       <Stagger className="space-y-2.5">
         {agencies.map((a) => {
@@ -304,16 +304,16 @@ function AgencyWorkload() {
                 <div className="flex items-baseline gap-2.5 flex-wrap">
                   <span className="data-mono text-xs font-semibold text-water w-10 shrink-0">{a.code}</span>
                   <span className="text-xs text-slate-700 flex-1 min-w-40 truncate" title={a.name}>{a.name}</span>
-                  <span className="micro-label !text-[0.6rem] text-muted-foreground">{a.kind.toLowerCase()}</span>
+                  <span className="micro-label !text-[0.7rem] text-muted-foreground">{a.kind.toLowerCase()}</span>
                   <a
                     href={`tel:${a.hotline.replace(/[^+\d]/g, "")}`}
-                    className="data-mono text-[0.62rem] text-water hover:text-water-dim transition-colors"
+                    className="data-mono text-[0.7rem] text-water hover:text-water-dim transition-colors"
                     title={`call ${a.code} hotline`}
                   >
                     {a.hotline}
                   </a>
                 </div>
-                <p className="mt-1 text-[0.65rem] text-muted-foreground leading-snug">{a.notes}</p>
+                <p className="mt-1 text-[0.7rem] text-muted-foreground leading-snug">{a.notes}</p>
                 <div className="mt-2 flex items-center gap-2.5">
                   <span
                     className="flex-1"
@@ -322,15 +322,15 @@ function AgencyWorkload() {
                   >
                     <AnimatedProgress value={a.activeEvents} max={maxLoad} fillClassName="bg-water-dim" />
                   </span>
-                  <span className="data-mono text-[0.62rem] text-slate-900">{a.activeEvents}<span className="text-muted-foreground"> links</span></span>
-                  <span className="data-mono text-[0.62rem] text-verified">{verified}<span className="text-muted-foreground"> ver</span></span>
+                  <span className="data-mono text-[0.7rem] text-slate-900">{a.activeEvents}<span className="text-muted-foreground"> links</span></span>
+                  <span className="data-mono text-[0.7rem] text-verified">{verified}<span className="text-muted-foreground"> ver</span></span>
                 </div>
               </div>
             </StaggerItem>
           );
         })}
       </Stagger>
-      <p className="mt-3 micro-label !text-[0.6rem] text-muted-foreground">
+      <p className="mt-3 micro-label !text-[0.7rem] text-muted-foreground">
         Links: open incidents involving this agency (any role) · bar length is relative to the busiest agency · ver: incidents verified or closed where the agency is the lead
       </p>
     </Panel>
@@ -361,7 +361,7 @@ function ChainInspector() {
     <Panel
       title="Chain Inspector"
       icon={<GitBranch />}
-      actions={respQ.data ? <span className="micro-label !text-[0.6rem] text-muted-foreground">{respQ.data.ruleVersion}</span> : undefined}
+      actions={respQ.data ? <span className="micro-label !text-[0.7rem] text-muted-foreground">{respQ.data.ruleVersion}</span> : undefined}
     >
       <div className="flex items-center gap-3 flex-wrap mb-3">
         <div className="w-full sm:w-80 space-y-1">
@@ -384,7 +384,7 @@ function ChainInspector() {
             size="sm"
             variant="outline"
             onClick={() => navigate("event", respQ.data!.event.code)}
-            className="h-8 text-[0.62rem] rounded-lg border-border text-slate-600 hover:bg-ink-850"
+            className="h-8 text-[0.7rem] rounded-lg border-border text-slate-600 hover:bg-ink-850"
           >
             open dossier <ChevronRight className="size-3" aria-hidden />
           </Button>
@@ -413,7 +413,7 @@ function ChainInspector() {
           </Stagger>
 
           {respQ.data.groundTruth && (
-            <p className="mt-3 text-[0.65rem] text-sev-moderate">
+            <p className="mt-3 text-[0.7rem] text-sev-moderate">
               Routing evaluation note: seeded ground-truth responsible agency{" "}
               <span className="data-mono">{respQ.data.groundTruth.agency}</span> (synthetic, for routing evaluation).
             </p>
@@ -421,7 +421,7 @@ function ChainInspector() {
 
           {/* actions */}
           <div className="mt-4 hairline-t pt-3">
-            <p className="micro-label !text-[0.6rem] mb-2">Action Items · {respQ.data.actions.length}</p>
+            <p className="micro-label !text-[0.7rem] mb-2">Action Items · {respQ.data.actions.length}</p>
             {respQ.data.actions.length === 0 ? (
               <p className="text-xs text-muted-foreground">No action items recorded for this event.</p>
             ) : (
@@ -429,25 +429,25 @@ function ChainInspector() {
                 {respQ.data.actions.map((a) => (
                   <li key={a.id} className="rounded-lg border border-border bg-slate-50 p-3">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="data-mono text-[0.62rem] font-semibold text-water">{a.kind.replace(/_/g, " ").toLowerCase()}</span>
-                      <span className={cn("micro-label !text-[0.6rem]", a.priority === "URGENT" ? "text-sev-critical" : a.priority === "HIGH" ? "text-sev-high" : "text-muted-foreground")}>
+                      <span className="data-mono text-[0.7rem] font-semibold text-water">{a.kind.replace(/_/g, " ").toLowerCase()}</span>
+                      <span className={cn("micro-label !text-[0.7rem]", a.priority === "URGENT" ? "text-sev-critical" : a.priority === "HIGH" ? "text-sev-high" : "text-muted-foreground")}>
                         {a.priority.toLowerCase()}
                       </span>
-                      <span className={cn("micro-label !text-[0.6rem]", a.status === "COMPLETED" ? "text-verified" : a.status === "FAILED" ? "text-sev-critical" : "text-water")}>
+                      <span className={cn("micro-label !text-[0.7rem]", a.status === "COMPLETED" ? "text-verified" : a.status === "FAILED" ? "text-sev-critical" : "text-water")}>
                         {a.status.toLowerCase().replace(/_/g, " ")}
                       </span>
-                      <span className="ml-auto data-mono text-[0.62rem] text-muted-foreground">
+                      <span className="ml-auto data-mono text-[0.7rem] text-muted-foreground">
                         {a.agencyCode ?? "n/a"}{a.assignedTo ? ` · ${a.assignedTo}` : ""}
                       </span>
                     </div>
                     <p className="mt-1 text-[0.78rem] text-slate-700">{a.instruction}</p>
                     {a.outcome && <p className="mt-1 text-xs text-verified">Outcome: {a.outcome}</p>}
-                    {a.dueAt && <p className="mt-1 text-[0.62rem] text-muted-foreground">due <TimeAgo iso={a.dueAt} /></p>}
+                    {a.dueAt && <p className="mt-1 text-[0.7rem] text-muted-foreground">due <TimeAgo iso={a.dueAt} /></p>}
                   </li>
                 ))}
               </ul>
             )}
-            <p className="mt-2.5 text-[0.6rem] text-muted-foreground">
+            <p className="mt-2.5 text-[0.7rem] text-muted-foreground">
               Updates and field checks happen inside the event dossier. This inspector is read-only.
             </p>
           </div>
@@ -476,11 +476,11 @@ function ChainStep({ step, last }: { step: ChainLevelData; last?: boolean }) {
       />
       {!last && <span className="absolute left-[4px] top-4 bottom-0 w-px bg-border" aria-hidden />}
       <div className="flex items-baseline gap-2 flex-wrap">
-        <span className="micro-label !text-[0.6rem]">{c.level.toLowerCase()}</span>
+        <span className="micro-label !text-[0.7rem]">{c.level.toLowerCase()}</span>
         <span className="data-mono text-xs font-semibold text-slate-900">{c.ref}</span>
-        {c.status && <span className="micro-label !text-[0.6rem] text-muted-foreground">{c.status.toLowerCase()}</span>}
+        {c.status && <span className="micro-label !text-[0.7rem] text-muted-foreground">{c.status.toLowerCase()}</span>}
         {c.hotline && (
-          <a href={`tel:${c.hotline.replace(/[^+\d]/g, "")}`} className="data-mono text-[0.6rem] text-water hover:text-water-dim transition-colors">
+          <a href={`tel:${c.hotline.replace(/[^+\d]/g, "")}`} className="data-mono text-[0.7rem] text-water hover:text-water-dim transition-colors">
             {c.hotline}
           </a>
         )}
@@ -489,7 +489,7 @@ function ChainStep({ step, last }: { step: ChainLevelData; last?: boolean }) {
       <p className="text-xs text-slate-700 mt-0.5 leading-snug">{c.label}</p>
       {c.detail && <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{c.detail}</p>}
       {c.asset && (
-        <p className="text-[0.65rem] text-muted-foreground mt-0.5">
+        <p className="text-[0.7rem] text-muted-foreground mt-0.5">
           asset: <span className="data-mono text-water">{c.asset.code}</span> · {c.asset.name} ·{" "}
           {c.asset.kind.toLowerCase().replace(/_/g, " ")} · condition {c.asset.condition}
         </p>
@@ -515,15 +515,15 @@ function EscalationMatrix() {
     <Panel
       title="Escalation Matrix · Routing Reference"
       icon={<ShieldAlert />}
-      actions={<span className="micro-label !text-[0.6rem] text-muted-foreground">routing-rules v1.2-demo</span>}
+      actions={<span className="micro-label !text-[0.7rem] text-muted-foreground">routing-rules v1.2-demo</span>}
     >
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="hairline-b">
-              <th scope="col" className="micro-label !text-[0.6rem] py-2 pr-4 font-medium">Trigger</th>
-              <th scope="col" className="micro-label !text-[0.6rem] py-2 pr-4 font-medium">Routes to</th>
-              <th scope="col" className="micro-label !text-[0.6rem] py-2 font-medium hidden md:table-cell">Note</th>
+              <th scope="col" className="micro-label !text-[0.7rem] py-2 pr-4 font-medium">Trigger</th>
+              <th scope="col" className="micro-label !text-[0.7rem] py-2 pr-4 font-medium">Routes to</th>
+              <th scope="col" className="micro-label !text-[0.7rem] py-2 font-medium hidden md:table-cell">Note</th>
             </tr>
           </thead>
           <tbody>
@@ -531,16 +531,16 @@ function EscalationMatrix() {
               <tr key={r.trigger} className="hairline-b last:border-0 card-hover">
                 <td className="py-2.5 pr-4 text-[0.78rem] text-slate-700 leading-snug align-top">{r.trigger}</td>
                 <td className="py-2.5 pr-4 align-top">
-                  <span className="data-mono text-[0.68rem] font-medium text-water">{r.route}</span>
-                  <span className="md:hidden block text-[0.65rem] text-muted-foreground leading-snug mt-0.5">{r.note}</span>
+                  <span className="data-mono text-[0.7rem] font-medium text-water">{r.route}</span>
+                  <span className="md:hidden block text-[0.7rem] text-muted-foreground leading-snug mt-0.5">{r.note}</span>
                 </td>
-                <td className="py-2.5 text-[0.65rem] text-muted-foreground leading-snug hidden md:table-cell align-top">{r.note}</td>
+                <td className="py-2.5 text-[0.7rem] text-muted-foreground leading-snug hidden md:table-cell align-top">{r.note}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <p className="mt-3 micro-label !text-[0.6rem] text-muted-foreground">
+      <p className="mt-3 micro-label !text-[0.7rem] text-muted-foreground">
         A fixed reference showing how the system picks the lead, support and escalation agencies. Each event's live chain is shown in the Chain Inspector above.
       </p>
     </Panel>

@@ -125,7 +125,7 @@ function sceneBanner(e: EventSummary): string {
     <source srcset="${scene.webp}" type="image/webp"/>
     <img src="${scene.png}" alt="Illustrative scene: ${escapeHtml(scene.label)} (synthetic)" width="264" height="104" loading="lazy" decoding="async" class="size-full object-cover"/>
   </picture>
-  <span aria-hidden="true" class="absolute left-2 top-2 rounded bg-ink-950/80 px-1.5 py-0.5 text-[0.5rem] font-semibold tracking-wide text-aqua-dim backdrop-blur-sm">ILLUSTRATIVE SCENE</span>
+  <span aria-hidden="true" class="absolute left-2 top-2 rounded bg-ink-950/80 px-1.5 py-0.5 text-[0.62rem] font-medium text-slate-400">Illustrative scene</span>
 </div>`;
 }
 
@@ -150,12 +150,12 @@ export function eventPopupHTML(e: EventSummary, now = Date.now()): string {
     <span class="rounded-full px-2 py-0.5 text-[0.58rem] font-semibold tracking-wide uppercase" style="color:${riskHex};background:${riskHex}14;border:1px solid ${riskHex}33">${riskBand} RISK</span>
   </div>
   <h3 class="mt-1.5 text-[0.82rem] font-semibold leading-snug text-slate-900">${escapeHtml(e.title)}</h3>
-  <p class="mt-0.5 text-[0.66rem] text-slate-500 leading-snug">${escapeHtml(e.locationText)}</p>
-  <p class="mt-2 text-[0.66rem] leading-relaxed text-slate-600"><span class="font-semibold text-slate-700">What this means:</span> ${riskPlain}</p>
-  <p class="mt-2 text-[0.62rem] text-slate-500 leading-snug">${e.reportCount} citizen report${e.reportCount === 1 ? "" : "s"} · updated ${updated}</p>
+  <p class="mt-0.5 text-[0.7rem] text-slate-500 leading-snug">${escapeHtml(e.locationText)}</p>
+  <p class="mt-2 text-[0.7rem] leading-relaxed text-slate-600"><span class="font-semibold text-slate-700">What this means:</span> ${riskPlain}</p>
+  <p class="mt-2 text-[0.7rem] text-slate-500 leading-snug">${e.reportCount} citizen report${e.reportCount === 1 ? "" : "s"} · updated ${updated}</p>
   <div class="mt-3 flex gap-2">
-    <button type="button" data-open-event="${escapeHtml(e.code)}" class="flex-1 rounded-lg text-[0.65rem] font-semibold tracking-wide py-2" style="background:${PALETTE.aqua};color:${PALETTE.canvas}">Open Full Dossier</button>
-    <button type="button" data-zoom-event="${escapeHtml(e.code)}" class="rounded-lg border border-slate-500 text-slate-600 px-3 py-2 text-[0.65rem] font-medium" title="Zoom to this location">Zoom</button>
+    <button type="button" data-open-event="${escapeHtml(e.code)}" class="flex-1 rounded-lg text-[0.7rem] font-semibold tracking-wide py-2" style="background:${PALETTE.aqua};color:${PALETTE.canvas}">Open Full Dossier</button>
+    <button type="button" data-zoom-event="${escapeHtml(e.code)}" class="rounded-lg border border-slate-500 text-slate-600 px-3 py-2 text-[0.7rem] font-medium" title="Zoom to this location">Zoom</button>
   </div>
   </div>
 </div>`.trim();

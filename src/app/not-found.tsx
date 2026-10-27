@@ -50,7 +50,7 @@ export default function NotFound() {
             </svg>
           </span>
           <span className="font-display font-bold text-foreground text-sm">JalSetu</span>
-          <span className="text-[0.62rem] text-slate-500 hidden sm:inline">Delhi Waterlogging Intelligence</span>
+          <span className="text-[0.7rem] text-slate-500 hidden sm:inline">Delhi Waterlogging Intelligence</span>
           <Link
             href="/"
             className="ml-auto inline-flex items-center gap-1.5 min-h-11 rounded-lg border border-border px-3.5 text-xs font-semibold text-foreground hover:border-aqua/40 hover:text-aqua hover:bg-white/[0.04] transition-colors"
@@ -74,7 +74,7 @@ export default function NotFound() {
               The page you asked for does not exist on this site. It may have been moved,
               or the link may be incomplete. Everything important lives one click away.
             </p>
-            <p className="mt-1.5 data-mono text-[0.65rem] text-slate-500">error 404</p>
+            <p className="mt-1.5 data-mono text-[0.7rem] text-slate-500">error 404</p>
 
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-left">
               {pathways.map(({ href, label, hint, icon: Icon }) => (
@@ -87,13 +87,13 @@ export default function NotFound() {
                     <Icon className="size-4 text-aqua" aria-hidden />
                     <span className="text-xs font-semibold text-slate-900 group-hover:text-aqua">{label}</span>
                   </span>
-                  <span className="mt-1 block text-[0.68rem] text-slate-500 leading-snug">{hint}</span>
+                  <span className="mt-1 block text-[0.7rem] text-slate-500 leading-snug">{hint}</span>
                 </Link>
               ))}
             </div>
           </div>
 
-          <p className="mt-4 text-center text-[0.68rem] text-slate-500">
+          <p className="mt-4 text-center text-[0.7rem] text-slate-500">
             Looking for a specific event? Open the{" "}
             <Link href="/#/map" className="text-aqua hover:text-aqua-dim font-medium">
               map
@@ -104,7 +104,7 @@ export default function NotFound() {
       </main>
 
       <footer className="mt-auto hairline-t bg-ink-900 px-4 sm:px-6 py-3">
-        <p className="text-[0.62rem] text-muted-foreground">
+        <p className="text-[0.7rem] text-muted-foreground">
           JalSetu · Research prototype · synthetic demo data · not a deployed government system
         </p>
       </footer>

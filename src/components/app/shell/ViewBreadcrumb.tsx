@@ -23,7 +23,7 @@ export function ViewBreadcrumb() {
 
   return (
     <nav aria-label="Breadcrumb" className="hairline-b bg-ink-900 px-3 sm:px-4 lg:px-6 py-2 sm:py-1.5 overflow-hidden">
-      <ol className="flex items-center gap-1 text-[0.68rem] leading-none text-slate-500 min-w-0">
+      <ol className="flex items-center gap-1 text-[0.7rem] leading-none text-slate-500 min-w-0">
         <li className="shrink-0">
           <a
             href="#/"

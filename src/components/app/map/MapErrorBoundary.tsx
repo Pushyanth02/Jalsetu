@@ -41,7 +41,7 @@ export class MapErrorBoundary extends React.Component<Props, State> {
               Something went wrong while drawing the map. Your data is safe. Tap Retry to
               reload the map, or use the event list below to keep working.
             </p>
-            <p className="mt-2 data-mono text-[0.6rem] text-slate-600 break-words">{this.state.error.message}</p>
+            <p className="mt-2 data-mono text-[0.7rem] text-slate-600 break-words">{this.state.error.message}</p>
             <button
               onClick={() => this.setState({ error: null }, this.props.onRetry)}
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-aqua px-4 py-2.5 text-xs font-semibold text-ink-950 hover:bg-aqua-dim transition-colors"

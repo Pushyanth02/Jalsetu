@@ -29,7 +29,7 @@ export function MapLegend({ compact }: { compact?: boolean }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="absolute z-10 bottom-3 left-3 panel rounded-lg px-2.5 py-1.5 micro-label !text-[0.6rem] text-slate-600 hover:bg-ink-850 transition-colors touch-target"
+        className="absolute z-10 bottom-3 left-3 panel rounded-lg px-2.5 py-1.5 micro-label !text-[0.7rem] text-slate-600 hover:bg-ink-850 transition-colors touch-target"
         aria-expanded={false}
       >
         legend
@@ -37,14 +37,14 @@ export function MapLegend({ compact }: { compact?: boolean }) {
     );
   }
   return (
-    <div className={cn("absolute z-10 bottom-3 left-3 panel rounded-xl p-3 max-w-48", compact && "text-[0.62rem]")}>
+    <div className={cn("absolute z-10 bottom-3 left-3 panel rounded-xl p-3 max-w-48", compact && "text-[0.7rem]")}>
       {(compact || isSmall) && (
-        <button onClick={() => setOpen(false)} className="absolute top-1.5 right-2 p-1 micro-label !text-[0.6rem] text-slate-600 hover:text-aqua" aria-label="Collapse legend">
+        <button onClick={() => setOpen(false)} className="absolute top-1.5 right-2 p-1 micro-label !text-[0.7rem] text-slate-600 hover:text-aqua" aria-label="Collapse legend">
           hide
         </button>
       )}
-      <p className="micro-label !text-[0.6rem] text-slate-600 mb-2">legend</p>
-      <ul className="space-y-1.5 text-[0.66rem] text-slate-600">
+      <p className="micro-label !text-[0.7rem] text-slate-600 mb-2">legend</p>
+      <ul className="space-y-1.5 text-[0.7rem] text-slate-600">
         <LegendRow color={PALETTE.sevCritical} label="severity 4 · critical" />
         <LegendRow color={PALETTE.sevHigh} label="severity 3 · high" />
         <LegendRow color={PALETTE.sevModerate} label="severity 2 · moderate" />
@@ -55,7 +55,7 @@ export function MapLegend({ compact }: { compact?: boolean }) {
         <LegendRow color={PALETTE.aqua} shape="glow" label="rainfall gauge (mm)" />
         <LegendRow color={PALETTE.aqua} shape="dot-lg" label="your location (Locate Me)" />
       </ul>
-      <p className="mt-2.5 pt-2 hairline-t micro-label !text-[0.6rem] text-slate-600 leading-relaxed">
+      <p className="mt-2.5 pt-2 hairline-t micro-label !text-[0.7rem] text-slate-600 leading-relaxed">
         marker size ∝ risk score · tap a marker for details
       </p>
     </div>

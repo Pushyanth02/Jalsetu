@@ -11,18 +11,19 @@ import { Reveal, Stagger, StaggerItem, CountUp, PulseDot, AnimatedProgress } fro
 import { RISK_META } from "@/components/app/shared/domain";
 
 /**
- * LANDING — the front door of the Monsoon ink site.
+ * LANDING — the front door of the Monsoon Ledger.
  *
  * Sits outside the ops shell (no TopBar / NavRail): this is the public face,
  * the console is the product behind it. Every number on this page is read
  * from the same in-browser API the console uses, so the landing page can
  * never drift from the data it describes.
  *
- * Design language — "future city command ops": an engineered grid and aurora
- * radial behind the hero, one aurora-gradient headline phrase, a glass status
- * chip, a HUD-framed live readout with a travelling border beam and scan
- * sweep, spotlight view cards and light-emitting stat values. Restraint is
- * the rule: one or two effects per section, aqua as the only signal colour.
+ * Design language — the civic ledger: ink paper, one solid aqua signal on
+ * the words that carry the claim, real photographs of the subject's world,
+ * a live readout wired to the same data as the console, honest numbers with
+ * their provenance beside them. No eyebrow chips, no gradient headlines,
+ * no numbered feature markers, no aurora rules. The signature is the live
+ * readout panel — the product's actual output, not a picture of it.
  */
 
 type Group = "Operations" | "Evidence flow" | "Research";
@@ -44,15 +45,15 @@ const PROBLEMS = [
   },
 ] as const;
 
-const PIPELINE = [
-  { step: "01", title: "Citizens report", body: "Location, depth, description and a photo in under a minute. No account, no app install." },
-  { step: "02", title: "Rules classify", body: "A deterministic classifier assigns category, severity and confidence. Provider and model version are always shown." },
-  { step: "03", title: "Events merge", body: "Near-duplicate reports cluster by time and space into a single urban event." },
-  { step: "04", title: "Evidence fuses", body: "Rainfall, drains, pumps, jurisdiction and recurrence history enrich each event." },
-  { step: "05", title: "Risk is scored", body: "A transparent 7-factor rule model returns 0-100 with the contribution of every factor." },
-  { step: "06", title: "Agencies routed", body: "The accountable owner is assigned through explainable rules, with an escalation path." },
-  { step: "07", title: "Field verifies", body: "Crews close the loop with photos and depth readings. Recurrence reopens the event." },
-] as const;
+const PIPELINE: { step: string; title: string; body: string; view: ViewId }[] = [
+  { step: "01", title: "Citizens report", body: "Location, depth, description and a photo in under a minute. No account, no app install.", view: "report" },
+  { step: "02", title: "Rules classify", body: "A deterministic classifier assigns category, severity and confidence. Provider and model version are always shown.", view: "investigate" },
+  { step: "03", title: "Events merge", body: "Near-duplicate reports cluster by time and space into a single urban event.", view: "map" },
+  { step: "04", title: "Evidence fuses", body: "Rainfall, drains, pumps, jurisdiction and recurrence history enrich each event.", view: "investigate" },
+  { step: "05", title: "Risk is scored", body: "A transparent 7-factor rule model returns 0-100 with the contribution of every factor.", view: "investigate" },
+  { step: "06", title: "Agencies routed", body: "The accountable owner is assigned through explainable rules, with an escalation path.", view: "responsibility" },
+  { step: "07", title: "Field verifies", body: "Crews close the loop with photos and depth readings. Recurrence reopens the event.", view: "verify" },
+];
 
 // Field-evidence gallery: one randomized scene per category (seeded, so the
 // build is deterministic) + a rainfall context card. All images are
@@ -104,13 +105,18 @@ const EVALUATION_NOTES = [
   "Synthetic demo evaluation, labelled everywhere it appears",
 ];
 
-/** Section eyebrow: one aqua rule, one mono label. Used by every section. */
-function SectionLabel({ children }: { children: ReactNode }) {
+/** The section label is retired: no eyebrow above a heading — the h2 opens
+ *  the section, in the display face, at full scale. */
+
+/** Ledger row link: opens the console view that proves the step. */
+function StepLink({ view, label }: { view: ViewId; label: string }) {
   return (
-    <>
-      <span className="signal-rule" aria-hidden />
-      <p className="mt-3.5 micro-label">{children}</p>
-    </>
+    <button
+      onClick={() => navigate(view)}
+      className="hidden text-[0.8rem] font-medium text-aqua transition-colors hover:text-aqua-dim sm:inline-flex"
+    >
+      {label}
+    </button>
   );
 }
 
@@ -125,7 +131,7 @@ export function LandingView() {
   return (
     <div className="relative min-h-[100dvh] overflow-x-hidden bg-background">
       {/* ---------------- site header ---------------- */}
-      <header className="sticky top-0 z-40 border-b border-hairline bg-ink-950/92 backdrop-blur-md supports-[backdrop-filter]:bg-ink-950/80">
+      <header className="sticky top-0 z-40 border-b border-hairline bg-background">
         <div className="content-wrap flex h-16 items-center gap-3 px-4 sm:px-6">
           <button
             onClick={() => go("landing")}
@@ -135,7 +141,7 @@ export function LandingView() {
             <img src={assetPath("/img/jalsetu-mark.svg")} alt="" width={32} height={32} className="size-8 shrink-0 rounded-[9px]" />
             <span className="min-w-0">
               <span className="block font-display text-[0.98rem] font-bold leading-none tracking-tight text-foreground">JalSetu</span>
-              <span className="mt-0.5 hidden text-[0.6rem] leading-tight text-muted-foreground xs:block">Delhi Waterlogging Intelligence</span>
+              <span className="mt-0.5 hidden text-[0.7rem] leading-tight text-muted-foreground xs:block">Delhi Waterlogging Intelligence</span>
             </span>
           </button>
 
@@ -157,7 +163,7 @@ export function LandingView() {
           <div className="ml-auto flex items-center gap-2 lg:ml-0">
             <button
               onClick={() => go("command")}
-              className="hidden h-9 items-center rounded-lg border border-hairline bg-ink-900 px-3.5 text-[0.8rem] font-semibold text-foreground transition-colors hover:border-aqua/40 hover:bg-ink-850 sm:inline-flex"
+              className="hidden h-9 items-center rounded-lg border border-hairline bg-ink-900 px-3.5 text-[0.8rem] font-semibold text-foreground transition-colors hover:bg-ink-850 sm:inline-flex"
             >
               Open console
             </button>
@@ -197,21 +203,12 @@ export function LandingView() {
       </header>
 
       {/* ---------------- hero ---------------- */}
-      <section className="relative overflow-hidden border-b border-hairline bg-atlas">
-        <div className="content-wrap relative grid items-start gap-12 px-4 pb-16 pt-14 sm:px-6 sm:pb-20 sm:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
-          <div>
-            <Reveal>
-              <p className="glass inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 micro-label !text-aqua-dim">
-                <PulseDot size={6} color="bg-aqua" />
-                Research prototype · Delhi pilot
-              </p>
-            </Reveal>
-
+      <section className="relative overflow-hidden border-b border-hairline">
+        <div className="content-wrap relative grid items-start gap-12 px-4 pb-16 pt-14 sm:px-6 sm:pb-20 sm:pt-20 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-16">
+          <div className="min-w-0">
             <Reveal delay={0.06}>
-              <h1 className="mt-6 font-display text-[2.7rem] font-semibold leading-[1.08] tracking-[-0.02em] text-foreground sm:text-[3.8rem] lg:text-[4.3rem]">
-                Every flooded street in Delhi,{" "}
-                <em className="text-signal italic">scored and routed</em> before
-                the water rises.
+              <h1 className="font-display text-[2.7rem] font-semibold leading-[1.08] tracking-[-0.02em] text-foreground break-words sm:text-[3.8rem] lg:text-[4.3rem]">
+                Every flooded street, scored and routed.
               </h1>
             </Reveal>
 
@@ -228,14 +225,13 @@ export function LandingView() {
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <button
                   onClick={() => go("command")}
-                  className="inline-flex h-12 items-center gap-2 rounded-xl bg-aqua px-6 text-[0.92rem] font-semibold text-ink-950 transition-colors hover:bg-aqua-dim"
+                  className="inline-flex h-12 items-center rounded-xl bg-aqua px-6 text-[0.92rem] font-semibold text-ink-950 transition-colors hover:bg-aqua-dim"
                 >
                   Open the command center
-                  <ArrowRight className="size-4" aria-hidden />
                 </button>
                 <button
                   onClick={() => go("map")}
-                  className="inline-flex h-12 items-center gap-2 rounded-xl border border-hairline bg-ink-900 px-6 text-[0.92rem] font-semibold text-foreground transition-colors hover:border-aqua/40 hover:bg-ink-850"
+                  className="inline-flex h-12 items-center gap-2 rounded-xl border border-hairline bg-ink-900 px-6 text-[0.92rem] font-semibold text-foreground transition-colors hover:bg-ink-850"
                 >
                   <MapPin className="size-4 text-aqua" aria-hidden />
                   Explore the map
@@ -244,13 +240,13 @@ export function LandingView() {
             </Reveal>
 
             <Reveal delay={0.24}>
-              <p className="mt-6 data-mono text-[0.68rem] leading-relaxed text-slate-500">
+              <p className="mt-6 data-mono text-[0.7rem] leading-relaxed text-slate-500">
                 static demo · no backend · no API keys · no tracking
               </p>
             </Reveal>
           </div>
 
-          <Reveal delay={0.16}>
+          <Reveal delay={0.16} className="min-w-0">
             <LiveReadout />
           </Reveal>
         </div>
@@ -283,19 +279,17 @@ export function LandingView() {
       {/* ---------------- the problem ---------------- */}
       <section className="content-wrap px-4 py-16 sm:px-6 sm:py-24">
         <Reveal>
-          <SectionLabel>The problem</SectionLabel>
-          <h2 className="mt-4 max-w-3xl font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.6rem]">
+          <h2 className="max-w-3xl font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.6rem]">
             Three failures keep the same drains under water every monsoon.
           </h2>
         </Reveal>
 
         <Stagger className="mt-10 border-t border-hairline">
-          {PROBLEMS.map((c, i) => (
+          {PROBLEMS.map((c) => (
             <StaggerItem
               key={c.title}
-              className="grid gap-x-6 gap-y-2 border-b border-hairline py-6 sm:grid-cols-[3rem_17rem_1fr] sm:py-7"
+              className="grid gap-x-6 gap-y-2 border-b border-hairline py-6 sm:grid-cols-[17rem_1fr] sm:py-7"
             >
-              <span className="data-mono text-[0.72rem] text-aqua/70">{String(i + 1).padStart(2, "0")}</span>
               <h3 className="font-display text-[1.05rem] font-semibold text-foreground">{c.title}</h3>
               <p className="text-[0.9rem] leading-relaxed text-slate-700">{c.body}</p>
             </StaggerItem>
@@ -304,11 +298,10 @@ export function LandingView() {
       </section>
 
       {/* ---------------- pipeline ---------------- */}
-      <section className="border-y border-hairline bg-ink-900/40">
+      <section className="border-y border-hairline bg-ink-900/30">
         <div className="content-wrap px-4 py-16 sm:px-6 sm:py-24">
           <Reveal>
-            <SectionLabel>How it works</SectionLabel>
-            <h2 className="mt-4 max-w-2xl font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.4rem]">
+            <h2 className="max-w-2xl font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.4rem]">
               Seven steps from a doorstep complaint to a verified fix.
             </h2>
             <p className="mt-4 max-w-xl text-[0.95rem] leading-relaxed text-slate-700">
@@ -318,23 +311,30 @@ export function LandingView() {
             </p>
           </Reveal>
 
-          <Stagger className="mt-12 grid gap-px overflow-hidden rounded-xl border border-hairline bg-hairline sm:grid-cols-2 lg:grid-cols-4">
+          {/* The pipeline as a ledger: hairline rows, the step number as data,
+              the view that proves it at the far right. No uniform cards. */}
+          <Stagger className="mt-12 border-t border-hairline">
             {PIPELINE.map((p) => (
-              <StaggerItem key={p.step} className="bg-ink-900 p-6">
-                <span className="data-mono text-[0.72rem] text-aqua">{p.step}</span>
-                <h3 className="mt-3 font-display text-[0.98rem] font-semibold text-foreground">{p.title}</h3>
-                <p className="mt-1.5 text-[0.84rem] leading-relaxed text-slate-700">{p.body}</p>
+              <StaggerItem
+                key={p.step}
+                className="grid items-baseline gap-x-6 gap-y-1.5 border-b border-hairline py-5 sm:grid-cols-[2.5rem_14rem_1fr_auto]"
+              >
+                <span className="data-mono text-[0.72rem] text-slate-500">{p.step}</span>
+                <h3 className="text-[0.92rem] font-semibold text-foreground">{p.title}</h3>
+                <p className="text-[0.86rem] leading-relaxed text-slate-700">{p.body}</p>
+                <StepLink view={p.view} label="Open" />
               </StaggerItem>
             ))}
-            <StaggerItem className="flex flex-col justify-center bg-ink-900 p-6">
-              <p className="font-display text-[0.98rem] font-semibold text-foreground">Then it loops.</p>
-              <p className="mt-1.5 text-[0.84rem] leading-relaxed text-slate-700">
-                A verified closure that floods again reopens the same event with its
-                full history intact.
+            <StaggerItem className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-hairline py-5">
+              <p className="text-[0.92rem] font-semibold text-foreground">
+                Then it loops.
+                <span className="ml-3 font-normal text-[0.86rem] text-slate-700">
+                  A verified closure that floods again reopens the same event with its full history intact.
+                </span>
               </p>
               <button
                 onClick={() => go("map")}
-                className="mt-4 self-start text-[0.82rem] font-semibold text-aqua transition-colors hover:text-aqua-dim"
+                className="text-[0.82rem] font-semibold text-aqua transition-colors hover:text-aqua-dim"
               >
                 See it on the map
               </button>
@@ -346,8 +346,7 @@ export function LandingView() {
       {/* ---------------- capabilities ---------------- */}
       <section className="content-wrap px-4 py-16 sm:px-6 sm:py-24">
         <Reveal>
-          <SectionLabel>The console</SectionLabel>
-          <h2 className="mt-4 max-w-2xl font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.4rem]">
+          <h2 className="max-w-2xl font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.4rem]">
             Nine views, one shared truth.
           </h2>
         </Reveal>
@@ -368,7 +367,7 @@ export function LandingView() {
                           <span className="font-display text-[0.94rem] font-semibold text-foreground transition-colors group-hover:text-aqua-dim">
                             {v.label}
                           </span>
-                          <span className="data-mono shrink-0 text-[0.62rem] text-slate-500 opacity-0 transition-opacity group-hover:opacity-100">
+                          <span className="data-mono shrink-0 text-[0.7rem] text-slate-500 opacity-0 transition-opacity group-hover:opacity-100">
                             open
                           </span>
                         </span>
@@ -387,8 +386,7 @@ export function LandingView() {
       <section className="border-y border-hairline bg-ink-900/40">
         <div className="content-wrap px-4 py-16 sm:px-6 sm:py-24">
           <Reveal>
-            <SectionLabel>Field evidence</SectionLabel>
-            <h2 className="mt-4 max-w-2xl font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.4rem]">
+            <h2 className="max-w-2xl font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.4rem]">
               What the classifier actually sees.
             </h2>
             <p className="mt-4 max-w-xl text-[0.95rem] leading-relaxed text-slate-700">
@@ -423,7 +421,7 @@ export function LandingView() {
                   <figcaption className="px-4 py-3.5">
                     <span className="block text-[0.88rem] font-semibold text-foreground">{g.title}</span>
                     <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.7rem] text-slate-500">
-                      <span className="data-mono text-[0.66rem] text-aqua-dim">{g.klass}</span>
+                      <span className="data-mono text-[0.7rem] text-aqua-dim">{g.klass}</span>
                       <span aria-hidden>·</span>
                       <span>synthetic demo</span>
                     </span>
@@ -438,8 +436,7 @@ export function LandingView() {
       {/* ---------------- evidence ---------------- */}
       <section className="content-wrap grid gap-12 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
         <Reveal>
-          <SectionLabel>Does it actually work?</SectionLabel>
-          <h2 className="mt-4 font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.4rem]">
+          <h2 className="font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-[2.4rem]">
             We measured it instead of claiming it.
           </h2>
           <p className="mt-4 text-[0.95rem] leading-relaxed text-slate-700">
@@ -449,18 +446,17 @@ export function LandingView() {
             labels, so any difference belongs to the scoring function.
           </p>
 
-          <dl className="mt-7 border-t border-hairline">
-            {EVALUATION_NOTES.map((note, i) => (
-              <div key={note} className="flex gap-4 border-b border-hairline py-3">
-                <dt className="data-mono shrink-0 text-[0.68rem] text-aqua/70">{String(i + 1).padStart(2, "0")}</dt>
-                <dd className="text-[0.88rem] leading-relaxed text-slate-600">{note}</dd>
-              </div>
+          <ul className="mt-7 border-t border-hairline">
+            {EVALUATION_NOTES.map((note) => (
+              <li key={note} className="border-b border-hairline py-3">
+                <span className="text-[0.88rem] leading-relaxed text-slate-600">{note}</span>
+              </li>
             ))}
-          </dl>
+          </ul>
 
           <button
             onClick={() => go("analytics")}
-            className="mt-7 inline-flex h-11 items-center gap-2 rounded-xl border border-hairline bg-ink-900 px-5 text-[0.88rem] font-semibold text-foreground transition-colors hover:border-aqua/40 hover:bg-ink-850"
+            className="mt-7 inline-flex h-11 items-center gap-2 rounded-xl border border-hairline bg-ink-900 px-5 text-[0.88rem] font-semibold text-foreground transition-colors hover:bg-ink-850"
           >
             Read the evaluation
             <ArrowRight className="size-4 text-aqua" aria-hidden />
@@ -496,10 +492,9 @@ export function LandingView() {
                 </button>
                 <button
                   onClick={() => go("command")}
-                  className="inline-flex h-12 items-center gap-2 rounded-xl border border-hairline bg-ink-900 px-6 text-[0.92rem] font-semibold text-foreground transition-colors hover:border-aqua/40 hover:bg-ink-850"
+                  className="inline-flex h-12 items-center rounded-xl border border-hairline bg-ink-900 px-6 text-[0.92rem] font-semibold text-foreground transition-colors hover:bg-ink-850"
                 >
                   Open the console
-                  <ArrowRight className="size-4 text-aqua" aria-hidden />
                 </button>
               </div>
             </div>
@@ -544,7 +539,7 @@ function LiveReadout() {
       <div className="flex items-center gap-2.5 border-b border-hairline px-4 py-3">
         <PulseDot size={6} color="bg-aqua" />
         <span className="micro-label !text-aqua-dim">Delhi pilot · live readout</span>
-        <span className="ml-auto data-mono text-[0.6rem] text-slate-500">/api/overview</span>
+        <span className="ml-auto data-mono text-[0.7rem] text-slate-500">/api/overview</span>
       </div>
 
       <div className="grid grid-cols-2 gap-px bg-hairline">
@@ -591,7 +586,7 @@ function LiveReadout() {
       </div>
 
       <div className="border-t border-hairline px-4 py-2.5">
-        <p className="data-mono text-[0.6rem] leading-relaxed text-slate-500">
+        <p className="data-mono text-[0.7rem] leading-relaxed text-slate-500">
           {data ? `${data.dataLabel} · snapshot ${data.generatedAt.slice(0, 10)}` : "loading dataset"}
         </p>
       </div>
@@ -716,7 +711,7 @@ function EvidenceCard() {
 function MeterRow({ label, value, cls }: { label: string; value?: number; cls: string }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="w-16 shrink-0 text-[0.66rem] text-slate-500">{label}</span>
+      <span className="w-16 shrink-0 text-[0.7rem] text-slate-500">{label}</span>
       <AnimatedProgress value={(value ?? 0) * 100} className="h-2 flex-1 bg-ink-800" fillClassName={cls} />
     </div>
   );
@@ -754,7 +749,6 @@ function LandingFooter({ onNavigate }: { onNavigate: (v: ViewId) => void }) {
 
   return (
     <footer className="border-t border-hairline bg-ink-900/50">
-      <div className="aurora-band" aria-hidden />
       <div className="content-wrap grid gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.4fr_repeat(3,1fr)]">
         <div>
           <div className="flex items-center gap-2.5">

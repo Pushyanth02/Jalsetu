@@ -1,6 +1,6 @@
 {
   "name": "jalsetu",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "description": "JalSetu - Delhi Waterlogging Intelligence. Static, API-key-less research prototype: citizen reports to risk-scored cross-agency urban events.",
   "scripts": {

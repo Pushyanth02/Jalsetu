@@ -176,7 +176,7 @@ function TrackReport() {
     <Panel
       title="Track a Report"
       icon={<Search />}
-      actions={<span className="micro-label !text-[0.6rem] text-muted-foreground">Public Reference</span>}
+      actions={<span className="micro-label !text-[0.7rem] text-muted-foreground">Public Reference</span>}
     >
       <form
         className="flex gap-2"
@@ -230,7 +230,7 @@ function TrackReport() {
                       }}
                     />
                   </picture>
-                  <span aria-hidden className="absolute bottom-1 left-1 rounded bg-ink-950/80 px-1 py-px text-[0.6rem] font-semibold tracking-wide text-aqua-dim">SCENE</span>
+                  <span aria-hidden className="absolute bottom-1 left-1 rounded bg-ink-950/80 px-1 py-px text-[0.7rem] font-semibold tracking-wide text-aqua-dim">SCENE</span>
                 </div>
               );
             })()}
@@ -238,17 +238,17 @@ function TrackReport() {
           <div className="flex items-center gap-2 flex-wrap">
             <span className="data-mono text-sm font-semibold text-water">{found.publicRef}</span>
             {rStatus && (
-              <span className={cn("inline-flex rounded-full border px-2 py-0.5 micro-label !text-[0.6rem]", rStatus.cls)}>{rStatus.label}</span>
+              <span className={cn("inline-flex rounded-full border px-2 py-0.5 micro-label !text-[0.7rem]", rStatus.cls)}>{rStatus.label}</span>
             )}
             <SourceBadge source={found.source} />
-            <span className="ml-auto micro-label !text-[0.6rem] text-muted-foreground" title={fmtDateTime(found.submittedAt)}>
+            <span className="ml-auto micro-label !text-[0.7rem] text-muted-foreground" title={fmtDateTime(found.submittedAt)}>
               {fmtDateTime(found.submittedAt)} · {found.channel.toLowerCase()}
             </span>
           </div>
 
           <p className="mt-1.5 text-[0.82rem] text-slate-700 leading-relaxed line-clamp-2">{found.description}</p>
 
-          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.68rem] text-slate-600">
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.7rem] text-slate-600">
             <span className="data-mono">{found.lat.toFixed(4)}, {found.lng.toFixed(4)}</span>
             <span>reported severity <span className="text-slate-700">{found.severityReported.toLowerCase()}</span></span>
             {found.classification && (
@@ -263,14 +263,14 @@ function TrackReport() {
 
           {found.urbanEvent ? (
             <div className="mt-3 pt-3 hairline-t flex items-center gap-3 flex-wrap">
-              <span className="micro-label !text-[0.6rem] text-muted-foreground">linked event</span>
+              <span className="micro-label !text-[0.7rem] text-muted-foreground">linked event</span>
               <span className="data-mono text-[0.72rem] font-semibold text-water">{found.urbanEvent.code}</span>
               <RiskBadge band={found.urbanEvent.riskBand} score={found.urbanEvent.riskScore} />
-              <span className="micro-label !text-[0.6rem] text-muted-foreground">{found.urbanEvent.title}</span>
+              <span className="micro-label !text-[0.7rem] text-muted-foreground">{found.urbanEvent.title}</span>
               <Button
                 size="sm"
                 variant="outline"
-                className="ml-auto rounded-lg border-border text-slate-600 hover:bg-ink-850 h-7 text-[0.65rem]"
+                className="ml-auto rounded-lg border-border text-slate-600 hover:bg-ink-850 h-7 text-[0.7rem]"
                 onClick={() => navigate("event", found.urbanEvent!.code)}
               >
                 Open dossier <ChevronRight className="size-3" aria-hidden />
@@ -463,7 +463,7 @@ function ReportWizard() {
     <Panel
       title="File a New Report"
       icon={<Flag />}
-      actions={<span className="micro-label !text-[0.6rem] text-muted-foreground">Public · Web Channel</span>}
+      actions={<span className="micro-label !text-[0.7rem] text-muted-foreground">Public · Web Channel</span>}
       className="panel-raised"
     >
       {/* step progress: numbered circles, completed shows a check */}
@@ -600,7 +600,7 @@ function ReportWizard() {
           <Button type="button" variant="outline" size="sm" className="rounded-lg border-border text-slate-600 hover:bg-ink-850" disabled={step === 0} onClick={() => goTo(Math.max(0, step - 1))}>
             <ChevronLeft className="size-3.5" aria-hidden /> Back
           </Button>
-          <span className="micro-label !text-[0.6rem] text-muted-foreground">
+          <span className="micro-label !text-[0.7rem] text-muted-foreground">
             {step < 3 ? `${step + 1} of 4` : "Final Check"}
           </span>
           {step < 3 ? (
@@ -647,8 +647,8 @@ function StepLocation(p: {
     <div className="space-y-4">
       <div className="relative h-52 sm:h-60 rounded-xl overflow-hidden border border-border/70 shadow-sm">
         <MapView events={[]} interactive className="size-full" />
-        <div className="absolute inset-x-0 bottom-0 bg-ink-950/92 backdrop-blur-sm border-t border-hairline p-2.5 pointer-events-none">
-          <p className="micro-label !text-[0.6rem] text-slate-600">
+        <div className="absolute inset-x-0 bottom-0 bg-ink-950/92 border-t border-hairline p-2.5 pointer-events-none">
+          <p className="micro-label !text-[0.7rem] text-slate-600">
             Pilot area: central Delhi · place your report using coordinates, GPS or an area below
           </p>
         </div>
@@ -669,7 +669,7 @@ function StepLocation(p: {
             aria-invalid={p.attempted && !p.latValid}
             aria-describedby="rep-lat-hint"
           />
-          <p id="rep-lat-hint" className={cn("text-[0.62rem]", p.attempted && !p.latValid ? "text-sev-high" : "text-muted-foreground")}>
+          <p id="rep-lat-hint" className={cn("text-[0.7rem]", p.attempted && !p.latValid ? "text-sev-high" : "text-muted-foreground")}>
             {p.attempted && !p.latValid
               ? p.latText.trim() === ""
                 ? "Latitude is required."
@@ -691,7 +691,7 @@ function StepLocation(p: {
             aria-invalid={p.attempted && !p.lngValid}
             aria-describedby="rep-lng-hint"
           />
-          <p id="rep-lng-hint" className={cn("text-[0.62rem]", p.attempted && !p.lngValid ? "text-sev-high" : "text-muted-foreground")}>
+          <p id="rep-lng-hint" className={cn("text-[0.7rem]", p.attempted && !p.lngValid ? "text-sev-high" : "text-muted-foreground")}>
             {p.attempted && !p.lngValid
               ? p.lngText.trim() === ""
                 ? "Longitude is required."
@@ -717,12 +717,12 @@ function StepLocation(p: {
           <MapPin className="size-3.5" aria-hidden /> Preview on map
         </Button>
         {p.gpsState === "ok" && !p.coordsValid && (
-          <span className="text-[0.62rem] text-sev-moderate self-center">Device location is outside the pilot window. Adjust manually.</span>
+          <span className="text-[0.7rem] text-sev-moderate self-center">Device location is outside the pilot window. Adjust manually.</span>
         )}
       </div>
 
       {p.gpsMsg && (
-        <p className={cn("text-[0.62rem] flex items-start gap-1.5", p.gpsState === "error" ? "text-sev-moderate" : "text-muted-foreground")} role={p.gpsState === "error" ? "alert" : undefined}>
+        <p className={cn("text-[0.7rem] flex items-start gap-1.5", p.gpsState === "error" ? "text-sev-moderate" : "text-muted-foreground")} role={p.gpsState === "error" ? "alert" : undefined}>
           {p.gpsState === "error" && <AlertTriangle className="size-3.5 shrink-0 mt-px" aria-hidden />}
           {p.gpsMsg}
         </p>
@@ -732,7 +732,7 @@ function StepLocation(p: {
         <div className="space-y-1.5">
           <Label className="text-xs">Pilot area (optional)</Label>
           {p.jurisdictionsError ? (
-            <p className="text-[0.62rem] text-sev-moderate">Pilot areas unavailable: {p.jurisdictionsError}</p>
+            <p className="text-[0.7rem] text-sev-moderate">Pilot areas unavailable: {p.jurisdictionsError}</p>
           ) : (
             <Select value={p.jurisdictionId} onValueChange={p.onJurisdiction}>
               <SelectTrigger className="h-9 rounded-lg bg-ink-900 border-border text-xs" aria-label="Pilot area">
@@ -750,7 +750,7 @@ function StepLocation(p: {
               </SelectContent>
             </Select>
           )}
-          <p className="text-[0.62rem] text-muted-foreground">Picking an area fills in its centre coordinates. You can fine-tune them afterwards.</p>
+          <p className="text-[0.7rem] text-muted-foreground">Picking an area fills in its centre coordinates. You can fine-tune them afterwards.</p>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="rep-address" className="text-xs">
@@ -764,7 +764,7 @@ function StepLocation(p: {
             className="h-9 rounded-lg bg-ink-900 border-border text-xs"
             maxLength={160}
           />
-          <p className="text-[0.62rem] text-muted-foreground">Free text, up to 160 characters. Helps field teams locate the spot.</p>
+          <p className="text-[0.7rem] text-muted-foreground">Free text, up to 160 characters. Helps field teams locate the spot.</p>
         </div>
       </div>
     </div>
@@ -811,7 +811,7 @@ function StepIssue(p: {
                   <RadioGroupItem value={c.value} className="mt-0.5 data-[state=checked]:border-water" />
                   <span className="min-w-0">
                     <span className="block text-sm font-medium text-slate-800">{c.value.toLowerCase().replace(/_/g, " ")}</span>
-                    <span className="block mt-0.5 text-[0.68rem] text-slate-600 leading-snug">{c.helper}</span>
+                    <span className="block mt-0.5 text-[0.7rem] text-slate-600 leading-snug">{c.helper}</span>
                   </span>
                 </OptionCard>
               </StaggerItem>
@@ -830,7 +830,7 @@ function StepIssue(p: {
                   <RadioGroupItem value={s.value} className="mt-0.5 data-[state=checked]:border-water" />
                   <span className="min-w-0">
                     <span className="block text-sm font-medium text-slate-800">{s.value.toLowerCase()}</span>
-                    <span className="block mt-0.5 text-[0.62rem] text-slate-600 leading-snug">{s.helper}</span>
+                    <span className="block mt-0.5 text-[0.7rem] text-slate-600 leading-snug">{s.helper}</span>
                   </span>
                 </OptionCard>
               </StaggerItem>
@@ -844,7 +844,7 @@ function StepIssue(p: {
           <Label htmlFor="rep-desc" className="text-xs">
             Describe what you see
           </Label>
-          <span className={cn("data-mono text-[0.62rem]", p.attempted && !p.descValid ? "text-sev-high" : "text-muted-foreground")}>
+          <span className={cn("data-mono text-[0.7rem]", p.attempted && !p.descValid ? "text-sev-high" : "text-muted-foreground")}>
             {descLen}/600
           </span>
         </div>
@@ -859,7 +859,7 @@ function StepIssue(p: {
           aria-invalid={p.attempted && !p.descValid}
           aria-describedby="rep-desc-hint"
         />
-        <p id="rep-desc-hint" className={cn("text-[0.62rem]", p.attempted && !p.descValid ? "text-sev-high" : "text-muted-foreground")}>
+        <p id="rep-desc-hint" className={cn("text-[0.7rem]", p.attempted && !p.descValid ? "text-sev-high" : "text-muted-foreground")}>
           {p.attempted && !p.descValid
             ? descLen < 12
               ? `At least 12 characters needed (${descLen} so far).`
@@ -907,20 +907,20 @@ function StepEvidence(props: StepEvidenceProps) {
             <Camera className="size-3.5" aria-hidden /> {photoBusy ? "Processing…" : photo ? "Replace photo" : "Select photo"}
           </Button>
           {photo && (
-            <Button type="button" variant="ghost" size="sm" className="h-7 text-[0.65rem] text-slate-600" onClick={onRemovePhoto}>
+            <Button type="button" variant="ghost" size="sm" className="h-7 text-[0.7rem] text-slate-600" onClick={onRemovePhoto}>
               <X className="size-3" aria-hidden /> Remove
             </Button>
           )}
-          <span className="text-[0.62rem] text-slate-600">Photos are shrunk to at most 1024px jpeg and stored in the demo database.</span>
+          <span className="text-[0.7rem] text-slate-600">Photos are shrunk to at most 1024px jpeg and stored in the demo database.</span>
         </div>
-        {photoErr && <p className="mt-1.5 text-[0.62rem] text-sev-high" role="alert">{photoErr}</p>}
+        {photoErr && <p className="mt-1.5 text-[0.7rem] text-sev-high" role="alert">{photoErr}</p>}
         {photo && (
           <figure className="mt-2.5 flex items-start gap-3 rounded-xl border border-border/70 bg-ink-900 p-2.5 shadow-sm ring-1 ring-hairline max-w-sm">
             <div className="relative rounded-lg overflow-hidden border border-border/60 size-20 shrink-0 bg-slate-100">
               <img src={photo.dataUrl} alt="Report photo preview" className="size-full object-cover" />
             </div>
-            <figcaption className="min-w-0 text-[0.65rem] text-slate-600">
-              <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 text-water px-2 py-0.5 micro-label !text-[0.6rem]">uploaded</span>
+            <figcaption className="min-w-0 text-[0.7rem] text-slate-600">
+              <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 text-water px-2 py-0.5 micro-label !text-[0.7rem]">uploaded</span>
               <span className="block mt-1 truncate">{photo.name}</span>
               <span className="data-mono block mt-0.5">{dataUrlKb(photo.dataUrl)} KB · jpeg</span>
             </figcaption>
@@ -944,7 +944,7 @@ function StepEvidence(props: StepEvidenceProps) {
           aria-invalid={attempted && !phoneValid}
           aria-describedby="rep-phone-hint"
         />
-        <p id="rep-phone-hint" className={cn("text-[0.62rem]", attempted && !phoneValid ? "text-sev-high" : "text-muted-foreground")}>
+        <p id="rep-phone-hint" className={cn("text-[0.7rem]", attempted && !phoneValid ? "text-sev-high" : "text-muted-foreground")}>
           {attempted && !phoneValid
             ? "Indian mobile number expected (10 digits starting 6 to 9, optional +91), or leave empty."
             : "Indian mobile format, or leave empty. Stored hashed, never displayed."}
@@ -962,7 +962,7 @@ function StepEvidence(props: StepEvidenceProps) {
           </span>
         </label>
         {attempted && !consent && (
-          <p className="mt-2 text-[0.62rem] text-sev-high" role="alert">
+          <p className="mt-2 text-[0.7rem] text-sev-high" role="alert">
             Consent is required to submit a report.
           </p>
         )}
@@ -1000,7 +1000,7 @@ function StepReview(p: {
         <ReviewRow label="Photo" value={p.photo ? `attached (${p.photo.name}, ${dataUrlKb(p.photo.dataUrl)} KB jpeg)` : "none"} />
         <ReviewRow label="Phone" value={p.phone ? "provided (stored hashed)" : "not provided"} />
       </dl>
-      <p className="text-[0.65rem] text-slate-600">
+      <p className="text-[0.7rem] text-slate-600">
         When you submit, the system reads your report, checks for duplicates within 150m and the last 48 hours, scores the risk and routes it to the right agencies. Keep your tracking reference to follow the outcome.
       </p>
       {p.submitError && <ErrorNote message={p.submitError} />}
@@ -1016,7 +1016,7 @@ function StepReview(p: {
 function ReviewRow({ label, value, multiline }: { label: string; value: string; multiline?: boolean }) {
   return (
     <div className="flex items-start gap-3 px-3.5 py-2.5">
-      <dt className="micro-label !text-[0.6rem] w-32 shrink-0 pt-0.5">{label}</dt>
+      <dt className="micro-label !text-[0.7rem] w-32 shrink-0 pt-0.5">{label}</dt>
       <dd className={cn("data-mono !text-[0.72rem] text-slate-700 min-w-0", multiline ? "whitespace-pre-wrap leading-relaxed" : "truncate")}>{value}</dd>
     </div>
   );
@@ -1046,25 +1046,25 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
     <div className="space-y-4" aria-live="polite">
       <Reveal>
         <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
-          <p className="micro-label !text-[0.6rem] text-water flex items-center gap-2">
+          <p className="micro-label !text-[0.7rem] text-water flex items-center gap-2">
             <PulseDot color="bg-emerald-500" size={7} />
             Report Submitted · Tracking Reference
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <span className="data-mono text-2xl sm:text-[1.7rem] font-bold text-water tracking-tight">{outcome.publicRef}</span>
-            <Button type="button" variant="outline" size="sm" className="rounded-lg border-aqua/25 bg-ink-850 text-aqua hover:bg-aqua/10 h-7 text-[0.65rem]" onClick={copy}>
+            <Button type="button" variant="outline" size="sm" className="rounded-lg border-hairline bg-ink-850 text-foreground hover:bg-ink-800 h-7 text-[0.7rem]" onClick={copy}>
               {copied ? <Check className="size-3" aria-hidden /> : <Copy className="size-3" aria-hidden />}
               {copied ? "Copied" : "Copy"}
             </Button>
           </div>
-          <p className="mt-1.5 text-[0.65rem] text-slate-600">Save this reference. Use the lookup above to follow the report at any time.</p>
+          <p className="mt-1.5 text-[0.7rem] text-slate-600">Save this reference. Use the lookup above to follow the report at any time.</p>
         </div>
       </Reveal>
 
       <Reveal delay={0.08}>
         <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="micro-label !text-[0.6rem] text-muted-foreground">Pipeline Outcome</span>
-          <span className={cn("inline-flex rounded-full border px-2.5 py-1 micro-label !text-[0.6rem]", pipe.cls)}>{pipe.label}</span>
+          <span className="micro-label !text-[0.7rem] text-muted-foreground">Pipeline Outcome</span>
+          <span className={cn("inline-flex rounded-full border px-2.5 py-1 micro-label !text-[0.7rem]", pipe.cls)}>{pipe.label}</span>
         </div>
         <p className="mt-2 text-xs text-slate-600 leading-relaxed">{pipe.explain(outcome)}</p>
       </Reveal>
@@ -1073,7 +1073,7 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="rounded-xl border border-border/70 bg-ink-900 p-3.5 shadow-xs">
             <div className="flex items-center justify-between gap-2">
-              <p className="micro-label !text-[0.6rem]">Classification</p>
+              <p className="micro-label !text-[0.7rem]">Classification</p>
               <ProviderChip provider={outcome.classification.provider} model={outcome.classification.modelId} />
             </div>
             <dl className="mt-2.5 space-y-1.5 text-xs">
@@ -1092,19 +1092,19 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
                 </dd>
               </div>
             </dl>
-            <p className="mt-2.5 text-[0.65rem] text-slate-600 leading-relaxed border-l-2 border-blue-200 pl-2.5">
+            <p className="mt-2.5 text-[0.7rem] text-slate-600 leading-relaxed border-l-2 border-blue-200 pl-2.5">
               {outcome.classification.summary}
             </p>
             {outcome.classification.fallbackUsed && (
-              <p className="mt-1.5 text-[0.62rem] text-sev-moderate">Deterministic fallback was used for this classification (remote model unavailable).</p>
+              <p className="mt-1.5 text-[0.7rem] text-sev-moderate">Deterministic fallback was used for this classification (remote model unavailable).</p>
             )}
           </div>
 
           <div className="rounded-xl border border-border/70 bg-ink-900 p-3.5 shadow-xs">
-            <p className="micro-label !text-[0.6rem]">Risk &amp; Routing</p>
+            <p className="micro-label !text-[0.7rem]">Risk &amp; Routing</p>
             <div className="mt-2.5 flex items-center gap-2">
               <RiskBadge band={outcome.risk.band} score={outcome.risk.score} />
-              <span className="text-[0.65rem] text-slate-600">risk score out of 100 · explainable 7-factor model</span>
+              <span className="text-[0.7rem] text-slate-600">risk score out of 100 · explainable 7-factor model</span>
             </div>
             <AnimatedProgress className="mt-3" value={outcome.risk.score} max={100} fillClassName={RISK_META[outcome.risk.band]?.bar ?? "bg-water-dim"} />
             <ul className="mt-3 space-y-1">
@@ -1114,7 +1114,7 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
                 outcome.routing.map((r) => (
                   <li key={`${r.agency}-${r.role}`} className="flex items-center gap-2 text-xs">
                     <span className="data-mono font-semibold text-water">{r.agency}</span>
-                    <span className="micro-label !text-[0.6rem] text-slate-600">{r.role.toLowerCase()}</span>
+                    <span className="micro-label !text-[0.7rem] text-slate-600">{r.role.toLowerCase()}</span>
                   </li>
                 ))
               )}
@@ -1125,9 +1125,9 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
 
       <Reveal delay={0.2}>
         <div className="rounded-xl border border-border/70 bg-ink-900 p-3.5 shadow-xs flex items-center gap-3 flex-wrap">
-          <span className="micro-label !text-[0.6rem] text-muted-foreground">Urban Event</span>
+          <span className="micro-label !text-[0.7rem] text-muted-foreground">Urban Event</span>
           <span className="data-mono text-sm font-semibold text-water">{outcome.event.code}</span>
-          <span className="micro-label !text-[0.6rem] text-muted-foreground">Status {outcome.event.status.toLowerCase().replace(/_/g, " ")}</span>
+          <span className="micro-label !text-[0.7rem] text-muted-foreground">Status {outcome.event.status.toLowerCase().replace(/_/g, " ")}</span>
           <Button size="sm" className="ml-auto rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim" onClick={() => navigate("event", outcome.event.code)}>
             Open event dossier <ChevronRight className="size-3.5" aria-hidden />
           </Button>
@@ -1136,7 +1136,7 @@ function StepResult({ outcome, onReset }: { outcome: ReportOutcome; onReset: () 
 
       <Reveal delay={0.26}>
         <div className="flex items-center justify-between gap-2 pt-1">
-          <p className="text-[0.62rem] text-slate-600">The form locks after submitting so each flow files exactly one report.</p>
+          <p className="text-[0.7rem] text-slate-600">The form locks after submitting so each flow files exactly one report.</p>
           <Button variant="outline" size="sm" className="rounded-lg border-border text-slate-600 hover:bg-ink-850" onClick={onReset}>
             File another report
           </Button>

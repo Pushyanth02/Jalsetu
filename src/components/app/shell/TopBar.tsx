@@ -37,8 +37,7 @@ export function TopBar() {
   }
 
   return (
-    <header className="sticky top-0 z-30 glass-deep border-b border-hairline">
-      <div aria-hidden className="aurora-band absolute inset-x-0 bottom-0" />
+    <header className="sticky top-0 z-30 bg-background border-b border-hairline">
       <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 lg:px-5 h-14 sm:h-16">
         <button
           type="button"
@@ -86,21 +85,21 @@ export function TopBar() {
           >
             <Bell className="size-[18px]" />
             {data && data.alerts.length > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 grid min-w-4 h-4 place-items-center rounded-full bg-sev-critical text-ink-950 data-mono text-[0.6rem] px-1 leading-none font-bold">
+              <span className="absolute -top-0.5 -right-0.5 grid min-w-4 h-4 place-items-center rounded-full bg-sev-critical text-ink-950 data-mono text-[0.7rem] px-1 leading-none font-bold">
                 {data.alerts.length > 9 ? "9+" : data.alerts.length}
               </span>
             )}
           </button>
 
           <span
-            className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 micro-label !text-[0.6rem] text-amber-700 whitespace-nowrap"
+            className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[0.7rem] font-medium text-amber-700 whitespace-nowrap"
             title="All pilot data in this prototype is synthetic. Live submissions are labelled separately."
           >
             synthetic demo data
           </span>
           {ai && (
             <span
-              className="hidden xl:inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 micro-label !text-[0.6rem] text-amber-400 whitespace-nowrap"
+              className="hidden xl:inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[0.7rem] font-medium text-amber-400 whitespace-nowrap"
               title={ai.available ? `Classifier: ${ai.modelId} (${ai.configuredBy})` : "Remote model unavailable, deterministic fallback active"}
             >
               <PulseDot size={6} color={ai.available ? "bg-emerald-500" : "bg-amber-500"} />
@@ -116,7 +115,7 @@ export function TopBar() {
         {/* Always-visible user chip on mobile (compact) */}
         <div className="sm:hidden flex items-center gap-2 shrink-0">
           <span
-            className="grid size-8 place-items-center rounded-full bg-aqua text-ink-950 text-[0.68rem] font-bold shrink-0"
+            className="grid size-8 place-items-center rounded-full bg-ink-800 text-foreground text-[0.7rem] font-semibold shrink-0"
             title="Session role: ADMIN"
             aria-label="Admin"
           >
@@ -144,8 +143,8 @@ export function TopBar() {
 
       {/* Mobile view label + time */}
       <div className="lg:hidden hairline-t px-3 sm:px-4 py-1.5 flex items-center gap-2 min-w-0">
-        <span className="micro-label !text-[0.6rem] text-muted-foreground truncate">{label}</span>
-        <time className="ml-auto data-mono text-[0.65rem] text-muted-foreground whitespace-nowrap shrink-0" suppressHydrationWarning>
+        <span className="micro-label !text-[0.7rem] text-muted-foreground truncate">{label}</span>
+        <time className="ml-auto data-mono text-[0.7rem] text-muted-foreground whitespace-nowrap shrink-0" suppressHydrationWarning>
           {now.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour12: false, hour: "2-digit", minute: "2-digit" })} IST
         </time>
       </div>
@@ -159,7 +158,7 @@ export function TopBar() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.18 }}
-              className="lg:hidden fixed inset-0 top-14 sm:top-16 bg-ink-950/70 backdrop-blur-sm z-20"
+              className="lg:hidden fixed inset-0 top-14 sm:top-16 bg-ink-950/70 z-20"
               aria-hidden
               onClick={() => setMenuOpen(false)}
             />
@@ -169,7 +168,7 @@ export function TopBar() {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: "-100%", opacity: 0 }}
               transition={{ type: "spring", stiffness: 380, damping: 32 }}
-              className="lg:hidden fixed left-0 top-14 sm:top-16 bottom-0 w-[84%] max-w-[320px] bg-ink-900/92 backdrop-blur-xl hairline-r shadow-2xl z-30 flex flex-col overflow-hidden"
+              className="lg:hidden fixed left-0 top-14 sm:top-16 bottom-0 w-[84%] max-w-[320px] bg-ink-900 hairline-r shadow-xl z-30 flex flex-col overflow-hidden"
               role="dialog"
               aria-label="Navigation menu"
               aria-modal="true"
@@ -183,7 +182,7 @@ export function TopBar() {
                   ] as const
                 ).map((g) => (
                   <div key={g.key} className="mb-4 last:mb-0">
-                    <p className="px-3 py-2 micro-label !text-[0.6rem] !text-slate-600">{g.label}</p>
+                    <p className="px-3 py-2 text-[0.72rem] font-medium text-slate-500">{g.label}</p>
                     <ul className="space-y-0.5" role="list">
                       {NAV_ITEMS.filter((n) => n.group === g.key && n.id !== "event").map((item) => {
                         const active = view === item.id;
@@ -199,11 +198,11 @@ export function TopBar() {
                               className={cn(
                                 "flex w-full items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-left touch-target transition-colors",
                                 active
-                                  ? "text-aqua bg-aqua/10 ring-1 ring-aqua/25 shadow-[0_0_24px_-10px_rgba(45,212,191,0.5)]"
+                                  ? "text-foreground bg-white/8"
                                   : "text-slate-600 hover:bg-ink-850 hover:text-foreground active:bg-ink-800"
                               )}
                             >
-                              <item.icon className={cn("size-4 shrink-0", active ? "text-aqua" : "text-slate-600")} aria-hidden />
+                              <item.icon className={cn("size-4 shrink-0", active ? "text-foreground" : "text-slate-500")} aria-hidden />
                               <span className="truncate">{item.label}</span>
                               <ChevronDown className="size-3.5 ml-auto -rotate-90 opacity-30 shrink-0" aria-hidden />
                             </button>
@@ -216,12 +215,12 @@ export function TopBar() {
               </div>
               <div className="hairline-t p-3 bg-ink-950">
                   <div className="flex items-center gap-2.5">
-                    <span className="grid size-9 place-items-center rounded-full bg-aqua text-ink-950 text-xs font-bold shrink-0">AD</span>
+                    <span className="grid size-9 place-items-center rounded-full bg-ink-800 text-foreground text-xs font-semibold shrink-0">AD</span>
                     <span className="min-w-0">
                       <span className="block text-sm font-semibold text-foreground leading-none">Admin</span>
                       <span className="block text-xs text-slate-600 leading-none mt-1">Monitoring Overview</span>
                     </span>
-                    <span className="ml-auto micro-label !text-[0.6rem] text-slate-500 hidden xs:inline">synthetic demo</span>
+                    <span className="ml-auto text-[0.7rem] font-medium text-slate-500 hidden xs:inline">synthetic demo</span>
                 </div>
               </div>
             </motion.div>
@@ -327,9 +326,9 @@ function GlobalSearch({ autoFocus, onSelect }: { autoFocus?: boolean; onSelect?:
         }}
         onFocus={() => setOpen(true)}
         placeholder="Search locations, events, reports…"
-        className="w-full h-10 rounded-xl bg-white/[0.04] border border-hairline focus:border-aqua/50 focus:bg-ink-850 focus:ring-2 focus:ring-aqua/15 focus:shadow-[0_0_28px_-8px_rgba(45,212,191,0.5)] pl-10 pr-12 text-sm text-foreground placeholder:text-slate-500 outline-none transition-all"
+        className="w-full h-10 rounded-xl bg-white/[0.04] border border-hairline focus:border-input focus:bg-ink-850 focus:ring-2 focus:ring-aqua/20 pl-10 pr-12 text-sm text-foreground placeholder:text-slate-500 outline-none transition-colors"
       />
-      <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden lg:grid place-items-center data-mono text-[0.6rem] text-slate-600 border border-hairline rounded-md px-1.5 py-0.5 bg-white/[0.04] min-w-5 h-5">/</kbd>
+      <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden lg:grid place-items-center data-mono text-[0.7rem] text-slate-600 border border-hairline rounded-md px-1.5 py-0.5 bg-white/[0.04] min-w-5 h-5">/</kbd>
 
       <AnimatePresence>
         {open && active && (
@@ -347,7 +346,7 @@ function GlobalSearch({ autoFocus, onSelect }: { autoFocus?: boolean; onSelect?:
             ) : (
               <ul className="overflow-y-auto flex-1 max-h-80">
                 {groups.events.length > 0 && (
-                  <li aria-hidden className="px-4 pt-2.5 pb-1 micro-label !text-[0.6rem] !text-slate-600">Events</li>
+                  <li aria-hidden className="px-4 pt-2.5 pb-1 micro-label !text-[0.7rem] !text-slate-600">Events</li>
                 )}
                 {groups.events.map((e) => {
                   const thumb = sceneThumb(e.category, e.title, e.code, e.riskScore);
@@ -371,8 +370,8 @@ function GlobalSearch({ autoFocus, onSelect }: { autoFocus?: boolean; onSelect?:
                         <span className="min-w-0 flex-1">
                           <span className="flex items-center gap-1.5 flex-wrap">
                             <span className="data-mono text-[0.7rem] font-semibold text-water">{e.code}</span>
-                            <StatusBadge status={e.status} className="!text-[0.6rem] !px-1.5" />
-                            <RiskBadge band={e.riskBand} score={e.riskScore} className="!text-[0.6rem]" />
+                            <StatusBadge status={e.status} className="!text-[0.7rem] !px-1.5" />
+                            <RiskBadge band={e.riskBand} score={e.riskScore} className="!text-[0.7rem]" />
                           </span>
                           <span className="mt-0.5 block text-[0.78rem] text-foreground truncate">{e.title}</span>
                         </span>
@@ -382,7 +381,7 @@ function GlobalSearch({ autoFocus, onSelect }: { autoFocus?: boolean; onSelect?:
                   );
                 })}
                 {groups.reports.length > 0 && (
-                  <li aria-hidden className="px-4 pt-2.5 pb-1 micro-label !text-[0.6rem] !text-slate-600">Citizen reports</li>
+                  <li aria-hidden className="px-4 pt-2.5 pb-1 micro-label !text-[0.7rem] !text-slate-600">Citizen reports</li>
                 )}
                 {groups.reports.map((r) => {
                   const thumb = sceneThumb(r.category, r.description, r.publicRef, r.severityReported);
@@ -413,7 +412,7 @@ function GlobalSearch({ autoFocus, onSelect }: { autoFocus?: boolean; onSelect?:
                   );
                 })}
                 {groups.assets.length > 0 && (
-                  <li aria-hidden className="px-4 pt-2.5 pb-1 micro-label !text-[0.6rem] !text-slate-600">Infrastructure</li>
+                  <li aria-hidden className="px-4 pt-2.5 pb-1 micro-label !text-[0.7rem] !text-slate-600">Infrastructure</li>
                 )}
                 {groups.assets.map((a) => (
                   <li key={a.id}>
@@ -437,13 +436,13 @@ function GlobalSearch({ autoFocus, onSelect }: { autoFocus?: boolean; onSelect?:
                         <span className="data-mono text-[0.7rem] font-semibold text-water">{a.code}</span>
                         <span className="mt-0.5 block text-[0.78rem] text-foreground truncate">{a.name} · {a.kind.toLowerCase()}</span>
                       </span>
-                      <span className="micro-label !text-[0.6rem] !text-slate-500 shrink-0">{a.agencyCode}</span>
+                      <span className="micro-label !text-[0.7rem] !text-slate-500 shrink-0">{a.agencyCode}</span>
                     </button>
                   </li>
                 ))}
               </ul>
             )}
-            <p className="hairline-t px-4 py-2 micro-label !text-[0.6rem] text-muted-foreground flex items-center gap-1.5 shrink-0">
+            <p className="hairline-t px-4 py-2 micro-label !text-[0.7rem] text-muted-foreground flex items-center gap-1.5 shrink-0">
               <MapIcon className="size-3 shrink-0" aria-hidden /> events · reports · assets · esc to close
             </p>
           </motion.div>
@@ -512,14 +511,14 @@ function TimeFilter() {
                   }}
                   className={cn(
                     "w-full text-left px-3 py-2.5 rounded-lg text-[0.8rem] transition-colors touch-target",
-                    o.value === hours ? "bg-aqua/10 text-aqua font-medium" : "text-slate-600 hover:bg-white/[0.06] active:bg-white/[0.1]"
+                    o.value === hours ? "bg-white/8 text-foreground font-medium" : "text-slate-600 hover:bg-white/[0.06] active:bg-white/[0.1]"
                   )}
                 >
                   {o.label}
                 </button>
               </li>
             ))}
-            <li className="px-3 py-1.5 micro-label !text-[0.6rem] text-muted-foreground">filters map + field board</li>
+            <li className="px-3 py-1.5 micro-label !text-[0.7rem] text-muted-foreground">filters map + field board</li>
           </motion.ul>
         )}
       </AnimatePresence>
@@ -535,7 +534,7 @@ function LocationChip() {
       <MapPin className="size-4 text-aqua shrink-0" aria-hidden />
       <span className="leading-tight text-left">
         <span className="block text-[0.78rem] font-semibold text-foreground leading-none">Delhi</span>
-        <span className="block text-[0.6rem] text-slate-500 leading-none mt-0.5">3 jurisdictions</span>
+        <span className="block text-[0.7rem] text-slate-500 leading-none mt-0.5">3 jurisdictions</span>
       </span>
     </span>
   );
@@ -546,10 +545,10 @@ function UserChip() {
     <span className="hidden sm:flex items-center gap-2.5 shrink-0">
       <span className="hidden lg:flex flex-col items-end leading-tight text-right">
         <span className="text-[0.78rem] font-semibold text-foreground leading-none">Admin</span>
-        <span className="text-[0.6rem] text-slate-600 leading-none mt-1">Monitoring Overview</span>
+        <span className="text-[0.7rem] text-slate-600 leading-none mt-1">Monitoring Overview</span>
       </span>
       <span
-        className="grid size-9 place-items-center rounded-full bg-aqua text-ink-950 text-[0.72rem] font-bold shrink-0"
+        className="grid size-9 place-items-center rounded-full bg-ink-800 text-foreground text-[0.72rem] font-semibold shrink-0"
         title="Session role: ADMIN"
         aria-label="Admin avatar"
       >

@@ -1,6 +1,17 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* MONSOON LEDGER v2.0 — JalSetu design system (redesigned)
+   Direction: a civic field ledger — neutral ink paper, tabular figures, one
+   rain-teal signal on data and at most one control per screen, hairline
+   surfaces, sentence-case labels in the body face, real photographs, honest
+   numbers. No gradients, no glow, no glass, no navy, no tracked capitals,
+   no endless pulses. Evidence over decoration.
+   Critique of v1 "Monsoon Atlas": read as an AI HUD — navy glass surfaces,
+   aqua aurora gradients, gradient-clip headline, 255 uppercase tracked mono
+   labels, glowing nav pills. The fix: the same product on flat ink, with the
+   accent moved off the chrome and onto the water. */
+
 @custom-variant dark (&:is(.dark *));
 
 /* Extra breakpoints (Tailwind v4 reads @theme, not tailwind.config.ts):
@@ -17,28 +28,31 @@
      `bg-white`, `text-slate-900`, `bg-blue-50` — remapping the ramp
      itself re-skins the whole product from this one file.
 
+     The greys are TRUE NEUTRAL (no navy cast): a dark screen that leans
+     blue reads as the default dark dashboard; this one reads as ink.
+
      TEXT FLOORS (WCAG AA on the ink surfaces, enforced here):
-       slate-600 and brighter are TEXT colours  (≥ 5.8:1 on ink-900)
-       slate-500 is the floor for meaningful secondary text (≥ 5.2:1)
+       slate-600 and brighter are TEXT colours  (≥ 7:1 on ink-900)
+       slate-500 is the floor for meaningful secondary text (≥ 6:1)
        slate-400 and darker are SURFACE / hairline tones only — never
        text. Any component that needs a quiet label uses slate-600+. */
-  --color-slate-50: #070c1c;
-  --color-slate-100: #0c1329;
-  --color-slate-200: #141d38;
-  --color-slate-300: #1e2a4d;
-  --color-slate-400: #5b6893;
-  --color-slate-500: #94a3cf; /* secondary text floor — 5.2:1 */
-  --color-slate-600: #9dabe0; /* default secondary text — 5.8:1 */
-  --color-slate-700: #b9c3ea; /* body copy / emphasised secondary — 8:1 */
-  --color-slate-800: #d5ddf4;
-  --color-slate-900: #eef2ff;
+  --color-slate-50: #0b0b0b;
+  --color-slate-100: #131313;
+  --color-slate-200: #1b1b1b;
+  --color-slate-300: #232323;
+  --color-slate-400: #5b5b5b;
+  --color-slate-500: #8f8f8f; /* secondary text floor — 5.9:1 */
+  --color-slate-600: #9a9a9a; /* default secondary text — 6.6:1 */
+  --color-slate-700: #c2c2c2; /* body copy / emphasised secondary — 10:1 */
+  --color-slate-800: #e0e0e0;
+  --color-slate-900: #ededed;
   --color-slate-950: #ffffff;
 
   /* --- blue becomes aqua: the one signal colour ------------------ */
-  --color-blue-50: #04211e;
-  --color-blue-100: #062e29;
-  --color-blue-200: #0a443c;
-  --color-blue-300: #0d5f53;
+  --color-blue-50: #06211f;
+  --color-blue-100: #082e2a;
+  --color-blue-200: #0b453e;
+  --color-blue-300: #0e5f55;
   --color-blue-400: #12836f;
   --color-blue-500: #17a892;
   --color-blue-600: #2dd4bf;
@@ -47,57 +61,57 @@
   --color-blue-900: #ccf8f1;
 
   /* --- severity ramp: deep tint → vivid → light text ------------- */
-  --color-amber-50: #2a1c05;
-  --color-amber-100: #3a2707;
-  --color-amber-200: #5c3f0d;
-  --color-amber-300: #8a6212;
-  --color-amber-400: #d99a1c;
-  --color-amber-500: #f5a524;
+  --color-amber-50: #241a05;
+  --color-amber-100: #332507;
+  --color-amber-200: #523d0d;
+  --color-amber-300: #7c5c12;
+  --color-amber-400: #cc911c;
+  --color-amber-500: #f0a524;
   --color-amber-600: #fbbf4d;
   --color-amber-700: #fcd88a;
   --color-amber-800: #fde9bd;
   --color-amber-900: #fef6e3;
 
-  --color-orange-50: #2b1405;
-  --color-orange-100: #3d1d07;
-  --color-orange-200: #5f2f0c;
-  --color-orange-300: #8c4611;
-  --color-orange-400: #d96a1a;
-  --color-orange-500: #fb8f3c;
-  --color-orange-600: #fdaa63;
+  --color-orange-50: #271405;
+  --color-orange-100: #391d07;
+  --color-orange-200: #592f0c;
+  --color-orange-300: #824611;
+  --color-orange-400: #c96a1a;
+  --color-orange-500: #ea8f3c;
+  --color-orange-600: #f8ab63;
   --color-orange-700: #fdc794;
   --color-orange-800: #fde4c9;
   --color-orange-900: #fef3e8;
 
-  --color-red-50: #2c0a14;
-  --color-red-100: #3f0f1c;
-  --color-red-200: #611524;
-  --color-red-300: #8f1c31;
-  --color-red-400: #c2203f;
-  --color-red-500: #ff4d6a;
-  --color-red-600: #ff7a8f;
+  --color-red-50: #2b0a14;
+  --color-red-100: #3d0f1c;
+  --color-red-200: #5c1524;
+  --color-red-300: #861c31;
+  --color-red-400: #b8203f;
+  --color-red-500: #f04d6a;
+  --color-red-600: #f87a8f;
   --color-red-700: #ffa8b6;
   --color-red-800: #ffcbd3;
   --color-red-900: #ffe6ea;
 
-  --color-emerald-50: #04241a;
-  --color-emerald-100: #06362a;
-  --color-emerald-200: #0a4a38;
-  --color-emerald-300: #0e6b50;
-  --color-emerald-400: #10916a;
-  --color-emerald-500: #14b88a;
-  --color-emerald-600: #34d3a4;
+  --color-emerald-50: #05221a;
+  --color-emerald-100: #073328;
+  --color-emerald-200: #0a4736;
+  --color-emerald-300: #0d6750;
+  --color-emerald-400: #0f8f6a;
+  --color-emerald-500: #12b488;
+  --color-emerald-600: #3ad2a3;
   --color-emerald-700: #7ce7c2;
   --color-emerald-800: #b3f1db;
   --color-emerald-900: #dcfaef;
 
-  --color-green-50: #04241a;
-  --color-green-100: #06362a;
-  --color-green-200: #0a4a38;
-  --color-green-300: #0e6b50;
-  --color-green-400: #10916a;
-  --color-green-500: #14b88a;
-  --color-green-600: #34d3a4;
+  --color-green-50: #05221a;
+  --color-green-100: #073328;
+  --color-green-200: #0a4736;
+  --color-green-300: #0d6750;
+  --color-green-400: #0f8f6a;
+  --color-green-500: #12b488;
+  --color-green-600: #3ad2a3;
   --color-green-700: #7ce7c2;
   --color-green-800: #b3f1db;
   --color-green-900: #dcfaef;
@@ -178,93 +192,87 @@
   --radius: 0.75rem;
 
   /* =====================================================================
-     IDENTITY — “MONSOON ATLAS”
-     A hydrological atlas of Delhi at monsoon dusk. Deep ink water,
-     one rain-teal signal, warm lantern severity. Depth comes from the
-     ink ramp and hairlines, never from drop shadows; atmosphere comes
-     from a few large, slow gradients (see the gradient notes below).
+     IDENTITY — "MONSOON LEDGER"
+     The field ledger of a Delhi monsoon: ink paper, tabular figures,
+     one rain-teal signal, warm severity stamps. Depth comes from one
+     tone step and 1px hairlines — never from shadows, gradients or
+     glass. Colour lives on data and status; the chrome stays ink.
 
      TYPOGRAPHY (chosen, not defaulted):
-     • Fraunces — display serif. Its soft, wonky old-style curves read
-       like a printed survey atlas: humanist, warm, unmistakably not a
-       template. Used for view titles, the landing headline and hero
-       numerals. Italic is reserved for one poetic accent per page.
-     • Public Sans — UI + body. Designed for government digital
-       services (USWDS); best-in-class legibility at 12–14px on dark.
-       A civic instrument deserves a civic face.
-     • IBM Plex Mono — data. Instrument readouts: codes, coordinates,
-       tabular numerals. The cartographic tradition of the atlas.
+     • Fraunces — display serif. Soft wonky old-style curves: the human
+       face of a printed government atlas. View titles and the landing
+       headline only. No italics inside headings.
+     • Public Sans — UI + body. Designed for government digital services
+       (USWDS); best-in-class legibility at 12–14px. The civic face.
+     • IBM Plex Mono — data readouts only: codes, coordinates, tabular
+       numerals. Labels are set in the body face (see .micro-label).
      ===================================================================== */
 
-  /* Surfaces — the ink stack, darkest to lightest */
-  --ink-950: #05080f; /* page canvas */
-  --ink-900: #0a1124; /* primary surface (cards, bars) */
-  --ink-850: #101a33; /* raised surface (rows, inputs, hovers) */
-  --ink-800: #16213f; /* highest surface (chips, active rows) */
-  --ink-700: #1e2b4f; /* strong border / track */
-  --ink-600: #2a3a63; /* decorative fill (skeleton, ticks) */
-  --hairline: #1a2440; /* the one border colour */
+  /* Surfaces — the ink stack, darkest to lightest. Pure neutral greys:
+     a navy dark is the default AI dashboard; this is ink on paper. */
+  --ink-950: #0b0b0b; /* page canvas */
+  --ink-900: #141414; /* primary surface (cards, bars) */
+  --ink-850: #1b1b1b; /* raised surface (rows, inputs, hovers) */
+  --ink-800: #232323; /* highest surface (chips, active rows) */
+  --ink-700: #2d2d2d; /* strong border / track */
+  --ink-600: #3c3c3c; /* decorative fill (skeleton, ticks) */
+  --hairline: #222222; /* the one border colour */
 
-  /* =====================================================================
-     GRADIENTS — the atmosphere set. Chosen once, used everywhere.
-     Rules: close hues only (no rainbow), long blends (no visible seams),
-     near-reading-direction angles for text (never “sloped”), static by
-     default (motion never trades legibility for decoration).
-     ===================================================================== */
-
-  /* Aqua — the single signal colour. `--water` is the BRIGHT value so it
-     works as text/icon on deep ink (contrast > 7:1). Filled buttons pair
-     it with `text-ink-950`, which is the intended pairing throughout. */
+  /* Aqua — the single signal colour, reserved for data and at most one
+     control per screen. `--water` is the BRIGHT value so it works as
+     text/icon on deep ink (contrast > 9:1). */
   --aqua: #2dd4bf;
   --aqua-dim: #6fe6d6;
   --aqua-deep: #0a6e63;
   --water: #2dd4bf;
   --water-dim: #7defdb;
 
-  /* Severity — mirrored in src/lib/palette.ts for non-Tailwind contexts */
-  --sev-low: #9dabe0;
+  /* Severity — mirrored in src/lib/palette.ts for non-Tailwind contexts.
+     Low is quiet neutral ink: low severity is the absence of a signal. */
+  --sev-low: #a3a8af;
   --sev-moderate: #f5a524;
   --sev-high: #fb8f3c;
   --sev-critical: #ff4d6a;
   --verified: #14b88a;
 
-  /* Sidebar sits deeper than the canvas so the rail reads as a well */
-  --sb-900: #03060d;
-  --sb-850: #080e1d;
-  --sb-800: #0e1730;
-  --sb-750: #16223f;
+  /* Sidebar sits on the page ground: one ground everywhere, split by a
+     1px rule. A darker "well" rail is the default dashboard tell. */
+  --sb-900: #0b0b0b;
+  --sb-850: #131313;
+  --sb-800: #1b1b1b;
+  --sb-750: #232323;
 
   --background: var(--ink-950);
-  --foreground: #eef2ff;
+  --foreground: #ededed;
   --card: var(--ink-900);
   --card-foreground: var(--foreground);
-  --popover: #0c142b;
+  --popover: #151515;
   --popover-foreground: var(--foreground);
   --primary: var(--aqua);
   /* Aqua fill, deep ink text — white on aqua would fail AA. */
   --primary-foreground: var(--ink-950);
   --secondary: var(--ink-850);
-  --secondary-foreground: #d5ddf4;
+  --secondary-foreground: #e0e0e0;
   --muted: var(--ink-850);
-  --muted-foreground: #9dabe0; /* 5.8:1 — AA floor for quiet text */
+  --muted-foreground: #9a9a9a; /* 6.6:1 — AA floor for quiet text */
   --accent: var(--ink-800);
-  --accent-foreground: #eef2ff;
+  --accent-foreground: #ededed;
   --destructive: var(--sev-critical);
   --border: var(--hairline);
-  --input: #33406e; /* 3:1 against ink-850 — perceived affordance */
+  --input: #3c3c3c; /* 3:1 against ink-850 — perceived affordance */
   --ring: var(--aqua);
   --chart-1: #2dd4bf;
   --chart-2: #f5a524;
   --chart-3: #fb8f3c;
   --chart-4: #ff4d6a;
-  --chart-5: #9dabe0;
+  --chart-5: #9a9a9a;
   --sidebar: var(--sb-900);
-  --sidebar-foreground: #d5ddf4;
+  --sidebar-foreground: #e0e0e0;
   --sidebar-primary: var(--aqua);
   --sidebar-primary-foreground: var(--ink-950);
   --sidebar-accent: var(--sb-800);
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #131c36;
+  --sidebar-border: #1b1b1b;
   --sidebar-ring: var(--aqua);
 }
 
@@ -288,7 +296,7 @@
   }
   ::selection {
     background: rgba(45, 212, 191, 0.28);
-    color: #eef2ff;
+    color: #ededed;
   }
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-ring;
@@ -311,23 +319,25 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
-  /* Display serif — Fraunces. Serif display wants far less negative
-     tracking than a geometric sans; -0.01em holds the atlas feel
-     without colliding letterforms at 3rem+. */
+  /* Display serif — Fraunces. One display face for titles and the
+     landing headline; tracking slightly negative, no italics inside it. */
   .font-display {
     font-family: var(--font-fraunces), var(--font-public), Georgia, serif;
     letter-spacing: -0.01em;
   }
-  /* Quiet mono kicker. The colour is an AA floor (8.6:1 on ink-900):
-     250+ usages, most of them the first line of a panel — it must
-     never be the reason someone can’t read a label. */
+  /* The quiet label. Redesigned: labels are the body face, one step
+     smaller, sentence case, untracked — never mono, never capitals
+     (mono-caps labels were the loudest tell in v1; this single class
+     is what makes the console read as a product instead of a HUD).
+     Colour floor 7:1 on ink-900. */
   .micro-label {
-    font-family: var(--font-plex-mono), monospace;
-    font-size: 0.66rem;
-    line-height: 1.45;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #a9b6e6;
+    font-family: var(--font-public), ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.72rem;
+    line-height: 1.4;
+    letter-spacing: 0;
+    text-transform: none;
+    font-weight: 500;
+    color: #a0a0a0;
   }
   .data-mono {
     font-family: var(--font-plex-mono), monospace;
@@ -346,7 +356,8 @@
     border-left: 1px solid var(--hairline);
   }
   /* The workhorse surface: a flat ink card. Depth comes from the step in
-     the ink ramp and the hairline border, not from gradients or shadows. */
+     the ink ramp and the hairline border — a border or a tone step,
+     never both, never a gradient, never a shadow. */
   .panel {
     background: var(--ink-900);
     border: 1px solid var(--hairline);
@@ -355,7 +366,7 @@
     transition: border-color 160ms ease, background-color 160ms ease;
   }
   .card-hover:hover {
-    border-color: #2b3d68;
+    border-color: #333333;
     background: var(--ink-850);
   }
   @media (hover: none) {
@@ -364,10 +375,11 @@
       background: var(--ink-900);
     }
   }
+  /* Loading texture: a flat grey bar at the value's real size. No
+     shimmer gradient, no slide — the layout says "loading", not a
+     spotlight effect. */
   .shimmer {
-    background: linear-gradient(100deg, #0d152c 40%, #1c2b4e 50%, #0d152c 60%);
-    background-size: 200% 100%;
-    animation: shimmer-slide 1.4s infinite linear;
+    background: var(--ink-850);
   }
   /* Fluid container — centers content on ultrawide */
   .content-wrap {
@@ -397,184 +409,142 @@
   }
 
   /* --- signal accents ---------------------------------------------- */
-  /* The one decorative mark allowed in the atlas era: a short aqua rule
-     under a section label. A whisper of light, not a glow. */
+  /* The one deliberate mark: a short aqua rule under a section label.
+     Solid, no glow — a whisper of the signal colour, not a light. */
   .signal-rule {
     display: block;
     width: 28px;
     height: 2px;
     background: var(--aqua);
-    box-shadow: 0 0 10px rgba(45, 212, 191, 0.3);
   }
 
   /* =====================================================================
-     THE GRADIENT SET — every gradient in the product is one of these.
+     SURFACE SET — v2. The six named gradients of v1 are gone. What
+     remains: flat ink, hairlines, photo scrims, and one solid accent.
+     1. .text-signal   — solid aqua accent phrase (no gradient clip)
+     2. .scrim-photo   — text-safe scrim for photos (banners, cards)
+     3. .feather-y     — photo → canvas melt (full-bleed imagery)
+     4. .aurora-band   — retired; kept as a plain hairline rule
+     5. .panel-raised  — now identical to .panel (flat, no top-light)
+     6. .bg-atlas      — retired (kept as a no-op for old call sites)
+     7. .bg-grid-faint — retired (kept as a no-op)
+     8. .glass/.glass-deep — now opaque ink (no backdrop blur)  ======== */
 
-     1. .bg-atlas      — the monsoon-dusk atmosphere (hero, bands)
-     2. .text-signal   — the one aqua text treatment (headline accent)
-     3. .scrim-photo   — text-safe scrim for photos (banners, cards)
-     4. .feather-y     — photo → canvas melt (full-bleed imagery)
-     5. .panel-raised  — the quiet top-light on cards
-     6. .aurora-band   — the hairline energy rule
-     All static. All close-hue. All long-blended.  ========================= */
-
-  /* 1 — Monsoon dusk: rain-light pooling upper-left, petrol depth
-     lower-right. Three huge low-alpha radial layers read as one
-     smooth sky; nothing here can band or seam. */
-  .bg-atlas {
-    background:
-      radial-gradient(64rem 36rem at 14% -12%, rgba(45, 212, 191, 0.1), transparent 62%),
-      radial-gradient(52rem 30rem at 108% 6%, rgba(13, 148, 136, 0.08), transparent 58%),
-      radial-gradient(80rem 48rem at 50% 128%, rgba(13, 148, 136, 0.07), transparent 70%);
-  }
-
-  /* 2 — The signal phrase. A close-hue aqua ramp swept at 94deg —
-     essentially the reading direction, so it never reads as “sloped”.
-     Static on purpose: text must be equally legible in every frame.
-     Every stop clears AA on ink-950 by 7:1+. */
+  /* 1 — the signal phrase: solid aqua. A gradient-clip headline is the
+     single most recognisable AI tell in typography; the same words in a
+     flat signal colour are quieter and stronger. */
   .text-signal {
-    background-image: linear-gradient(94deg, #a7f3e3 0%, #5eead4 42%, #2dd4bf 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: var(--aqua);
   }
 
-  /* 3 — Photo scrim. Anchored long blends: transparent until a third of
+  /* 2 — Photo scrim. Anchored long blends: transparent until a third of
      the way down, then a slow darkening that only reaches full ink at
-     the last 8%. The seam between “photo” and “interface” disappears. */
+     the last 8%. The seam between "photo" and "interface" disappears. */
   .scrim-photo {
     background: linear-gradient(
       180deg,
-      rgba(5, 8, 15, 0) 0%,
-      rgba(5, 8, 15, 0.1) 32%,
-      rgba(5, 8, 15, 0.42) 56%,
-      rgba(5, 8, 15, 0.76) 78%,
-      rgba(5, 8, 15, 0.95) 100%
+      rgba(11, 11, 11, 0) 0%,
+      rgba(11, 11, 11, 0.1) 32%,
+      rgba(11, 11, 11, 0.42) 56%,
+      rgba(11, 11, 11, 0.76) 78%,
+      rgba(11, 11, 11, 0.95) 100%
     );
   }
 
-  /* 4 — Vertical feather. Masks a full-bleed image so it dissolves into
-     the canvas above and below — the atlas way of mounting a photograph,
+  /* 3 — Vertical feather. Masks a full-bleed image so it dissolves into
+     the canvas above and below — the ledger way of mounting a photograph,
      no hard cuts, no overlay sandwich. */
   .feather-y {
     -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 26%, #000 76%, transparent 100%);
     mask-image: linear-gradient(180deg, transparent 0%, #000 26%, #000 76%, transparent 100%);
   }
 
-  /* 5 — Raised panel: a three-stop top light that breathes out by a
-     third of the card. No visible edge where the light ends. */
+  /* 4 — the aurora band is retired: a 1px hairline does the same job
+     without the light show. */
+  .aurora-band {
+    height: 1px;
+    background: var(--hairline);
+  }
+
+  /* 5 — a raised panel is the same flat panel as everything else. */
   .panel-raised {
-    background:
-      linear-gradient(180deg, rgba(45, 212, 191, 0.05) 0%, rgba(45, 212, 191, 0.018) 16%, rgba(45, 212, 191, 0) 34%),
-      var(--ink-900);
+    background: var(--ink-900);
     border: 1px solid var(--hairline);
   }
 
-  /* 6 — Hairline energy rule: the aqua horizon. Calmer than it was —
-     the peak comes down and the tail stretches longer. */
-  .aurora-band {
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(45, 212, 191, 0.05) 14%,
-      rgba(45, 212, 191, 0.5) 50%,
-      rgba(13, 148, 136, 0.32) 76%,
-      transparent
-    );
-  }
+  /* 6/7 — retired atmosphere + grid textures. Photos carry the page now. */
+  .bg-atlas { background: transparent; }
+  .bg-grid-faint { background: transparent; }
 
-  /* --- glass chrome (floating bars, popovers over the map) -----------
-     Calmer than the earlier language: more ink, less blur. Legibility
-     of the text sitting on the glass is the whole point of the panel. */
+  /* 8 — floating chrome over the map: opaque ink, no backdrop blur.
+     Legibility of the text sitting on it is the whole point; blur is a
+     lens, and lenses are for cameras. */
   .glass {
-    background: color-mix(in srgb, var(--ink-900) 84%, transparent);
-    -webkit-backdrop-filter: blur(10px) saturate(1.12);
-    backdrop-filter: blur(10px) saturate(1.12);
-    border: 1px solid color-mix(in srgb, var(--hairline) 90%, transparent);
+    background: var(--ink-900);
+    border: 1px solid var(--hairline);
   }
   .glass-deep {
-    background: color-mix(in srgb, var(--ink-950) 86%, transparent);
-    -webkit-backdrop-filter: blur(12px) saturate(1.08);
-    backdrop-filter: blur(12px) saturate(1.08);
+    background: var(--ink-950);
+    border: 1px solid var(--hairline);
   }
-  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .glass { background: var(--ink-900); }
-    .glass-deep { background: var(--ink-950); }
-  }
-
-  /* --- functional loading texture ------------------------------------
-     The engineered grid is reserved for ONE job: signalling “structure
-     is being built” while a view hydrates. It is never decoration. */
-  .bg-grid-faint {
-    background-image: linear-gradient(to right, rgba(45, 212, 191, 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(45, 212, 191, 0.05) 1px, transparent 1px);
-    background-size: 44px 44px;
-  }
-}
-
-@keyframes shimmer-slide {
-  0% { background-position: 150% 0; }
-  100% { background-position: -50% 0; }
 }
 
 /* --- scrollbars: thin, ink ---------------------------------------------- */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #2b3d68 transparent;
+  scrollbar-color: #2d2d2d transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: #2b3d68;
+  background: #2d2d2d;
   border-radius: 4px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: #3d5290;
+  background: #3c3c3c;
 }
 
 /* --- map marker + popup primitives ----------------------------------------- */
 /* The basemap is dark, so map chrome sits in the same ink family as the
-   app. Attribution is raised to an AA floor — it was the faintest text
-   in the product. */
+   app. Shadows exist only on what floats: popups and controls. */
 
 .maplibregl-popup-content {
-  background: #0c142b !important;
-  color: #eef2ff !important;
-  border: 1px solid #2b3d68 !important;
+  background: #151515 !important;
+  color: #ededed !important;
+  border: 1px solid #2d2d2d !important;
   border-radius: 12px !important;
   padding: 0 !important;
-  box-shadow: 0 18px 44px rgba(2, 4, 10, 0.7) !important;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55) !important;
 }
 .maplibregl-popup-tip {
-  border-top-color: #0c142b !important;
-  border-bottom-color: #0c142b !important;
+  border-top-color: #151515 !important;
+  border-bottom-color: #151515 !important;
 }
 .maplibregl-ctrl-attrib {
-  background: rgba(5, 8, 15, 0.82) !important;
-  color: #93a5d8 !important;
+  background: rgba(11, 11, 11, 0.82) !important;
+  color: #8f8f8f !important;
   font-size: 10px !important;
 }
 .maplibregl-ctrl-attrib a {
-  color: #b3c2ee !important;
+  color: #c2c2c2 !important;
 }
 .maplibregl-ctrl-group {
-  background: #0c142b !important;
-  border: 1px solid #2b3d68 !important;
+  background: #151515 !important;
+  border: 1px solid #2d2d2d !important;
   border-radius: 10px !important;
-  box-shadow: 0 4px 14px rgba(2, 4, 10, 0.6) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45) !important;
 }
 .maplibregl-ctrl-group button {
   width: 30px !important;
   height: 30px !important;
 }
 .maplibregl-ctrl-group button + button {
-  border-top: 1px solid #2b3d68 !important;
+  border-top: 1px solid #2d2d2d !important;
 }
 .maplibregl-ctrl-group button span {
-  filter: invert(1) brightness(1.7) sepia(0.4) saturate(3) hue-rotate(120deg) !important;
+  filter: invert(1) brightness(1.6) sepia(0.3) saturate(2.4) hue-rotate(130deg) !important;
 }
 
 .event-marker {
@@ -584,8 +554,8 @@
   width: 22px;
   height: 22px;
   border-radius: 999px;
-  border: 1.5px solid rgba(238, 242, 255, 0.85);
-  box-shadow: 0 0 0 1.5px rgba(5, 8, 15, 0.6), 0 2px 10px rgba(2, 4, 10, 0.7);
+  border: 1.5px solid rgba(237, 237, 237, 0.85);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
   transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
   background-clip: padding-box;
 }
@@ -596,20 +566,21 @@
 }
 .event-marker.is-selected {
   transform: scale(1.35);
-  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.9), 0 2px 12px rgba(2, 4, 10, 0.7);
+  outline: 2px solid rgba(45, 212, 191, 0.95);
+  outline-offset: 1px;
 }
 .cluster-marker {
   cursor: pointer;
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: rgba(14, 23, 48, 0.94);
+  background: rgba(19, 19, 19, 0.94);
   border: 1px solid rgba(45, 212, 191, 0.5);
-  color: #d5ddf4;
+  color: #e0e0e0;
   font-family: var(--font-plex-mono), monospace;
   font-size: 11px;
   font-variant-numeric: tabular-nums;
-  box-shadow: 0 0 14px -6px rgba(45, 212, 191, 0.35), 0 2px 10px rgba(2, 4, 10, 0.6);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
   transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .cluster-marker:hover,
@@ -654,23 +625,12 @@
   width: 18px;
   height: 18px;
   border-radius: 999px;
-  background: radial-gradient(circle, #2dd4bf 0%, #17a892 45%, rgba(45, 212, 191, 0.35) 55%, transparent 72%);
-  border: 2px solid #0a1124;
-  box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.3), 0 2px 8px rgba(2, 4, 10, 0.7);
+  background: #2dd4bf;
+  border: 2px solid #0a0b0e;
+  /* The location dot marks a real state ("you are here"), so it stays —
+     but as a steady mark, not a radar. No infinite pulse. */
+  box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.3);
   position: relative;
-}
-.user-dot::after {
-  content: "";
-  position: absolute;
-  inset: -6px;
-  border-radius: 999px;
-  border: 1.5px solid rgba(45, 212, 191, 0.6);
-  animation: user-dot-ping 2.2s ease-out infinite;
-}
-@keyframes user-dot-ping {
-  0% { transform: scale(0.6); opacity: 0.9; }
-  70% { transform: scale(1.25); opacity: 0; }
-  100% { transform: scale(1.25); opacity: 0; }
 }
 
 .maplibregl-popup button[data-open-event] {
@@ -682,12 +642,12 @@
 }
 .maplibregl-popup-close-button {
   font-size: 16px;
-  color: #9dabe0;
+  color: #9a9a9a;
   padding: 4px 8px;
   line-height: 1;
 }
 .maplibregl-popup-close-button:hover {
-  color: #eef2ff;
+  color: #eef0f2;
 }
 
 /* --- focus & a11y ---------------------------------------------------------- */
@@ -706,4 +666,3 @@
 [data-radix-popper-content-wrapper] {
   max-width: min(92vw, 420px);
 }
-

@@ -99,7 +99,7 @@ export function MapSelectionCard({ events }: { events: EventSummary[] }) {
           <p className="mt-1 text-xs text-muted-foreground line-clamp-1">{ev.locationText}</p>
           <div className="mt-2.5 flex items-center gap-3 flex-wrap">
             <SeverityTicks severity={ev.severity} />
-            <span className="data-mono text-[0.65rem] text-muted-foreground">{ev.reportCount} reports</span>
+            <span className="data-mono text-[0.7rem] text-muted-foreground">{ev.reportCount} reports</span>
             <ConfidenceChip confidence={ev.confidence} />
             <TimeAgo iso={ev.lastActivityAt} />
           </div>
@@ -115,7 +115,7 @@ export function MapSelectionCard({ events }: { events: EventSummary[] }) {
       <div className="mt-3 flex gap-2">
         <button
           onClick={() => navigate("event", ev.code)}
-          className="flex-1 rounded-lg bg-aqua text-ink-950 micro-label !text-[0.62rem] font-semibold !tracking-[0.12em] py-2 hover:bg-aqua-dim transition-colors"
+          className="flex-1 rounded-lg bg-aqua text-ink-950 micro-label !text-[0.7rem] font-semibold py-2 hover:bg-aqua-dim transition-colors"
         >
           Open full dossier
         </button>
@@ -123,7 +123,7 @@ export function MapSelectionCard({ events }: { events: EventSummary[] }) {
           onClick={() => {
             useUi.getState().focusMap(ev.lat, ev.lng, 15.5);
           }}
-          className="rounded-lg border border-border text-slate-600 px-3 py-2 micro-label !text-[0.62rem] hover:bg-ink-850 transition-colors"
+          className="rounded-lg border border-border text-slate-600 px-3 py-2 micro-label !text-[0.7rem] hover:bg-ink-850 transition-colors"
         >
           Zoom
         </button>

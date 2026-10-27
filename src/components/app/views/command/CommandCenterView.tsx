@@ -57,10 +57,10 @@ export function CommandCenterView() {
           <div className="ml-auto flex items-center gap-2.5">
             <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 pl-2.5 pr-3 py-1">
               <PulseDot color="bg-emerald-500" size={7} />
-              <span className="text-[0.65rem] font-semibold text-emerald-700">Live Data</span>
-              <span className="data-mono text-[0.6rem] text-emerald-600">demo mode</span>
+              <span className="text-[0.7rem] font-semibold text-emerald-700">Live Data</span>
+              <span className="data-mono text-[0.7rem] text-emerald-600">demo mode</span>
             </span>
-            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 micro-label text-[0.6rem]! text-water">
+            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 micro-label text-[0.7rem]! text-water">
               <Radio className="size-3" aria-hidden /> 3 pilot jurisdictions
             </span>
           </div>
@@ -76,8 +76,6 @@ export function CommandCenterView() {
                 label="Active Waterlogging Events"
                 value={d.counts.activeEvents}
                 delta={eventDelta(allEventsQ.data)}
-                icon={<Droplets className="size-5" aria-hidden />}
-                tint="bg-blue-50 text-water"
                 to="map"
                 hint="Total incidents currently active in the pilot window"
               />
@@ -85,19 +83,14 @@ export function CommandCenterView() {
                 label="High Risk Hotspots"
                 value={d.counts.highRisk}
                 delta={bandDelta(allEventsQ.data, "HIGH")}
-                icon={<AlertTriangle className="size-5" aria-hidden />}
-                tint="bg-red-50 text-sev-critical"
                 to="map"
                 filterRisk="HIGH"
                 hint="Rated High Risk or Critical on the 0-100 risk scale"
-                critical
               />
               <KpiCard
                 label="Unresolved Events"
                 value={d.counts.unresolved}
                 delta={bandDelta(allEventsQ.data, "UNRESOLVED")}
-                icon={<ClipboardCheck className="size-5" aria-hidden />}
-                tint="bg-amber-50 text-sev-moderate"
                 to="verify"
                 hint="Spotted or sorted, but no crew assigned yet"
               />
@@ -105,8 +98,6 @@ export function CommandCenterView() {
                 label="Under Verification"
                 value={d.counts.inField}
                 delta={null}
-                icon={<CheckCircle2 className="size-5" aria-hidden />}
-                tint="bg-emerald-50 text-verified"
                 to="verify"
                 hint="A crew has been assigned or is already on site"
               />
@@ -161,11 +152,11 @@ export function CommandCenterView() {
                       <li key={a.code} className="flex items-center gap-3 px-4 py-2.5 hairline-b last:border-0 hover:bg-ink-850/60 transition-colors">
                         <span className="data-mono text-xs font-semibold text-water w-10 shrink-0">{a.code}</span>
                         <span className="text-xs text-slate-600 flex-1 truncate">{a.name}</span>
-                        <span className="data-mono text-[0.65rem] text-slate-500" title="Active events right now">{a.active}<span className="text-slate-500"> act</span></span>
-                        <span className="data-mono text-[0.65rem] text-verified flex items-center gap-1" title="Verified or closed events">
+                        <span className="data-mono text-[0.7rem] text-slate-500" title="Active events right now">{a.active}<span className="text-slate-500"> act</span></span>
+                        <span className="data-mono text-[0.7rem] text-verified flex items-center gap-1" title="Verified or closed events">
                           <CheckCircle2 className="size-3" aria-hidden />{a.verified}
                         </span>
-                        {a.highRisk > 0 && <span className="data-mono text-[0.65rem] text-sev-high" title="High-risk events">{a.highRisk} hi</span>}
+                        {a.highRisk > 0 && <span className="data-mono text-[0.7rem] text-sev-high" title="High-risk events">{a.highRisk} hi</span>}
                       </li>
                     ))}
                   </ul>
@@ -184,46 +175,35 @@ export function CommandCenterView() {
 
 /* ------------------------------------------------------------- KPI cards */
 
-function KpiCard({ label, value, delta, icon, tint, to, filterRisk, hint, critical }: {
+/** A KPI is type, not a tile: label over value, no icon, no sparkline.
+ *  The delta names its window in its tooltip; colour says good or bad,
+ *  not up and down. */
+function KpiCard({ label, value, delta, to, filterRisk, hint }: {
   label: string;
   value: number;
   delta: number | null;
-  icon: React.ReactNode;
-  tint: string;
   to: "map" | "verify";
   filterRisk?: string;
   hint: string;
-  critical?: boolean;
 }) {
   const setFilters = useUi((s) => s.setFilters);
-  const reduce = useReducedMotion();
   return (
-    <HoverLift>
-      <div className="relative rounded-xl">
-        <button
-          onClick={() => {
-            if (filterRisk) setFilters({ riskBand: filterRisk as "HIGH" });
-            navigate(to);
-          }}
-          title={hint}
-          className="w-full text-left p-4 sm:p-5 panel rounded-xl card-hover"
-        >
-          <span className="flex items-start justify-between gap-3">
-            <span className={cn("grid size-10 place-items-center rounded-lg shrink-0", tint)}>{icon}</span>
-            {delta !== null && <DeltaPill delta={delta} />}
-          </span>
-          <motion.span
-            className="block mt-3 font-display text-3xl sm:text-[2.1rem] font-bold tabular-nums text-slate-900 leading-none"
-            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.4 }}
-          >
-            <CountUp value={value} />
-          </motion.span>
-          <span className="block mt-1.5 text-[0.72rem] font-medium text-slate-600 leading-snug">{label}</span>
-        </button>
-      </div>
-    </HoverLift>
+    <button
+      onClick={() => {
+        if (filterRisk) setFilters({ riskBand: filterRisk as "HIGH" });
+        navigate(to);
+      }}
+      title={hint}
+      className="w-full text-left p-4 sm:p-5 panel rounded-xl card-hover"
+    >
+      <span className="flex items-center justify-between gap-3">
+        <span className="block text-[0.75rem] font-medium text-slate-500 leading-snug">{label}</span>
+        {delta !== null && <DeltaPill delta={delta} />}
+      </span>
+      <span className="mt-2.5 block font-display text-[1.7rem] sm:text-3xl font-semibold tabular-nums text-foreground leading-none">
+        <CountUp value={value} />
+      </span>
+    </button>
   );
 }
 
@@ -233,7 +213,7 @@ function DeltaPill({ delta }: { delta: number }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.6rem] font-semibold",
+        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.7rem] font-semibold",
         flat ? "bg-slate-100 text-slate-600" : up ? "bg-red-50 text-sev-critical" : "bg-emerald-50 text-verified"
       )}
       title="Change in new incidents over the last 24 hours compared with the day before (computed from pilot data)"
@@ -298,10 +278,10 @@ function LayersPanel() {
             aria-label="Map layers"
           >
             <div className="flex items-center justify-between mb-2">
-              <p className="micro-label text-[0.6rem]! text-slate-600 flex items-center gap-1.5">
+              <p className="micro-label text-[0.7rem]! text-slate-600 flex items-center gap-1.5">
                 <Layers className="size-3" aria-hidden /> Layers
               </p>
-              <button onClick={() => setOpen(false)} className="micro-label text-[0.6rem]! text-slate-600 hover:text-aqua" aria-label="Hide layers panel">
+              <button onClick={() => setOpen(false)} className="micro-label text-[0.7rem]! text-slate-600 hover:text-aqua" aria-label="Hide layers panel">
                 hide
               </button>
             </div>
@@ -328,7 +308,7 @@ function LayersPanel() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setOpen(true)}
-            className="panel rounded-lg px-2.5 py-1.5 micro-label text-[0.6rem]! text-slate-600 flex items-center gap-1.5"
+            className="panel rounded-lg px-2.5 py-1.5 micro-label text-[0.7rem]! text-slate-600 flex items-center gap-1.5"
             aria-label="Show layers panel"
           >
             <Layers className="size-3" aria-hidden /> layers
@@ -343,10 +323,10 @@ function LayersPanel() {
 function DemoModeBadge() {
   return (
     <div className="absolute z-20 bottom-7.5 right-3 pointer-events-none">
-      <span className="inline-flex items-center gap-2 rounded-full bg-ink-800/90 border border-hairline backdrop-blur px-3 py-1.5 shadow-lg">
+      <span className="inline-flex items-center gap-2 rounded-full bg-ink-800 border border-hairline px-3 py-1.5 shadow-lg">
         <PulseDot color="bg-emerald-400" size={7} />
-        <span className="text-[0.62rem] font-semibold text-white">Live Data</span>
-        <span className="data-mono text-[0.6rem] text-amber-400">demo mode</span>
+        <span className="text-[0.7rem] font-semibold text-white">Live Data</span>
+        <span className="data-mono text-[0.7rem] text-amber-400">demo mode</span>
       </span>
     </div>
   );
@@ -400,7 +380,7 @@ function RecentReportsPanel() {
       title="Recent Reports"
       icon={<Droplets />}
       actions={
-        <button onClick={() => navigate("report")} className="micro-label text-[0.6rem]! text-water hover:text-water-dim transition-colors">
+        <button onClick={() => navigate("report")} className="micro-label text-[0.7rem]! text-water hover:text-water-dim transition-colors">
           view all →
         </button>
       }
@@ -447,12 +427,12 @@ function RecentReportsPanel() {
                         </div>
                         <span className="min-w-0 flex-1">
                           <span className="flex items-center gap-2">
-                            <span className="data-mono text-[0.68rem] font-semibold text-water">{r.publicRef}</span>
+                            <span className="data-mono text-[0.7rem] font-semibold text-water">{r.publicRef}</span>
                             <SeverityPill severity={r.severityReported} />
-                            {r.isDuplicate && <span className="micro-label text-[0.6rem]! text-slate-600">merged</span>}
+                            {r.isDuplicate && <span className="micro-label text-[0.7rem]! text-slate-600">merged</span>}
                           </span>
                           <span className="mt-0.5 block text-[0.76rem] text-slate-600 leading-snug line-clamp-1">{r.description}</span>
-                          <span className="mt-1 flex items-center gap-2 text-[0.62rem] text-slate-600">
+                          <span className="mt-1 flex items-center gap-2 text-[0.7rem] text-slate-600">
                             <span className="data-mono">{r.channel.toLowerCase()}</span>
                             <TimeAgo iso={r.submittedAt} />
                           </span>
@@ -465,7 +445,7 @@ function RecentReportsPanel() {
               })}
             </Stagger>
           </ul>
-          <p className="hairline-t px-4 py-2 micro-label text-[0.6rem]! text-muted-foreground">
+          <p className="hairline-t px-4 py-2 micro-label text-[0.7rem]! text-muted-foreground">
             thumbnails are illustrative · report photos never faked
           </p>
         </>
@@ -482,7 +462,7 @@ function SeverityPill({ severity }: { severity: string }) {
     : severity === "HIGH" ? "bg-orange-50 text-orange-700 border-orange-200"
     : severity === "MEDIUM" ? "bg-amber-50 text-amber-700 border-amber-200"
     : "bg-emerald-50 text-emerald-700 border-emerald-200";
-  return <span className={cn("inline-flex rounded-full border px-1.5 py-0.5 micro-label text-[0.6rem]!", cls)}>{severity.toLowerCase()}</span>;
+  return <span className={cn("inline-flex rounded-full border px-1.5 py-0.5 micro-label text-[0.7rem]!", cls)}>{severity.toLowerCase()}</span>;
 }
 
 /* ---------------------------------------------------- operational alerts */
@@ -500,7 +480,7 @@ function OperationalAlertsPanel() {
     <Panel
       title="Operational Alerts"
       icon={<AlertTriangle />}
-      actions={<span className="micro-label text-[0.6rem]! text-muted-foreground">{d ? `${d.alerts.length} active` : ""}</span>}
+      actions={<span className="micro-label text-[0.7rem]! text-muted-foreground">{d ? `${d.alerts.length} active` : ""}</span>}
       dense
       className="panel-raised overflow-hidden"
     >
@@ -551,12 +531,12 @@ function ActiveEventQueue({ eventsQ, total }: { eventsQ: { data?: EventSummary[]
       title={
         <span className="flex items-center gap-2">
           Active Event Queue
-          {total != null && <span className="data-mono ml-1 text-[0.65rem] font-normal text-slate-500">{total}</span>}
+          {total != null && <span className="data-mono ml-1 text-[0.7rem] font-normal text-slate-500">{total}</span>}
         </span>
       }
       icon={<Radio />}
       actions={
-        <button onClick={() => navigate("map")} className="micro-label text-[0.6rem]! text-water hover:text-water-dim transition-colors">
+        <button onClick={() => navigate("map")} className="micro-label text-[0.7rem]! text-water hover:text-water-dim transition-colors">
           open map →
         </button>
       }
@@ -617,11 +597,11 @@ export const EventRow = memo(function EventRow({ event }: { event: EventSummary 
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="data-mono text-[0.68rem] font-semibold text-water group-hover:text-water-dim">{event.code}</span>
+              <span className="data-mono text-[0.7rem] font-semibold text-water group-hover:text-water-dim">{event.code}</span>
               <StatusBadge status={event.status} />
               <RiskBadge band={event.riskBand} score={event.riskScore} />
               {event.recurrenceCount > 0 && (
-                <span className="micro-label text-[0.6rem]! text-sev-high" title={`recurred ${event.recurrenceCount}×`}>
+                <span className="micro-label text-[0.7rem]! text-sev-high" title={`recurred ${event.recurrenceCount}×`}>
                   ↻{event.recurrenceCount}
                 </span>
               )}
@@ -630,8 +610,8 @@ export const EventRow = memo(function EventRow({ event }: { event: EventSummary 
             <p className="mt-1 text-[0.8rem] text-slate-700 leading-snug line-clamp-1">{event.title}</p>
             <div className="mt-1.5 flex items-center gap-3 flex-wrap">
               <SeverityTicks severity={event.severity} />
-              <span className="data-mono text-[0.66rem] text-slate-600">{event.reportCount} rep</span>
-              <span className="data-mono text-[0.66rem] text-slate-600">{event.agencyCode ?? "-"}</span>
+              <span className="data-mono text-[0.7rem] text-slate-600">{event.reportCount} rep</span>
+              <span className="data-mono text-[0.7rem] text-slate-600">{event.agencyCode ?? "-"}</span>
               <ConfidenceChip confidence={event.confidence} note={event.confidenceNote} />
             </div>
           </div>
@@ -652,7 +632,7 @@ function RainfallStrip({ weatherQ, nearest }: { weatherQ: { data?: WeatherRespon
       icon={<Umbrella />}
       actions={
         nearest && (
-          <span className="micro-label text-[0.6rem]! text-slate-600">
+          <span className="micro-label text-[0.7rem]! text-slate-600">
             nearest: {nearest.name} · {(nearest.distanceM / 1000).toFixed(1)}km
           </span>
         )
@@ -673,25 +653,25 @@ function RainfallStrip({ weatherQ, nearest }: { weatherQ: { data?: WeatherRespon
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="label" tick={false} axisLine={false} tickLine={false} />
-                <YAxis width={28} tick={{ fill: PALETTE.textDim, fontSize: 9, fontFamily: "var(--font-plex-mono)" }} axisLine={false} tickLine={false} />
+                <YAxis width={28} tick={{ fill: PALETTE.textDim, fontSize: 11, fontFamily: "var(--font-plex-mono)" }} axisLine={false} tickLine={false} />
                 <Tooltip
                   contentStyle={{ background: PALETTE.popover, border: `1px solid ${PALETTE.input}`, borderRadius: 8, fontSize: 11, fontFamily: "var(--font-plex-mono)", color: PALETTE.foreground, boxShadow: "0 8px 24px -8px rgba(0,0,0,0.9)" }}
                   labelStyle={{ color: PALETTE.textMuted }}
                   itemStyle={{ color: PALETTE.aqua }}
                   formatter={(v: number) => [`${v} mm`, "avg 3h rain"]}
                 />
-                <Area type="monotone" dataKey="mm" stroke={PALETTE.aqua} strokeWidth={1.8} fill="url(#rainFill)" animationDuration={900} />
+                <Area type="linear" dataKey="mm" stroke={PALETTE.aqua} strokeWidth={1.8} fill="url(#rainFill)" animationDuration={900} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-1 px-1 pt-1.5">
             {w.stations.map((s) => (
-              <span key={s.code} className="data-mono text-[0.62rem] text-slate-500">
+              <span key={s.code} className="data-mono text-[0.7rem] text-slate-500">
                 <span className="text-water">{s.code}</span> {s.totalMm.toFixed(0)}mm
               </span>
             ))}
             <SourceBadge source="SYNTHETIC_DEMO" />
-            <span className="micro-label text-[0.6rem]! text-slate-500">window 72h</span>
+            <span className="micro-label text-[0.7rem]! text-slate-500">window 72h</span>
           </div>
         </>
       ) : (
@@ -727,7 +707,7 @@ function ErrorNoteInline({ message, onRetry }: { message: string; onRetry?: () =
       <span className="text-sev-critical" aria-hidden>⚠</span>
       <span className="text-red-700 flex-1">{message}</span>
       {onRetry && (
-        <button onClick={onRetry} className="micro-label text-[0.6rem]! text-water hover:text-water-dim">retry</button>
+        <button onClick={onRetry} className="micro-label text-[0.7rem]! text-water hover:text-water-dim">retry</button>
       )}
     </div>
   );

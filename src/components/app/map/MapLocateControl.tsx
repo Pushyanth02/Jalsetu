@@ -102,20 +102,20 @@ export function MapLocateControl({ events }: { events: EventSummary[] }) {
           onClick={() => openEvent(nearest.code)}
           className="panel rounded-xl px-3 py-2 shadow-md max-w-full text-left group animate-in fade-in slide-in-from-right-2 duration-200"
         >
-          <span className="micro-label !text-[0.6rem] block text-muted-foreground">nearest waterlogging</span>
+          <span className="micro-label !text-[0.7rem] block text-muted-foreground">nearest waterlogging</span>
           <span className="mt-0.5 flex items-center gap-1.5">
-            <span className="data-mono text-[0.68rem] font-semibold text-water group-hover:text-water-dim truncate">
+            <span className="data-mono text-[0.7rem] font-semibold text-water group-hover:text-water-dim truncate">
               {nearest.code}
             </span>
-            <span className="data-mono text-[0.68rem] font-semibold text-sev-high">{nearest.km.toFixed(1)} km</span>
+            <span className="data-mono text-[0.7rem] font-semibold text-sev-high">{nearest.km.toFixed(1)} km</span>
             <Navigation className="size-3 text-slate-400 shrink-0" aria-hidden />
           </span>
-          <span className="mt-0.5 block text-[0.66rem] text-slate-600 truncate">{nearest.title}</span>
+          <span className="mt-0.5 block text-[0.7rem] text-slate-600 truncate">{nearest.title}</span>
         </button>
       )}
 
       {state === "located" && !nearest && (
-        <span className="panel rounded-xl px-3 py-1.5 shadow-md text-[0.66rem] text-slate-600">
+        <span className="panel rounded-xl px-3 py-1.5 shadow-md text-[0.7rem] text-slate-600">
           No waterlogging events near you
         </span>
       )}

@@ -56,7 +56,7 @@ export function MapProviderCanvas(props: Props) {
 function ProviderBadge() {
   return (
     <span
-      className="absolute z-10 top-2 left-2 inline-flex items-center gap-1.5 rounded-full border border-hairline bg-ink-800/90 backdrop-blur px-2.5 py-1 text-[0.6rem] font-medium text-slate-600 pointer-events-none"
+      className="absolute z-10 top-2 left-2 inline-flex items-center gap-1.5 rounded-full border border-hairline bg-ink-800 px-2.5 py-1 text-[0.7rem] font-medium text-slate-600 pointer-events-none"
       title="Keyless open basemap: Esri World Dark Gray Canvas + OpenStreetMap labels. No API key required."
     >
       <span aria-hidden className="size-1.5 rounded-full bg-emerald-500" />

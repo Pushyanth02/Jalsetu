@@ -20,7 +20,8 @@ import { cn } from "@/lib/utils";
 const EASE = [0.21, 0.47, 0.32, 0.98] as const;
 
 /* ------------------------------------------------------------------ Reveal */
-/** Fade + slide-up entrance on mount. The workhorse reveal. */
+/** Fade + slide-up entrance on mount. Used sparingly: the landing page
+ *  (a page may choreograph entrances); app views stay quiet. */
 export function Reveal({
   children,
   className,
@@ -78,14 +79,16 @@ export function StaggerItem({ children, className }: { children: ReactNode; clas
 }
 
 /* ------------------------------------------------------------------ CountUp */
-/** Animated number count-up (spring). Formats with locale separators. */
+/** Animated number count-up (spring). Formats with locale separators.
+ *  A short settle — the figure lands almost immediately; the animation
+ *  is a flicker of "live data", never a performance. */
 export function CountUp({
   value,
   decimals = 0,
   suffix,
   prefix,
   className,
-  duration = 1.1,
+  duration = 0.55,
 }: {
   value: number;
   decimals?: number;
@@ -118,8 +121,10 @@ function format(v: number, decimals: number, prefix?: string, suffix?: string) {
   return `${prefix ?? ""}${rounded}${suffix ?? ""}`;
 }
 
-/* --------------------------------------------------------------- PulseDot */
-/** Pulsing live-status dot (radar ping). */
+/* ------------------------------------------------------------------ PulseDot */
+/** Live-status dot. It marks a real state (live feed, fresh snapshot),
+ *  so it stays — but steady: one solid dot, no radar ping, no infinite
+ *  loop. Motion belongs to feedback, not to ambience. */
 export function PulseDot({
   className,
   color = "bg-emerald-500",
@@ -129,16 +134,8 @@ export function PulseDot({
   color?: string;
   size?: number;
 }) {
-  const reduce = useReducedMotion();
   return (
     <span className={cn("relative inline-flex shrink-0", className)} style={{ width: size, height: size }} aria-hidden>
-      {!reduce && (
-        <motion.span
-          className={cn("absolute inline-flex size-full rounded-full opacity-60", color)}
-          animate={{ scale: [1, 2.4], opacity: [0.55, 0] }}
-          transition={{ repeat: Infinity, duration: 1.8, ease: "easeOut" }}
-        />
-      )}
       <span className={cn("relative inline-flex size-full rounded-full", color)} />
     </span>
   );
@@ -174,18 +171,15 @@ export function AnimatedProgress({
 }
 
 /* ------------------------------------------------------------ HoverLiftCard */
-/** Card that lifts slightly on hover (shadow + translate). */
+/** Hover wrapper, retired: cards no longer float on hover — the lift was
+ *  decoration, not feedback. Feedback now comes from .card-hover (a one-
+ *  tone step + border change in CSS). Kept as a pass-through so call
+ *  sites keep their layout. */
 export function HoverLift({ children, className }: { children: ReactNode; className?: string }) {
-  const reduce = useReducedMotion();
   return (
-    <motion.div
-      className={className}
-      whileHover={reduce ? undefined : { y: -3 }}
-      whileTap={reduce ? undefined : { y: -1 }}
-      transition={{ type: "spring", stiffness: 380, damping: 26 }}
-    >
+    <div className={className}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 

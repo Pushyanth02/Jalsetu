@@ -187,10 +187,10 @@ export function VerificationView() {
 
         <div className="mt-2 flex items-center gap-2 flex-wrap">
           <SourceBadge source="SYNTHETIC_DEMO" />
-          <span className="inline-flex items-center gap-1.5 micro-label !text-[0.6rem] text-muted-foreground" title="The board mixes seeded demo events with live submissions">
+          <span className="inline-flex items-center gap-1.5 micro-label !text-[0.7rem] text-muted-foreground" title="The board mixes seeded demo events with live submissions">
             <PulseDot color="bg-emerald-500" size={6} /> seeded demo + live events
           </span>
-          <span className="data-mono text-[0.62rem] text-slate-500 ml-auto" aria-live="polite">
+          <span className="data-mono text-[0.7rem] text-slate-500 ml-auto" aria-live="polite">
             <CountUp value={filtered.length} /> shown / {all.length} loaded
           </span>
         </div>
@@ -217,7 +217,7 @@ export function VerificationView() {
                     <span className="flex items-center gap-2" title={col.hint}>
                       <span className={cn("size-2 rounded-full", col.dot)} aria-hidden />
                       {col.title}
-                      <span className="data-mono text-[0.68rem] text-slate-500">
+                      <span className="data-mono text-[0.7rem] text-slate-500">
                         <CountUp value={items.length} />
                       </span>
                     </span>
@@ -227,7 +227,7 @@ export function VerificationView() {
                   bodyClassName="p-2 flex flex-col gap-2 overflow-y-auto max-h-[46vh] xl:max-h-none xl:flex-1"
                 >
                   {items.length === 0 ? (
-                    <p className="px-3 py-6 text-center text-[0.65rem] text-slate-600">{col.key === "unassigned" ? "nothing waiting for assignment" : "no events"}</p>
+                    <p className="px-3 py-6 text-center text-[0.7rem] text-slate-600">{col.key === "unassigned" ? "nothing waiting for assignment" : "no events"}</p>
                   ) : (
                     <Stagger className="flex flex-col gap-2">
                       {items.map((e) => (
@@ -274,11 +274,11 @@ function BoardCard({ event, onOpen }: { event: EventSummary; onOpen: () => void 
         aria-label={`${event.code}: ${event.title}. Risk ${event.riskBand.toLowerCase()}, ${event.reportCount} reports.`}
       >
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="data-mono text-[0.68rem] font-semibold text-water">{event.code}</span>
+          <span className="data-mono text-[0.7rem] font-semibold text-water">{event.code}</span>
           <StatusBadge status={event.status} />
           <RiskBadge band={event.riskBand} score={event.riskScore} />
           {event.recurrenceCount > 0 && (
-            <span className="micro-label !text-[0.6rem] text-sev-high" title={`recurred ${event.recurrenceCount} times`}>
+            <span className="micro-label !text-[0.7rem] text-sev-high" title={`recurred ${event.recurrenceCount} times`}>
               ↻{event.recurrenceCount}
             </span>
           )}
@@ -287,8 +287,8 @@ function BoardCard({ event, onOpen }: { event: EventSummary; onOpen: () => void 
         <p className="mt-1 text-[0.8rem] text-slate-700 leading-snug line-clamp-1">{event.title}</p>
         <div className="mt-1.5 flex items-center gap-3 flex-wrap">
           <SeverityTicks severity={event.severity} />
-          <span className="data-mono text-[0.62rem] text-slate-600">{event.reportCount} rep</span>
-          <span className="data-mono text-[0.62rem] text-slate-600">{event.agencyCode ?? "unassigned"}</span>
+          <span className="data-mono text-[0.7rem] text-slate-600">{event.reportCount} rep</span>
+          <span className="data-mono text-[0.7rem] text-slate-600">{event.agencyCode ?? "unassigned"}</span>
           <ChevronRight className="ml-auto size-3.5 text-slate-400 group-hover:text-water transition-colors" aria-hidden />
         </div>
       </button>
@@ -445,11 +445,11 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                     <Fact label="Severity" value={<SeverityTicks severity={ev.severity} />} />
                     <Fact label="Reports" value={<span className="data-mono">{ev.reportCount} ({ev.recurrenceCount} recurrences)</span>} />
                     <Fact label="Agency" value={<span className="data-mono">{ev.agencyCode ?? "unassigned"}</span>} />
-                    <Fact label="Location" value={<span className="data-mono !text-[0.68rem]">{ev.lat.toFixed(4)}, {ev.lng.toFixed(4)}</span>} />
+                    <Fact label="Location" value={<span className="data-mono !text-[0.7rem]">{ev.lat.toFixed(4)}, {ev.lng.toFixed(4)}</span>} />
                     <Fact label="First Reported" value={<TimeAgo iso={ev.firstReportedAt} />} />
                     <Fact label="Last Activity" value={<TimeAgo iso={ev.lastActivityAt} />} />
                     <Fact label="Rainfall 24/72h" value={<span className="data-mono">{Math.round(ev.rainfall24hMm ?? 0)} / {Math.round(ev.rainfall72hMm ?? 0)} mm</span>} />
-                    <Fact label="Classification" value={ev.classificationProvider ? <span className="micro-label !text-[0.6rem]">{ev.classificationProvider.toLowerCase()}</span> : <span className="text-slate-500">n/a</span>} />
+                    <Fact label="Classification" value={ev.classificationProvider ? <span className="micro-label !text-[0.7rem]">{ev.classificationProvider.toLowerCase()}</span> : <span className="text-slate-500">n/a</span>} />
                     <Fact label="Risk Assessed" value={ev.riskAssessedAt ? <TimeAgo iso={ev.riskAssessedAt} /> : <span className="text-slate-500">pending</span>} />
                   </dl>
                 </Reveal>
@@ -479,14 +479,14 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                             />
                             {i < ev.verifications.length - 1 && <span className="absolute left-[3.5px] top-3.5 bottom-0 w-px bg-border" aria-hidden />}
                             <div className="flex items-baseline gap-2 flex-wrap">
-                              <span className="micro-label !text-[0.6rem]">{v.stage.toLowerCase().replace(/_/g, " ")}</span>
-                              <span className="text-[0.62rem] text-slate-500">
+                              <span className="micro-label !text-[0.7rem]">{v.stage.toLowerCase().replace(/_/g, " ")}</span>
+                              <span className="text-[0.7rem] text-slate-500">
                                 {v.verifiedBy.toLowerCase()} · {fmtDateTime(v.verifiedAt)}
                               </span>
                             </div>
                             {v.notes && <p className="mt-0.5 text-xs text-slate-600">{v.notes}</p>}
                             {(v.waterDepthCm != null || v.observedSeverity) && (
-                              <p className="mt-0.5 data-mono text-[0.62rem] text-slate-500">
+                              <p className="mt-0.5 data-mono text-[0.7rem] text-slate-500">
                                 {v.waterDepthCm != null && <>depth {v.waterDepthCm}cm </>}
                                 {v.observedSeverity && <>· observed {v.observedSeverity.toLowerCase()}</>}
                               </p>
@@ -509,7 +509,7 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                         </p>
                         <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-end">
                           <div className="flex-1 space-y-1">
-                            <Label htmlFor="reopen-reason" className="text-[0.65rem] sr-only">
+                            <Label htmlFor="reopen-reason" className="text-[0.7rem] sr-only">
                               Reopen reason
                             </Label>
                             <Textarea
@@ -539,7 +539,7 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                         <p className="micro-label">Record Verification Stage · Field Team Role</p>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                           <div className="space-y-1">
-                            <Label className="text-[0.65rem]">Stage</Label>
+                            <Label className="text-[0.7rem]">Stage</Label>
                             <Select value={stage} onValueChange={setStage}>
                               <SelectTrigger className="h-8 rounded-lg bg-ink-900 border-border text-xs" aria-label="Verification stage">
                                 <SelectValue />
@@ -556,7 +556,7 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                             </Select>
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-[0.65rem]">Observed Severity</Label>
+                            <Label className="text-[0.7rem]">Observed Severity</Label>
                             <Select value={observedSeverity} onValueChange={setObservedSeverity}>
                               <SelectTrigger className="h-8 rounded-lg bg-ink-900 border-border text-xs" aria-label="Observed severity">
                                 <SelectValue />
@@ -571,7 +571,7 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                             </Select>
                           </div>
                           <div className="space-y-1">
-                            <Label htmlFor="vf-depth" className="text-[0.65rem]">
+                            <Label htmlFor="vf-depth" className="text-[0.7rem]">
                               Water depth (cm)
                             </Label>
                             <Input
@@ -587,7 +587,7 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                         </div>
 
                         <div className="space-y-1">
-                          <Label htmlFor="vf-notes" className="text-[0.65rem]">
+                          <Label htmlFor="vf-notes" className="text-[0.7rem]">
                             Field notes (optional)
                           </Label>
                           <Textarea
@@ -622,14 +622,14 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                               <Camera className="size-3.5" aria-hidden /> {photoBusy ? "Processing…" : photo ? "Replace photo" : "Attach photo"}
                             </Button>
                             {photo && (
-                              <Button type="button" variant="ghost" size="sm" className="h-7 text-[0.65rem] text-slate-600" onClick={() => setPhoto(null)}>
+                              <Button type="button" variant="ghost" size="sm" className="h-7 text-[0.7rem] text-slate-600" onClick={() => setPhoto(null)}>
                                 <X className="size-3" aria-hidden /> Remove
                               </Button>
                             )}
-                            <span className="text-[0.62rem] text-slate-600">Optional. Downscaled to at most 1024px jpeg.</span>
+                            <span className="text-[0.7rem] text-slate-600">Optional. Downscaled to at most 1024px jpeg.</span>
                           </div>
                           {photoErr && (
-                            <p className="mt-1.5 text-[0.62rem] text-sev-high" role="alert">
+                            <p className="mt-1.5 text-[0.7rem] text-sev-high" role="alert">
                               {photoErr}
                             </p>
                           )}
@@ -638,8 +638,8 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                               <div className="relative rounded-lg overflow-hidden border border-border/60 size-16 shrink-0 bg-slate-100">
                                 <img src={photo.dataUrl} alt="Field photo preview" className="size-full object-cover" />
                               </div>
-                              <figcaption className="min-w-0 text-[0.62rem] text-slate-600">
-                                <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 text-verified px-2 py-0.5 micro-label !text-[0.6rem]">uploaded</span>
+                              <figcaption className="min-w-0 text-[0.7rem] text-slate-600">
+                                <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 text-verified px-2 py-0.5 micro-label !text-[0.7rem]">uploaded</span>
                                 <span className="block mt-1 truncate">{photo.name}</span>
                               </figcaption>
                             </figure>
@@ -647,7 +647,7 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                         </div>
 
                         <div className="flex items-center justify-between gap-3 flex-wrap">
-                          <p className="text-[0.62rem] text-slate-600">
+                          <p className="text-[0.7rem] text-slate-600">
                             Next expected: <span className="text-water">{(nextStage ?? "CLOSED").toLowerCase().replace(/_/g, " ")}</span>. Steps must be recorded in order (checked by the server).
                           </p>
                           <Button size="sm" className="rounded-lg bg-aqua text-ink-950 hover:bg-aqua-dim h-8" disabled={verify.isPending} onClick={submitStage}>
@@ -660,8 +660,8 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
                     {formError && <ErrorNote className="mt-3" message={formError} />}
 
                     <div className="mt-4 pt-3 hairline-t flex items-center justify-between gap-2">
-                      <span className="micro-label !text-[0.6rem] text-muted-foreground">mutations post as FIELD_TEAM / AGENCY demo roles</span>
-                      <Button variant="outline" size="sm" className="rounded-lg border-border text-slate-600 hover:bg-ink-850 h-7 text-[0.65rem]" onClick={() => ev && navigate("event", ev.code)}>
+                      <span className="micro-label !text-[0.7rem] text-muted-foreground">mutations post as FIELD_TEAM / AGENCY demo roles</span>
+                      <Button variant="outline" size="sm" className="rounded-lg border-border text-slate-600 hover:bg-ink-850 h-7 text-[0.7rem]" onClick={() => ev && navigate("event", ev.code)}>
                         Full dossier
                       </Button>
                     </div>
@@ -679,7 +679,7 @@ function VerifyDialog({ eventId, onClose }: { eventId: string | null; onClose: (
 function Fact({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5 min-w-0">
-      <dt className="micro-label !text-[0.6rem]">{label}</dt>
+      <dt className="micro-label !text-[0.7rem]">{label}</dt>
       <dd className="flex items-center min-w-0 text-slate-700">{value}</dd>
     </div>
   );
@@ -702,7 +702,7 @@ function StageStepper({ stages }: { stages: string[] }) {
               >
                 {done && <Check className="size-2.5 text-ink-950" aria-hidden />}
               </span>
-              <span className={cn("micro-label !text-[0.6rem] text-center leading-tight", done ? "text-verified" : current ? "text-water" : "text-slate-600")}>
+              <span className={cn("micro-label !text-[0.7rem] text-center leading-tight", done ? "text-verified" : current ? "text-water" : "text-slate-600")}>
                 {s.toLowerCase().replace(/_/g, " ")}
               </span>
             </div>
