@@ -193,31 +193,31 @@ export function InvestigateView() {
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <span className="flex items-center gap-2 shrink-0">
             <Radio className="size-3.5 text-water" aria-hidden />
-            <span className="micro-label !text-[0.62rem] text-slate-600">Investigation Tools</span>
+            <span className="micro-label !text-[0.7rem] text-slate-600">Investigation Tools</span>
           </span>
           {health ? (
             <>
               <ProviderChip provider={health.provider} model={health.modelId} />
-              <span className={cn("micro-label !text-[0.6rem] flex items-center gap-1.5", health.available ? "text-verified" : "text-sev-high")}>
+              <span className={cn("micro-label !text-[0.7rem] flex items-center gap-1.5", health.available ? "text-verified" : "text-sev-high")}>
                 {health.available ? <PulseDot color="bg-verified" size={6} /> : <span aria-hidden className="size-1.5 rounded-full bg-sev-high" />}
                 {health.available ? "available" : "unavailable"}
               </span>
-              <span className="micro-label !text-[0.6rem] text-muted-foreground flex items-center gap-1.5">
+              <span className="micro-label !text-[0.7rem] text-muted-foreground flex items-center gap-1.5">
                 configured by {health.configuredBy.toLowerCase()}
                 {health.lastCheckedAt && <>· probed <TimeAgo iso={health.lastCheckedAt} /></>}
               </span>
               {health.lastError && (
-                <span className="text-[0.62rem] text-sev-moderate" role="note" title={health.lastError}>
+                <span className="text-[0.7rem] text-sev-moderate" role="note" title={health.lastError}>
                   last error: {health.lastError}
                 </span>
               )}
             </>
           ) : healthQ.isLoading ? (
-            <span className="micro-label !text-[0.6rem] text-muted-foreground">probing provider…</span>
+            <span className="micro-label !text-[0.7rem] text-muted-foreground">probing provider…</span>
           ) : (
-            <span className="micro-label !text-[0.6rem] text-sev-critical">Provider Health Unavailable</span>
+            <span className="micro-label !text-[0.7rem] text-sev-critical">Provider Health Unavailable</span>
           )}
-          <span className="micro-label ml-auto !text-[0.6rem] text-muted-foreground hidden sm:inline">
+          <span className="micro-label ml-auto !text-[0.7rem] text-muted-foreground hidden sm:inline">
             structured output only · no chain-of-thought exposed
           </span>
         </div>
@@ -252,7 +252,7 @@ export function InvestigateView() {
                       <span
                         className={cn(
                           "grid size-9 lg:size-10 place-items-center rounded-lg shrink-0",
-                          active ? "bg-aqua/10 text-aqua shadow-sm" : "bg-ink-850 text-slate-500"
+                          active ? "bg-ink-800 text-aqua" : "bg-ink-850 text-slate-500"
                         )}
                       >
                         <t.icon className="size-4 lg:size-5" aria-hidden />
@@ -261,7 +261,7 @@ export function InvestigateView() {
                         <span className={cn("block text-[0.7rem] lg:text-[0.78rem] font-semibold leading-tight", active ? "text-slate-900" : "text-slate-800")}>
                           {t.label}
                         </span>
-                        <span className="hidden lg:block mt-0.5 text-[0.62rem] text-slate-600 leading-snug">{t.hint}</span>
+                        <span className="hidden lg:block mt-0.5 text-[0.7rem] text-slate-600 leading-snug">{t.hint}</span>
                       </span>
                     </span>
                   </button>
@@ -315,7 +315,7 @@ function ClassifyInput({ classify }: { classify: ClassifyMutation }) {
             aria-selected={mode === m}
             onClick={() => setMode(m)}
             className={cn(
-              "flex-1 rounded-md micro-label !text-[0.6rem] py-1.5 transition-colors",
+              "flex-1 rounded-md micro-label !text-[0.7rem] py-1.5 transition-colors",
               mode === m ? "bg-ink-900 text-water shadow-sm" : "text-slate-600 hover:text-slate-700"
             )}
           >
@@ -339,11 +339,11 @@ function ClassifyInput({ classify }: { classify: ClassifyMutation }) {
               className="bg-ink-900 border-border text-xs leading-relaxed"
               maxLength={600}
             />
-            <p className="text-[0.6rem] text-muted-foreground">At least 12 characters · please do not include personal details</p>
+            <p className="text-[0.7rem] text-muted-foreground">At least 12 characters · please do not include personal details</p>
           </div>
           <div className="grid grid-cols-3 gap-2">
             <div className="space-y-1">
-              <Label className="text-[0.65rem]">Severity</Label>
+              <Label className="text-[0.7rem]">Severity</Label>
               <Select value={severity} onValueChange={setSeverity}>
                 <SelectTrigger className="h-8 bg-ink-900 border-border text-xs" aria-label="Reported severity"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -352,11 +352,11 @@ function ClassifyInput({ classify }: { classify: ClassifyMutation }) {
               </Select>
             </div>
             <div className="space-y-1">
-              <Label htmlFor="adhoc-lat" className="text-[0.65rem]">Lat (opt)</Label>
+              <Label htmlFor="adhoc-lat" className="text-[0.7rem]">Lat (opt)</Label>
               <Input id="adhoc-lat" inputMode="decimal" value={lat} onChange={(e) => setLat(e.target.value)} placeholder="28.6129" className="h-8 bg-ink-900 border-border text-xs font-mono" />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="adhoc-lng" className="text-[0.65rem]">Lng (opt)</Label>
+              <Label htmlFor="adhoc-lng" className="text-[0.7rem]">Lng (opt)</Label>
               <Input id="adhoc-lng" inputMode="decimal" value={lng} onChange={(e) => setLng(e.target.value)} placeholder="77.2295" className="h-8 bg-ink-900 border-border text-xs font-mono" />
             </div>
           </div>
@@ -376,14 +376,14 @@ function ClassifyInput({ classify }: { classify: ClassifyMutation }) {
             <Tags className={cn("size-3.5", pending && "animate-pulse")} aria-hidden />
             {pending ? "Classifying…" : "Classify text"}
           </Button>
-          <p className="text-[0.6rem] text-muted-foreground leading-relaxed">
+          <p className="text-[0.7rem] text-muted-foreground leading-relaxed">
             Only Delhi locations are accepted: latitude 28.3 to 28.9, longitude 76.8 to 77.6. Anything outside Delhi is rejected.
           </p>
         </div>
       )}
 
       {classify.isError && (
-        <p className="micro-label !text-[0.6rem] text-sev-critical" role="alert">
+        <p className="micro-label !text-[0.7rem] text-sev-critical" role="alert">
           last run failed: {classify.error.message}
         </p>
       )}
@@ -408,17 +408,17 @@ function ReportQueue({ pending, onClassify }: { pending: boolean; onClassify: (r
 
   return (
     <div>
-      <p className="micro-label !text-[0.6rem] text-muted-foreground mb-2">
+      <p className="micro-label !text-[0.7rem] text-muted-foreground mb-2">
         Recent Reports · Newest First · {reports.length}
       </p>
       <Stagger>
         {reports.map((r) => (
           <StaggerItem key={r.id} className="hairline-b last:border-0 py-2.5 first:pt-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="data-mono text-[0.65rem] font-semibold text-water">{r.publicRef}</span>
-              <span className="micro-label !text-[0.6rem]">{r.channel.toLowerCase()}</span>
-              <span className={cn("micro-label !text-[0.6rem]", sevTone(r.severityReported))}>{r.severityReported.toLowerCase()}</span>
-              {r.isDuplicate && <span className="micro-label !text-[0.6rem] text-sev-moderate">merged</span>}
+              <span className="data-mono text-[0.7rem] font-semibold text-water">{r.publicRef}</span>
+              <span className="micro-label !text-[0.7rem]">{r.channel.toLowerCase()}</span>
+              <span className={cn("micro-label !text-[0.7rem]", sevTone(r.severityReported))}>{r.severityReported.toLowerCase()}</span>
+              {r.isDuplicate && <span className="micro-label !text-[0.7rem] text-sev-moderate">merged</span>}
               <TimeAgo iso={r.submittedAt} />
             </div>
             <p className="mt-0.5 text-[0.72rem] text-slate-600 leading-snug line-clamp-2">{r.description}</p>
@@ -430,7 +430,7 @@ function ReportQueue({ pending, onClassify }: { pending: boolean; onClassify: (r
                 variant="outline"
                 disabled={pending}
                 onClick={() => onClassify(r)}
-                className="ml-auto h-7 rounded-lg bg-aqua border-aqua text-ink-950 hover:bg-aqua-dim hover:text-ink-950 text-[0.65rem]"
+                className="ml-auto h-7 rounded-lg bg-aqua border-aqua text-ink-950 hover:bg-aqua-dim hover:text-ink-950 text-[0.7rem]"
               >
                 <Tags className={cn("size-3", pending && "animate-pulse")} aria-hidden />
                 {r.classification ? "Re-run" : "Classify"}
@@ -448,7 +448,7 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
     return (
       <Panel title="Classification · Result" icon={<Tags />} className="panel-raised">
         <LoadingRows rows={5} />
-        <p className="micro-label !text-[0.6rem] text-muted-foreground mt-2">
+        <p className="micro-label !text-[0.7rem] text-muted-foreground mt-2">
           running provider call for {m.variables?.reportRef ?? "ad-hoc text"}…
         </p>
       </Panel>
@@ -492,7 +492,7 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
         >
           {/* verdict headline */}
           <div className="rounded-lg border border-blue-100 bg-blue-50/70 px-3.5 py-2.5 mb-3">
-            <p className="micro-label !text-[0.6rem] text-water">Analysis Result</p>
+            <p className="micro-label !text-[0.7rem] text-water">Analysis Result</p>
             <p className="mt-0.5 text-[0.95rem] font-semibold text-slate-900 leading-snug">
               {cl.category.toLowerCase().replace(/_/g, " ")}
             </p>
@@ -504,7 +504,7 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
               value={
                 <span className="flex items-baseline gap-0.5">
                   <CountUp value={cl.confidence * 100} className="text-xl font-semibold text-water" />
-                  <span className="text-[0.65rem] text-muted-foreground">%</span>
+                  <span className="text-[0.7rem] text-muted-foreground">%</span>
                 </span>
               }
             />
@@ -516,21 +516,21 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
           {cl.factors.length > 0 && (
             <ul className="mt-3 flex flex-wrap gap-1.5">
               {cl.factors.map((f, i) => (
-                <li key={i} className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[0.65rem] text-slate-600">{f}</li>
+                <li key={i} className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[0.7rem] text-slate-600">{f}</li>
               ))}
             </ul>
           )}
           <div className="mt-3">
             {cl.isDuplicateSuspected ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[0.65rem] text-sev-moderate">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[0.7rem] text-sev-moderate">
                 <GitMerge className="size-3" aria-hidden /> duplicate suspected
                 {cl.duplicateReason ? `: ${cl.duplicateReason}` : ""}
               </span>
             ) : (
-              <span className="micro-label !text-[0.6rem] text-muted-foreground">No duplicate suspected by model</span>
+              <span className="micro-label !text-[0.7rem] text-muted-foreground">No duplicate suspected by model</span>
             )}
           </div>
-          <p className="mt-3 micro-label !text-[0.6rem] text-muted-foreground">
+          <p className="mt-3 micro-label !text-[0.7rem] text-muted-foreground">
             Structured output only. No chain-of-thought exposed.
           </p>
         </Panel>
@@ -541,11 +541,11 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
         <Panel title="Provenance" icon={<ShieldAlert />} className="panel-raised">
           <div className="space-y-2.5">
             <FactRow label="Provider"><ProviderChip provider={prov.provider} model={prov.modelId} /></FactRow>
-            <FactRow label="Model ID"><span className="data-mono text-[0.62rem] break-all">{prov.modelId}</span></FactRow>
-            <FactRow label="Version"><span className="data-mono text-[0.62rem]">{prov.version}</span></FactRow>
-            <FactRow label="Latency"><span className="data-mono text-[0.62rem]">{prov.latencyMs} ms</span></FactRow>
+            <FactRow label="Model ID"><span className="data-mono text-[0.7rem] break-all">{prov.modelId}</span></FactRow>
+            <FactRow label="Version"><span className="data-mono text-[0.7rem]">{prov.version}</span></FactRow>
+            <FactRow label="Latency"><span className="data-mono text-[0.7rem]">{prov.latencyMs} ms</span></FactRow>
             <FactRow label="Fallback">
-              <span className={cn("micro-label !text-[0.6rem]", prov.fallbackUsed ? "text-sev-moderate" : "text-verified")}>
+              <span className={cn("micro-label !text-[0.7rem]", prov.fallbackUsed ? "text-sev-moderate" : "text-verified")}>
                 {prov.fallbackUsed ? "used" : "not used"}
               </span>
             </FactRow>
@@ -555,15 +555,15 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
               </p>
             )}
             <div className="hairline-t pt-2.5 space-y-2">
-              <p className="micro-label !text-[0.6rem] text-muted-foreground">Provider Health at Run Time</p>
+              <p className="micro-label !text-[0.7rem] text-muted-foreground">Provider Health at Run Time</p>
               <FactRow label="Status">
-                <span className={cn("micro-label !text-[0.6rem] flex items-center gap-1.5", prov.providerHealth.available ? "text-verified" : "text-sev-high")}>
+                <span className={cn("micro-label !text-[0.7rem] flex items-center gap-1.5", prov.providerHealth.available ? "text-verified" : "text-sev-high")}>
                   <span aria-hidden className={cn("size-1.5 rounded-full", prov.providerHealth.available ? "bg-verified" : "bg-sev-high")} />
                   {prov.providerHealth.provider} {prov.providerHealth.available ? "available" : "unavailable"}
                 </span>
               </FactRow>
               {prov.providerHealth.lastError && (
-                <p className="text-[0.65rem] text-sev-moderate break-words" title={prov.providerHealth.lastError}>
+                <p className="text-[0.7rem] text-sev-moderate break-words" title={prov.providerHealth.lastError}>
                   last error: {prov.providerHealth.lastError}
                 </p>
               )}
@@ -593,12 +593,12 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
           </ul>
           {r.context.nearestAssets.length > 0 && (
             <div className="mt-3 hairline-t pt-2.5">
-              <p className="micro-label !text-[0.6rem] text-muted-foreground mb-1.5">Nearest Assets</p>
+              <p className="micro-label !text-[0.7rem] text-muted-foreground mb-1.5">Nearest Assets</p>
               <ul className="space-y-1.5">
                 {r.context.nearestAssets.map((a) => (
                   <li key={a.code} className="flex items-baseline gap-2.5 text-xs">
-                    <span className="data-mono text-[0.62rem] text-slate-500 w-12 shrink-0">{Math.round(a.distanceM)}m</span>
-                    <span className="data-mono text-[0.62rem] text-water">{a.code}</span>
+                    <span className="data-mono text-[0.7rem] text-slate-500 w-12 shrink-0">{Math.round(a.distanceM)}m</span>
+                    <span className="data-mono text-[0.7rem] text-water">{a.code}</span>
                     <span className="flex-1 truncate text-slate-600">{a.kind.toLowerCase().replace(/_/g, " ")} · condition {a.condition ?? "n/a"}</span>
                   </li>
                 ))}
@@ -617,11 +617,11 @@ function ClassifyResults({ m }: { m: ClassifyMutation }) {
             <ul className="space-y-2">
               {r.duplicateSignals.map((d, i) => (
                 <li key={i} className="flex items-baseline gap-2.5 text-xs flex-wrap">
-                  <button onClick={() => navigate("event", d.code)} className="data-mono text-[0.65rem] font-semibold text-water hover:text-water-dim transition-colors">
+                  <button onClick={() => navigate("event", d.code)} className="data-mono text-[0.7rem] font-semibold text-water hover:text-water-dim transition-colors">
                     {d.code}
                   </button>
-                  <span className="data-mono text-[0.62rem] text-slate-500">{Math.round(d.distanceM)}m · {d.hoursApart.toFixed(1)}h apart</span>
-                  {d.recurrence && <span className="rounded-full bg-red-50 border border-red-200 px-2 py-0.5 micro-label !text-[0.6rem] text-sev-high" title="The same spot has flooded again">Recurrence</span>}
+                  <span className="data-mono text-[0.7rem] text-slate-500">{Math.round(d.distanceM)}m · {d.hoursApart.toFixed(1)}h apart</span>
+                  {d.recurrence && <span className="rounded-full bg-red-50 border border-red-200 px-2 py-0.5 micro-label !text-[0.7rem] text-sev-high" title="The same spot has flooded again">Recurrence</span>}
                   <span className="flex-1 min-w-40 text-slate-600">{d.reason}</span>
                 </li>
               ))}
@@ -647,7 +647,7 @@ function ClusterInput({ cluster, radius, setRadius }: { cluster: ClusterMutation
               onClick={() => setRadius(rm)}
               aria-pressed={radius === rm}
               className={cn(
-                "rounded-lg border micro-label !text-[0.6rem] py-1.5 transition-colors data-mono !tracking-normal !normal-case font-medium",
+                "rounded-lg border micro-label !text-[0.7rem] py-1.5 transition-colors data-mono !tracking-normal !normal-case font-medium",
                 radius === rm
                   ? "border-blue-200 bg-blue-50 text-water"
                   : "border-border bg-ink-900 text-slate-600 hover:bg-ink-850 hover:text-slate-700"
@@ -667,11 +667,11 @@ function ClusterInput({ cluster, radius, setRadius }: { cluster: ClusterMutation
         <GitMerge className={cn("size-3.5", cluster.isPending && "animate-pulse")} aria-hidden />
         {cluster.isPending ? "Clustering…" : "Run clustering"}
       </Button>
-      <p className="text-[0.6rem] text-muted-foreground leading-relaxed">
+      <p className="text-[0.7rem] text-muted-foreground leading-relaxed">
         Looks at all reports from the last 72 hours. It uses a fixed, deterministic method with no network call, so the same inputs always produce the same groups.
       </p>
       {cluster.isError && (
-        <p className="micro-label !text-[0.6rem] text-sev-critical" role="alert">
+        <p className="micro-label !text-[0.7rem] text-sev-critical" role="alert">
           last run failed: {cluster.error.message}
         </p>
       )}
@@ -684,7 +684,7 @@ function ClusterResults({ m }: { m: ClusterMutation }) {
     return (
       <Panel title="Duplicate Clustering · Result" icon={<GitMerge />} className="panel-raised">
         <LoadingRows rows={5} />
-        <p className="micro-label !text-[0.6rem] text-muted-foreground mt-2">union-find over last-72h reports…</p>
+        <p className="micro-label !text-[0.7rem] text-muted-foreground mt-2">union-find over last-72h reports…</p>
       </Panel>
     );
   }
@@ -717,12 +717,12 @@ function ClusterResults({ m }: { m: ClusterMutation }) {
         icon={<GitMerge />}
         className="panel-raised"
         actions={
-          <span className="data-mono text-[0.62rem] text-slate-500">
+          <span className="data-mono text-[0.7rem] text-slate-500">
             {data.singletons} singletons · {String(meta.evaluated ?? "?")} evaluated
           </span>
         }
       >
-        <p className="micro-label !text-[0.6rem] text-muted-foreground mb-3">
+        <p className="micro-label !text-[0.7rem] text-muted-foreground mb-3">
           {String(meta.method ?? `union-find proximity clustering, radius ${radius}m`)} · {String(meta.version ?? "cluster-1.1-demo")}
         </p>
         {data.clusters.length === 0 ? (
@@ -733,11 +733,11 @@ function ClusterResults({ m }: { m: ClusterMutation }) {
               <StaggerItem key={c.id}>
                 <div className="rounded-lg border border-border overflow-hidden">
                   <div className="flex items-center gap-2.5 flex-wrap px-3 py-2 bg-slate-50 hairline-b">
-                    <span className="data-mono text-[0.65rem] font-semibold text-water">{c.id}</span>
-                    <span className="data-mono text-[0.62rem] text-slate-500">
+                    <span className="data-mono text-[0.7rem] font-semibold text-water">{c.id}</span>
+                    <span className="data-mono text-[0.7rem] text-slate-500">
                       {c.size} reports · spread {c.spatialDiameterM}m
                     </span>
-                    <span className="ml-auto data-mono text-[0.6rem] text-slate-500 hidden sm:inline" title="Cluster centroid">
+                    <span className="ml-auto data-mono text-[0.7rem] text-slate-500 hidden sm:inline" title="Cluster centroid">
                       {c.centroid.lat.toFixed(4)}, {c.centroid.lng.toFixed(4)}
                     </span>
                   </div>
@@ -745,22 +745,22 @@ function ClusterResults({ m }: { m: ClusterMutation }) {
                     {c.members.map((mem) => (
                       <li key={mem.id} className="px-3 py-2 hairline-b last:border-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="data-mono text-[0.62rem] font-medium text-slate-800">{mem.publicRef}</span>
-                          <span className={cn("micro-label !text-[0.6rem]", sevTone(mem.severityReported))}>{mem.severityReported.toLowerCase()}</span>
-                          <span className="micro-label !text-[0.6rem] text-muted-foreground">{mem.category.toLowerCase().replace(/_/g, " ")}</span>
+                          <span className="data-mono text-[0.7rem] font-medium text-slate-800">{mem.publicRef}</span>
+                          <span className={cn("micro-label !text-[0.7rem]", sevTone(mem.severityReported))}>{mem.severityReported.toLowerCase()}</span>
+                          <span className="micro-label !text-[0.7rem] text-muted-foreground">{mem.category.toLowerCase().replace(/_/g, " ")}</span>
                           <TimeAgo iso={mem.submittedAt} />
                           {mem.urbanEventId && (
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => navigate("event", mem.urbanEventId!)}
-                              className="ml-auto h-6 text-[0.6rem] px-2 rounded-lg border-blue-200 text-water hover:bg-blue-50 hover:text-water"
+                              className="ml-auto h-6 text-[0.7rem] px-2 rounded-lg border-blue-200 text-water hover:bg-blue-50 hover:text-water"
                             >
                               linked event <ChevronRight className="size-3" aria-hidden />
                             </Button>
                           )}
                         </div>
-                        <p className="mt-0.5 text-[0.68rem] text-slate-600 leading-snug line-clamp-1" title={mem.description}>{mem.description}</p>
+                        <p className="mt-0.5 text-[0.7rem] text-slate-600 leading-snug line-clamp-1" title={mem.description}>{mem.description}</p>
                       </li>
                     ))}
                   </ul>
@@ -835,11 +835,11 @@ function RiskInput({ risk }: { risk: RiskMutation }) {
                     className={cn("w-full text-left px-2.5 py-2 transition-colors hover:bg-ink-850/60", active && "bg-blue-50")}
                   >
                     <span className="flex items-center gap-2 flex-wrap">
-                      <span className="data-mono text-[0.62rem] font-semibold text-water">{e.code}</span>
+                      <span className="data-mono text-[0.7rem] font-semibold text-water">{e.code}</span>
                       <RiskBadge band={e.riskBand} score={e.riskScore} />
-                      <span className="micro-label !text-[0.6rem] text-muted-foreground">{e.reportCount} rep</span>
+                      <span className="micro-label !text-[0.7rem] text-muted-foreground">{e.reportCount} rep</span>
                     </span>
-                    <span className="block mt-0.5 text-[0.68rem] text-slate-700 leading-snug line-clamp-1">{e.title}</span>
+                    <span className="block mt-0.5 text-[0.7rem] text-slate-700 leading-snug line-clamp-1">{e.title}</span>
                   </button>
                 </li>
               );
@@ -851,11 +851,11 @@ function RiskInput({ risk }: { risk: RiskMutation }) {
       {selectedEvent && (
         <div className="rounded-lg border border-blue-200 bg-blue-50/60 px-2.5 py-2">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="data-mono text-[0.65rem] font-semibold text-water">{selectedEvent.code}</span>
+            <span className="data-mono text-[0.7rem] font-semibold text-water">{selectedEvent.code}</span>
             <RiskBadge band={selectedEvent.riskBand} score={selectedEvent.riskScore} />
-            <span className="micro-label !text-[0.6rem] text-muted-foreground">{selectedEvent.reportCount} reports</span>
+            <span className="micro-label !text-[0.7rem] text-muted-foreground">{selectedEvent.reportCount} reports</span>
           </div>
-          <p className="mt-0.5 text-[0.68rem] text-slate-600 line-clamp-1">{selectedEvent.title}</p>
+          <p className="mt-0.5 text-[0.7rem] text-slate-600 line-clamp-1">{selectedEvent.title}</p>
         </div>
       )}
 
@@ -868,11 +868,11 @@ function RiskInput({ risk }: { risk: RiskMutation }) {
         <Gauge className={cn("size-3.5", risk.isPending && "animate-pulse")} aria-hidden />
         {risk.isPending ? "Assessing…" : "Assess risk"}
       </Button>
-      <p className="text-[0.6rem] text-muted-foreground leading-relaxed">
+      <p className="text-[0.7rem] text-muted-foreground leading-relaxed">
         Re-scores the incident with the transparent 7-factor risk engine and generates a structured advisory (a written second opinion) from the active provider. The result is saved to the event dossier.
       </p>
       {risk.isError && (
-        <p className="micro-label !text-[0.6rem] text-sev-critical" role="alert">
+        <p className="micro-label !text-[0.7rem] text-sev-critical" role="alert">
           last run failed: {risk.error.message}
         </p>
       )}
@@ -885,7 +885,7 @@ function RiskResults({ m }: { m: RiskMutation }) {
     return (
       <Panel title="Risk Assessment · Result" icon={<Gauge />} className="panel-raised">
         <LoadingRows rows={5} />
-        <p className="micro-label !text-[0.6rem] text-muted-foreground mt-2">computing factors + advisory…</p>
+        <p className="micro-label !text-[0.7rem] text-muted-foreground mt-2">computing factors + advisory…</p>
       </Panel>
     );
   }
@@ -921,12 +921,12 @@ function RiskResults({ m }: { m: RiskMutation }) {
         <Panel
           title={`Risk Assessment · ${r.event.code}`}
           icon={<Gauge />}
-          actions={<span className="micro-label !text-[0.6rem] text-muted-foreground">{r.risk.modelVersion}</span>}
+          actions={<span className="micro-label !text-[0.7rem] text-muted-foreground">{r.risk.modelVersion}</span>}
           className="panel-raised"
         >
           <div className="flex items-center gap-4 flex-wrap mb-4">
             <RiskMeter score={r.risk.score} band={r.risk.band} />
-            {r.risk.computedAt && <span className="text-[0.65rem] text-slate-500">computed <TimeAgo iso={r.risk.computedAt} /></span>}
+            {r.risk.computedAt && <span className="text-[0.7rem] text-slate-500">computed <TimeAgo iso={r.risk.computedAt} /></span>}
           </div>
           <div className="space-y-2.5 max-w-2xl">
             {factors.map((f) => (
@@ -944,12 +944,12 @@ function RiskResults({ m }: { m: RiskMutation }) {
                     fillClassName={f.contribution > 12 ? "bg-sev-high" : f.contribution > 7 ? "bg-sev-moderate" : "bg-water-dim"}
                   />
                 </span>
-                <span className="data-mono text-[0.65rem] w-10 text-right text-slate-900">{f.contribution.toFixed(1)}</span>
-                <span className="data-mono text-[0.6rem] w-20 text-right text-slate-500 hidden sm:block" title={`raw: ${f.raw}`}>{f.raw}</span>
+                <span className="data-mono text-[0.7rem] w-10 text-right text-slate-900">{f.contribution.toFixed(1)}</span>
+                <span className="data-mono text-[0.7rem] w-20 text-right text-slate-500 hidden sm:block" title={`raw: ${f.raw}`}>{f.raw}</span>
               </div>
             ))}
           </div>
-          <p className="mt-3 text-[0.68rem] text-slate-600">
+          <p className="mt-3 text-[0.7rem] text-slate-600">
             The score adds up each factor (value × weight) and scales the total to 0–100. Every factor, weight and contribution is returned by the engine: no black boxes.
           </p>
         </Panel>
@@ -975,7 +975,7 @@ function RiskResults({ m }: { m: RiskMutation }) {
                   key={i}
                   title={`${f.key} · weight ${f.weight.toFixed(2)}`}
                   className={cn(
-                    "rounded-full border px-2.5 py-0.5 text-[0.62rem] font-medium",
+                    "rounded-full border px-2.5 py-0.5 text-[0.7rem] font-medium",
                     f.direction === "AGGRAVATES"
                       ? "border-red-200 bg-red-50 text-sev-high"
                       : "border-emerald-200 bg-emerald-50 text-verified"
@@ -988,11 +988,11 @@ function RiskResults({ m }: { m: RiskMutation }) {
           )}
           {r.advisory.output.recommendedInvestigation && (
             <p className="mt-3 text-xs text-water">
-              <span className="micro-label !text-[0.6rem] mr-1.5">Recommended</span>{" "}
+              <span className="micro-label !text-[0.7rem] mr-1.5">Recommended</span>{" "}
               {r.advisory.output.recommendedInvestigation}
             </p>
           )}
-          <p className="mt-3 micro-label !text-[0.6rem] text-muted-foreground">
+          <p className="mt-3 micro-label !text-[0.7rem] text-muted-foreground">
             Structured output only. No chain-of-thought exposed.
           </p>
         </Panel>
@@ -1001,15 +1001,15 @@ function RiskResults({ m }: { m: RiskMutation }) {
       <Reveal key={`rk-prov-${rkey}`} delay={0.16}>
         <Panel title="Provenance" icon={<ShieldAlert />} className="panel-raised">
           <dl className="space-y-2 text-xs">
-            <FactRow label="Risk Engine"><span className="data-mono text-[0.62rem]">{r.provenance.riskModelVersion}</span></FactRow>
+            <FactRow label="Risk Engine"><span className="data-mono text-[0.7rem]">{r.provenance.riskModelVersion}</span></FactRow>
             <FactRow label="Advisory Provider"><ProviderChip provider={r.advisory.provider} model={r.advisory.modelId} /></FactRow>
             <FactRow label="Fallback">
-              <span className={cn("micro-label !text-[0.6rem]", r.advisory.fallbackUsed ? "text-sev-moderate" : "text-verified")}>
+              <span className={cn("micro-label !text-[0.7rem]", r.advisory.fallbackUsed ? "text-sev-moderate" : "text-verified")}>
                 {r.advisory.fallbackUsed ? "used" : "not used"}
               </span>
             </FactRow>
             <FactRow label="Event">
-              <button onClick={() => navigate("event", r.event.code)} className="data-mono text-[0.62rem] text-water hover:text-water-dim transition-colors">
+              <button onClick={() => navigate("event", r.event.code)} className="data-mono text-[0.7rem] text-water hover:text-water-dim transition-colors">
                 {r.event.code} →
               </button>
             </FactRow>
@@ -1027,7 +1027,7 @@ function EvidenceCheck({ label, children }: { label: string; children: React.Rea
     <li className="flex items-start gap-2.5">
       <CheckCircle2 className="size-4 shrink-0 text-water mt-0.5" aria-hidden />
       <div className="flex-1 min-w-0">
-        <span className="micro-label !text-[0.6rem]">{label}</span>
+        <span className="micro-label !text-[0.7rem]">{label}</span>
         <p className="data-mono text-[0.72rem] text-slate-700 mt-0.5">{children}</p>
       </div>
     </li>
@@ -1037,7 +1037,7 @@ function EvidenceCheck({ label, children }: { label: string; children: React.Rea
 function Readout({ label, value, tone }: { label: string; value: React.ReactNode; tone?: string }) {
   return (
     <div className="rounded-lg border border-border bg-slate-50 px-3 py-2.5">
-      <p className="micro-label !text-[0.6rem]">{label}</p>
+      <p className="micro-label !text-[0.7rem]">{label}</p>
       <div className={cn("data-mono text-sm mt-1", tone ?? "text-slate-900")}>{value}</div>
     </div>
   );
@@ -1046,7 +1046,7 @@ function Readout({ label, value, tone }: { label: string; value: React.ReactNode
 function FactRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <dt className="micro-label !text-[0.6rem]">{label}</dt>
+      <dt className="micro-label !text-[0.7rem]">{label}</dt>
       <dd className="flex items-center text-right">{children}</dd>
     </div>
   );

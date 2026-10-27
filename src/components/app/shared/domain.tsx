@@ -3,10 +3,12 @@
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { AlertTriangle } from "lucide-react";
 import { AnimatedProgress } from "@/components/motion/kit";
 
 // Domain display primitives: severity, status, risk, provenance, time.
-// Monsoon ink: indigo surfaces, aqua signal, warm severity ramp.
+// Monsoon Ledger: flat ink chips, one hue per state, dark-tint fills with
+// bright text of the same hue, sentence-case labels in the body face.
 // Colour is never the only signal (label text + symbols always present).
 
 export const STATUS_ORDER = ["DETECTED", "TRIAGED", "ASSIGNED", "IN_PROGRESS", "VERIFIED", "CLOSED", "REOPENED"] as const;
@@ -26,7 +28,7 @@ export function StatusBadge({ status, className }: { status: string; className?:
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 micro-label !text-[0.6rem] !tracking-[0.08em] font-medium",
+        "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 micro-label !text-[0.7rem] font-medium",
         m.cls,
         className
       )}
@@ -44,19 +46,17 @@ export const RISK_META: Record<string, { label: string; cls: string; bar: string
   CRITICAL: { label: "Critical", cls: "text-red-700 bg-red-50 border-red-200", bar: "bg-red-500" },
 };
 
-/** Soft halo for the risk band dot — severity ramp colours at glow strength. */
-const RISK_DOT_GLOW: Record<string, string> = {
-  MODERATE: "shadow-[0_0_6px_rgba(245,165,36,0.65)]",
-  HIGH: "shadow-[0_0_6px_rgba(251,143,60,0.65)]",
-  CRITICAL: "shadow-[0_0_6px_rgba(255,77,106,0.7)]",
-};
+/** Soft halo for the risk band dot — removed in v2: the dot is a steady
+ *  mark of a real band, not a light source. Kept as an empty map so
+ *  call sites that read it still compile. */
+const RISK_DOT_GLOW: Record<string, string> = {};
 
 export function RiskBadge({ band, score, className }: { band: string; score?: number; className?: string }) {
   const m = RISK_META[band] ?? RISK_META.LOW;
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 micro-label !text-[0.6rem] font-medium", m.cls, className)}>
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 micro-label !text-[0.7rem] font-medium", m.cls, className)}>
       <span aria-hidden className={cn("size-1.5 rounded-full", m.bar, RISK_DOT_GLOW[band] ?? "")} />
-      {score != null && <span className="data-mono !text-[0.65rem] !tracking-normal !normal-case">{score}</span>}
+      {score != null && <span className="data-mono !text-[0.7rem] !tracking-normal !normal-case">{score}</span>}
       {m.label}
     </span>
   );
@@ -90,12 +90,12 @@ export function ConfidenceChip({ confidence, note }: { confidence: number; note?
     <span
       title={note ?? undefined}
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 micro-label !text-[0.6rem] !tracking-[0.08em]",
+        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 micro-label !text-[0.7rem]",
         low ? "text-amber-700 border-amber-200 bg-amber-50" : "text-slate-600 border-slate-200 bg-slate-50"
       )}
     >
-      conf <span className="data-mono !text-[0.65rem] !tracking-normal !normal-case">{pct}%</span>
-      {low && <span aria-hidden>⚠</span>}
+      conf <span className="data-mono !text-[0.7rem] !tracking-normal !normal-case">{pct}%</span>
+      {low && <AlertTriangle className="size-3" aria-label="low confidence" />}
     </span>
   );
 }
@@ -110,7 +110,7 @@ export function SourceBadge({ source, className }: { source: string; className?:
     MANUAL: { label: "manual", cls: "text-slate-600 border-slate-200 bg-slate-50" },
   };
   const m = meta[source] ?? { label: source.toLowerCase(), cls: "text-slate-600 border-slate-200 bg-slate-50" };
-  return <span className={cn("inline-flex rounded-full border px-2 py-0.5 micro-label !text-[0.6rem]", m.cls, className)}>{m.label}</span>;
+  return <span className={cn("inline-flex rounded-full border px-2 py-0.5 micro-label !text-[0.7rem]", m.cls, className)}>{m.label}</span>;
 }
 
 export function ProviderChip({ provider, model, className }: { provider: string; model?: string | null; className?: string }) {
@@ -118,7 +118,7 @@ export function ProviderChip({ provider, model, className }: { provider: string;
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 micro-label !text-[0.6rem]",
+        "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 micro-label !text-[0.7rem]",
         isGlm ? "text-water border-blue-200 bg-blue-50" : "text-slate-600 border-slate-200 bg-slate-50",
         className
       )}
@@ -126,7 +126,7 @@ export function ProviderChip({ provider, model, className }: { provider: string;
     >
       <span aria-hidden className={cn("size-1.5 rounded-full", isGlm ? "bg-water-dim" : "bg-slate-400")} />
       {provider === "GLM" ? "GLM" : provider === "MOCK" ? "deterministic" : provider.toLowerCase()}
-      {model && <span className="data-mono !text-[0.6rem] text-muted-foreground !tracking-normal !normal-case max-w-44 truncate">{model.split("/")[0]}</span>}
+      {model && <span className="data-mono !text-[0.7rem] text-muted-foreground !tracking-normal !normal-case max-w-44 truncate">{model.split("/")[0]}</span>}
     </span>
   );
 }
@@ -197,10 +197,10 @@ export function ErrorNote({ message, onRetry, className }: { message: string; on
       transition={{ duration: 0.3 }}
       className={cn("flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm", className)}
     >
-      <span className="text-sev-critical" aria-hidden>⚠</span>
-      <span className="text-red-500 flex-1">{message}</span>
+      <AlertTriangle className="size-3.5 shrink-0 text-sev-critical" aria-hidden />
+      <span className="text-red-400 flex-1">{message}</span>
       {onRetry && (
-        <button onClick={onRetry} className="micro-label !text-[0.6rem] text-aqua hover:text-aqua-dim transition-colors">
+        <button onClick={onRetry} className="micro-label !text-[0.7rem] text-aqua hover:text-aqua-dim transition-colors">
           retry
         </button>
       )}
@@ -230,7 +230,7 @@ export function fmtDateTime(iso: string | Date): string {
 
 export function TimeAgo({ iso, title = true }: { iso: string; title?: boolean }) {
   return (
-    <time dateTime={iso} title={title ? fmtDateTime(iso) : undefined} className="data-mono text-[0.68rem] text-muted-foreground whitespace-nowrap">
+    <time dateTime={iso} title={title ? fmtDateTime(iso) : undefined} className="data-mono text-[0.7rem] text-muted-foreground whitespace-nowrap">
       {timeAgo(iso)}
     </time>
   );

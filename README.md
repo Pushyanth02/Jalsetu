@@ -34,20 +34,36 @@ One single-page app, 12 hash-routed views, deep-linkable (e.g. `#/events/UE-2026
 | **Terms of Service** (`#/terms`) | Scope of the research prototype, permitted research use, licences, liability |
 | **Privacy Policy** (`#/privacy`) | No accounts, no cookies, no analytics, no server; third-party map tiles only |
 
-## Design System ("Monsoon Atlas")
+## Design System ("Monsoon Ledger")
 
-Deliberate, documented choices — not defaults:
+Deliberate, documented choices — not defaults. v2 replaces the v1
+"Monsoon Atlas" glass-HUD language with a flat civic ledger: ink paper,
+tabular figures, one signal colour, and no atmospheric effects.
 
-- **Typography** — *Fraunces* (display serif: the character of a printed survey
-  atlas, italic reserved for one poetic accent), *Public Sans* (UI + body: the
-  civic face designed for government digital services, best-in-class at 12–14px)
-  and *IBM Plex Mono* (data readouts: codes, coordinates, tabular numerals).
-  All three are self-hosted via `next/font` — zero third-party font requests.
-- **Gradients** — a small set of static, close-hue, long-blend tokens
-  (`bg-atlas`, `text-signal`, `scrim-photo`, `feather-y`, `panel-raised`,
-  `aurora-band`); no animated or sloped gradients.
+- **Typography** — *Fraunces* (display serif: the human face of a printed
+  government atlas; view titles and the landing headline only, no italics
+  inside headings), *Public Sans* (UI + body: the civic face designed for
+  government digital services, best-in-class at 12–14px — and, since v2,
+  the face of every label too), and *IBM Plex Mono* (data readouts only:
+  codes, coordinates, tabular numerals). All three are self-hosted via
+  `next/font` — zero third-party font requests.
+- **Labels** — sentence case, body face, one step smaller, untracked
+  (`.micro-label`). v1's uppercase letter-spaced mono labels were the
+  loudest AI-template tell in the product; the 2026 redesign removed them
+  everywhere.
+- **Colour** — true-neutral ink surfaces (no navy cast) split by 1px
+  hairlines; one rain-teal accent (`--aqua`) on data and at most one
+  control per screen; warm severity ramp reserved for status; colour
+  says good or bad, never up or down.
+- **Surfaces** — flat panels, a border or a tone step but never both,
+  no gradients, no glows, no glass, no shadows on resting cards
+  (shadows only on what floats: menus, popovers, dialogs, map popups).
+- **Motion** — feedback only: press, hover, focus, view transitions,
+  transient loading states. No endless pulses, no entrance choreography
+  on app screens, no hover lifts.
 - **Contrast** — AA floors enforced across all views: body text ≥ 4.5:1
-  (most tokens sit at 5–8:1), micro-labels ≥ 4.5:1, input affordances ≥ 3:1.
+  (most tokens sit at 6–17:1), labels ≥ 4.5:1, input affordances ≥ 3:1,
+  no text under 11px.
 
 ## No API Keys, No Backend
 

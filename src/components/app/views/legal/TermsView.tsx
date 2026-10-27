@@ -21,7 +21,7 @@ interface SectionProps {
 function LegalSection({ id, number, kicker, title, children }: SectionProps) {
   return (
     <section id={id} aria-labelledby={`${id}-title`} className="panel rounded-xl px-4 sm:px-5 py-4">
-      <p className="micro-label !text-[0.6rem] text-slate-600">
+      <p className="micro-label !text-[0.7rem] text-slate-600">
         {number} · {kicker}
       </p>
       <h2 id={`${id}-title`} className="mt-1.5 font-display text-[1rem] font-semibold leading-snug text-slate-900">
@@ -64,9 +64,9 @@ export function TermsView() {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
             <span className="flex items-center gap-2">
               <Scale className="size-3.5 text-water" aria-hidden />
-              <span className="micro-label !text-[0.62rem] text-slate-600">Legal · JalSetu Research Prototype</span>
+              <span className="micro-label !text-[0.7rem] text-slate-600">Legal · JalSetu Research Prototype</span>
             </span>
-            <span className="data-mono ml-auto hidden sm:inline text-[0.62rem] text-slate-500">
+            <span className="data-mono ml-auto hidden sm:inline text-[0.7rem] text-slate-500">
               doc v1 · ships with the repository release
             </span>
           </div>

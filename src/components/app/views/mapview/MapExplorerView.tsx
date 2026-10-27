@@ -89,11 +89,11 @@ export function MapExplorerView() {
         <div className="ml-auto flex items-center gap-2.5">
           <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 pl-2.5 pr-3 py-1">
             <PulseDot color="bg-emerald-500" size={7} />
-            <span className="text-[0.65rem] font-semibold text-emerald-700">Live Data</span>
-            <span className="data-mono text-[0.6rem] text-emerald-600">demo mode</span>
+            <span className="text-[0.7rem] font-semibold text-emerald-700">Live Data</span>
+            <span className="data-mono text-[0.7rem] text-emerald-600">demo mode</span>
           </span>
           {jurisdictionsQ.data && (
-            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 micro-label !text-[0.6rem] text-water">
+            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 micro-label !text-[0.7rem] text-water">
               <MapPin className="size-3" aria-hidden /> {jurisdictionsQ.data.length} jurisdictions
             </span>
           )}
@@ -112,7 +112,7 @@ export function MapExplorerView() {
           <SlidersHorizontal className="size-4 text-water" aria-hidden />
           Filters &amp; Layers
           {activeFilterCount > 0 && (
-            <span className="grid size-5 place-items-center rounded-full bg-blue-50 text-water data-mono text-[0.6rem] font-semibold">
+            <span className="grid size-5 place-items-center rounded-full bg-blue-50 text-water data-mono text-[0.7rem] font-semibold">
               {activeFilterCount}
             </span>
           )}
@@ -193,7 +193,7 @@ export function MapExplorerView() {
                   <div className="p-3">
                     <button
                       onClick={() => setPage({ key: filterKey, count: visibleCount + LIST_PAGE })}
-                      className="w-full rounded-lg border border-border px-3 py-2 micro-label !text-[0.6rem] text-slate-600 transition-colors hover:bg-ink-850 hover:text-slate-900"
+                      className="w-full rounded-lg border border-border px-3 py-2 micro-label !text-[0.7rem] text-slate-600 transition-colors hover:bg-ink-850 hover:text-slate-900"
                     >
                       show more · {remaining} remaining
                     </button>
@@ -205,7 +205,7 @@ export function MapExplorerView() {
                 title="No Events Match These Filters"
                 hint="Loosen the severity, status, or time window filters."
                 action={
-                  <button onClick={() => setFilters({ status: "ALL", riskBand: "ALL", category: "ALL", hours: "ALL", jurisdictionId: "ALL" })} className="micro-label !text-[0.6rem] text-water hover:text-water-dim transition-colors mt-1">
+                  <button onClick={() => setFilters({ status: "ALL", riskBand: "ALL", category: "ALL", hours: "ALL", jurisdictionId: "ALL" })} className="micro-label !text-[0.7rem] text-water hover:text-water-dim transition-colors mt-1">
                     reset filters
                   </button>
                 }
@@ -214,11 +214,11 @@ export function MapExplorerView() {
           </div>
 
           <div className="shrink-0 hairline-t bg-ink-950/60 px-3 py-1.5 flex items-center gap-3">
-            <span className="data-mono text-[0.62rem] text-muted-foreground flex items-center gap-1">
+            <span className="data-mono text-[0.7rem] text-muted-foreground flex items-center gap-1">
               <CountUp value={eventsQ.data?.length ?? 0} className="text-slate-700" /> events shown
               {eventsQ.dataUpdatedAt ? <span> · updated <TimeAgo iso={new Date(eventsQ.dataUpdatedAt).toISOString()} title={false} /></span> : null}
             </span>
-            <button onClick={() => navigate("report")} className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 min-h-8 micro-label !text-[0.6rem] text-slate-600 hover:bg-ink-850 hover:text-slate-900 transition-colors">
+            <button onClick={() => navigate("report")} className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 min-h-8 micro-label !text-[0.7rem] text-slate-600 hover:bg-ink-850 hover:text-slate-900 transition-colors">
               report waterlogging →
             </button>
           </div>
@@ -263,7 +263,7 @@ function FilterRailContent({
               onClick={() => setFilters({ riskBand: b })}
               aria-pressed={filters.riskBand === b}
               className={cn(
-                "rounded-lg border micro-label !text-[0.6rem] py-2 lg:py-1.5 transition-colors",
+                "rounded-lg border micro-label !text-[0.7rem] py-2 lg:py-1.5 transition-colors",
                 filters.riskBand === b
                   ? cn(
                       b === "CRITICAL"
@@ -289,7 +289,7 @@ function FilterRailContent({
               onClick={() => setFilters({ status: s })}
               aria-pressed={filters.status === s}
               className={cn(
-                "rounded-lg border micro-label !text-[0.6rem] px-2 py-1.5 lg:px-1.5 lg:py-1 transition-colors",
+                "rounded-lg border micro-label !text-[0.7rem] px-2 py-1.5 lg:px-1.5 lg:py-1 transition-colors",
                 filters.status === s
                   ? "border-blue-200 bg-blue-50 text-water"
                   : "border-border text-slate-600 hover:bg-ink-850 hover:text-slate-700"
@@ -309,7 +309,7 @@ function FilterRailContent({
               onClick={() => setFilters({ category: c })}
               aria-pressed={filters.category === c}
               className={cn(
-                "rounded-lg border px-2.5 py-1.5 lg:py-1 text-[0.65rem] font-medium transition-colors",
+                "rounded-lg border px-2.5 py-1.5 lg:py-1 text-[0.7rem] font-medium transition-colors",
                 filters.category === c
                   ? "border-blue-200 bg-blue-50 text-water"
                   : "border-border text-slate-600 hover:bg-ink-850 hover:text-slate-700"
@@ -331,7 +331,7 @@ function FilterRailContent({
             </button>
           </div>
         ) : (
-          <p className="text-[0.68rem] text-muted-foreground leading-relaxed">
+          <p className="text-[0.7rem] text-muted-foreground leading-relaxed">
             Click a shaded zone on the map to focus on it. Without a selection, incidents from the whole pilot area are shown.
           </p>
         )}

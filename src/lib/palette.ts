@@ -4,15 +4,18 @@
  *
  * Every value mirrors a token in `src/app/globals.css`. When the theme
  * changes there, update this file to match — nothing else should hardcode hex.
+ *
+ * Monsoon Ledger v2: true-neutral ink (no navy cast), one aqua signal,
+ * warm severity. sevLow reads as quiet neutral data, not pale blue.
  */
 export const PALETTE = {
   // surfaces (mirror --ink-* / --hairline)
-  canvas: "#05080f", // --ink-950
-  surface: "#0a1124", // --ink-900
-  raised: "#101a33", // --ink-850
-  chip: "#16213f", // --ink-800
-  hairline: "#1a2440", // --hairline
-  input: "#33406e", // --input (3:1 perceived affordance)
+  canvas: "#0b0b0b", // --ink-950
+  surface: "#141414", // --ink-900
+  raised: "#1b1b1b", // --ink-850
+  chip: "#232323", // --ink-800
+  hairline: "#222222", // --hairline
+  input: "#3c3c3c", // --input (3:1 perceived affordance)
 
   // signal (mirror --aqua / --water)
   aqua: "#2dd4bf",
@@ -21,20 +24,20 @@ export const PALETTE = {
   aquaMid: "#17a892", // blue-500 ramp (drains, corridors)
 
   // severity (mirror --sev-* / --verified)
-  sevLow: "#9dabe0",
+  sevLow: "#a0a0a0",
   sevModerate: "#f5a524",
   sevHigh: "#fb8f3c",
   sevCritical: "#ff4d6a",
   verified: "#14b88a",
 
   // text ramp (mirror inverted slate ramp; text floors are AA-safe)
-  foreground: "#eef2ff",
-  textMuted: "#9dabe0", // slate-600
-  textDim: "#94a3cf", // slate-500
-  textFaint: "#8291c4", // AA floor for quiet text/markers (was 2.6:1 — invisible)
+  foreground: "#ededed",
+  textMuted: "#9a9a9a", // slate-600
+  textDim: "#8f8f8f", // slate-500
+  textFaint: "#808080", // AA floor for quiet text/markers
 
   // overlays (mirror --popover)
-  popover: "#0c142b",
+  popover: "#151515",
 } as const;
 
 /** Severity 1–4 fills, keyed the way map code passes severity. */

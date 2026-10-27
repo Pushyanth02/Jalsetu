@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiGet, type OverviewResponse, type WeatherResponse } from "@/lib/client/api";
 import { cn } from "@/lib/utils";
 import { motion, useReducedMotion } from "framer-motion";
-import { PulseDot, CountUp } from "@/components/motion/kit";
+import { CountUp } from "@/components/motion/kit";
 import { useState, useEffect } from "react";
 import {
   LayoutDashboard, Map as MapIcon, FileSearch, Network, ClipboardCheck, Flag, BarChart3, Activity, Droplets, Umbrella, Plus,
@@ -50,7 +50,7 @@ export function BrandLockup({ compact = false }: { compact?: boolean }) {
       <span className="min-w-0 text-left">
         <span className="block font-display text-[1.05rem] font-bold leading-none text-white tracking-tight">JalSetu</span>
         {!compact && (
-          <span className="mt-0.5 block text-[0.62rem] leading-tight text-white/60 truncate">Delhi Waterlogging Intelligence</span>
+          <span className="mt-0.5 block text-[0.7rem] leading-tight text-white/60 truncate">Delhi Waterlogging Intelligence</span>
         )}
       </span>
     </span>
@@ -73,7 +73,7 @@ export function BrandLockupLight({ compact = false }: { compact?: boolean }) {
       <span className="min-w-0 text-left">
         <span className="block font-display text-sm font-bold leading-none text-foreground">JalSetu</span>
         {!compact && (
-          <span className="hidden xs:block mt-0.5 text-[0.6rem] leading-tight text-slate-600 truncate">Delhi Waterlogging Intelligence</span>
+          <span className="hidden xs:block mt-0.5 text-[0.7rem] leading-tight text-slate-600 truncate">Delhi Waterlogging Intelligence</span>
         )}
       </span>
     </span>
@@ -83,7 +83,6 @@ export function BrandLockupLight({ compact = false }: { compact?: boolean }) {
 export function NavRail() {
   const view = useUi((s) => s.view);
   const eventId = useUi((s) => s.eventId);
-  const reduce = useReducedMotion();
   const { data } = useQuery({
     queryKey: ["overview"],
     queryFn: () => apiGet<OverviewResponse>("/api/overview").then((r) => r.data),
@@ -99,7 +98,7 @@ export function NavRail() {
   return (
     <nav
       aria-label="Primary"
-      className="hidden lg:flex w-60 xl:w-66 shrink-0 flex-col bg-sb-900 border-r border-hairline"
+      className="hidden lg:flex w-60 xl:w-66 shrink-0 flex-col bg-background border-r border-hairline"
     >
       <div className="px-5 pt-5 pb-4 border-b border-hairline shrink-0">
         <button
@@ -114,13 +113,13 @@ export function NavRail() {
       <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-4 space-y-5">
         {groups.map((g) => (
           <div key={g.key}>
-            <p className="px-3 pb-2 micro-label text-[0.6rem]! text-aqua! tracking-[0.14em]">{g.label}</p>
+            <p className="px-3 pb-2 text-[0.72rem] font-medium text-slate-500">{g.label}</p>
             <ul className="space-y-0.5" role="list">
               {NAV_ITEMS.filter((n) => n.group === g.key).map((item) => {
                 const active = view === item.id;
                 const disabled = item.id === "event" && !eventId;
                 return (
-                  <li key={item.id} className="relative">
+                  <li key={item.id}>
                     <button
                       onClick={() => navigate(item.id, item.id === "event" ? eventId : undefined)}
                       disabled={disabled}
@@ -128,24 +127,20 @@ export function NavRail() {
                       aria-label={item.label}
                       className={cn(
                         "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 xl:py-2 text-[0.84rem] font-medium transition-colors text-left touch-target",
+                        // Navigation recedes: the active item is a neutral grey
+                        // pill with the label unchanged — no accent fill, no
+                        // left bar, no glow. The console's colour lives on its
+                        // data, not on its chrome.
                         active
-                          ? "text-aqua bg-aqua/10 ring-1 ring-aqua/25 shadow-[0_0_28px_-12px_rgba(45,212,191,0.65)]"
-                          : "text-slate-600 hover:text-white hover:bg-white/6",
+                          ? "text-foreground bg-white/8"
+                          : "text-slate-600 hover:text-foreground hover:bg-white/5",
                         disabled && "opacity-35 cursor-not-allowed hover:bg-transparent hover:text-slate-600"
                       )}
                     >
-                      {active && (
-                        <motion.span
-                          layoutId="nav-active-bar"
-                          className="absolute left-0 top-1.5 bottom-1.5 w-0.75 rounded-full bg-water-dim shadow-[0_0_10px_rgba(45,212,191,0.8)]"
-                          transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 500, damping: 38 }}
-                          aria-hidden
-                        />
-                      )}
-                      <item.icon className={cn("size-4 shrink-0", active ? "text-water-dim" : "text-slate-500")} aria-hidden />
+                      <item.icon className={cn("size-4 shrink-0", active ? "text-foreground" : "text-slate-500")} aria-hidden />
                       <span className="truncate">{item.label}</span>
                       {item.id === "command" && data && (
-                        <span className="ml-auto data-mono text-[0.62rem] text-slate-500 tabular-nums">{data.counts.activeEvents}</span>
+                        <span className={cn("ml-auto data-mono text-[0.7rem] tabular-nums", active ? "text-slate-500" : "text-slate-500")}>{data.counts.activeEvents}</span>
                       )}
                     </button>
                   </li>
@@ -177,7 +172,7 @@ function WeatherWidget() {
 
   const mm = data ? Math.round(data.rainfall.pilot24hMm) : weatherQ.data?.stations.reduce((a, s) => a + s.totalMm, 0) ?? 0;
   const condition = mm >= 40 ? "Heavy rain" : mm >= 15 ? "Moderate rain" : mm > 0.5 ? "Light rain" : "Dry";
-  const dateLabel = now.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase();
+  const dateLabel = now.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
   // rotate the weather backdrop daily (deterministic — no hydration flicker)
   const wx = weatherScene(`navrail-${new Date().toISOString().slice(0, 10)}`);
 
@@ -201,26 +196,25 @@ function WeatherWidget() {
             aria-hidden
           />
         </picture>
-        <div className="absolute inset-0 bg-linear-to-t from-sb-900/90 via-sb-900/35 to-transparent" aria-hidden />
+        <div className="absolute inset-0 scrim-photo" aria-hidden />
         <div className="absolute bottom-2 left-3 right-3 flex items-end justify-between gap-2">
           <div>
             <p className="flex items-baseline gap-1.5 leading-none">
-              <span className="font-display text-2xl font-bold text-white tabular-nums">
+              <span className="font-display text-2xl font-semibold text-white tabular-nums">
                 {data ? <CountUp value={mm} decimals={mm % 1 ? 1 : 0} /> : mm}
               </span>
-              <span className="text-[0.6rem] font-medium text-white">mm/24h</span>
+              <span className="text-[0.7rem] font-medium text-white">mm/24h</span>
             </p>
-            <p className="mt-1 flex items-center gap-1.5 text-[0.65rem] text-white">
+            <p className="mt-1 flex items-center gap-1.5 text-[0.7rem] text-white">
               <Umbrella className="size-3 text-water-dim shrink-0" aria-hidden />
               <span className="truncate">{condition} · pilot gauges</span>
             </p>
           </div>
-          <PulseDot color="bg-emerald-400" size={7} className="mb-1 shrink-0" />
         </div>
       </div>
       <div className="mt-2.5 flex items-center justify-between gap-2">
-        <span className="data-mono text-[0.6rem] text-slate-500 truncate" suppressHydrationWarning>{dateLabel}</span>
-        <span className="micro-label text-[0.6rem]! text-slate-500! shrink-0">synthetic</span>
+        <span className="data-mono text-[0.7rem] text-slate-500 truncate" suppressHydrationWarning>{dateLabel}</span>
+        <span className="text-[0.7rem] font-medium text-slate-500 shrink-0">synthetic</span>
       </div>
     </div>
   );
@@ -250,9 +244,8 @@ export function MobileNav() {
   return (
     <nav
       aria-label="Primary mobile"
-      className="lg:hidden fixed bottom-0 inset-x-0 z-40 glass-deep border-t border-hairline safe-pb"
+      className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-ink-950 border-t border-hairline safe-pb"
     >
-      <div aria-hidden className="aurora-band absolute inset-x-0 top-0 rotate-180" />
       <ul className="grid grid-cols-5 items-end max-w-130 mx-auto" role="list">
         {left.slice(0, 2).map((item) => (
           <MobileNavItem key={item.id} item={item} active={view === item.id} />
@@ -264,14 +257,16 @@ export function MobileNav() {
             aria-label="Report a waterlogging issue"
             aria-current={view === "report" ? "page" : undefined}
             className={cn(
-              "relative -mt-5 grid size-14 place-items-center rounded-full bg-aqua text-ink-950 shadow-lg shadow-ink-950/60 shadow-aqua/30 transition-all touch-target",
+              // The one filled primary control on the shell: solid aqua, flat,
+              // no glow. It is the screen's one job, so it is allowed colour.
+              "relative -mt-5 grid size-14 place-items-center rounded-full bg-aqua text-ink-950 transition-colors touch-target",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aqua",
               view === "report" && "ring-2 ring-aqua ring-offset-2 ring-offset-ink-950"
             )}
           >
             <Plus className="size-6" aria-hidden />
           </motion.button>
-          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 micro-label text-[0.6rem]! text-water! font-semibold pointer-events-none">
+          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[0.7rem] font-medium text-water pointer-events-none">
             Report
           </span>
         </li>
@@ -293,11 +288,11 @@ function MobileNavItem({ item, active }: { item: NavItem; active: boolean }) {
         className={cn(
           "flex w-full flex-col items-center justify-center gap-1 py-2.5 touch-target transition-colors",
           "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-aqua rounded-lg",
-          active ? "text-aqua" : "text-slate-600 hover:text-white"
+          active ? "text-foreground" : "text-slate-600 hover:text-foreground"
         )}
       >
-        <item.icon className="size-5 shrink-0" aria-hidden />
-        <span className="text-[0.6rem] font-medium leading-none tracking-tight">{item.shortLabel}</span>
+        <item.icon className={cn("size-5 shrink-0", active && "text-aqua")} aria-hidden />
+        <span className="text-[0.7rem] font-medium leading-none">{item.shortLabel}</span>
       </button>
     </li>
   );

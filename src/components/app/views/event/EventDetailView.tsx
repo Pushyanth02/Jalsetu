@@ -203,8 +203,8 @@ export function EventDetailView() {
               closedAt: event.closedAt, reopenedAt: event.reopenedAt,
               groundTruthHotspotId: event.groundTruthHotspotId, source: event.source,
             }]} initialZoom={14.2} />
-            <div className="absolute top-2 left-2 rounded-md bg-ink-950/85 px-2 py-1 shadow-sm ring-1 ring-border/70 pointer-events-none backdrop-blur-sm">
-              <p className="micro-label text-[0.6rem]!">Event Focus</p>
+            <div className="absolute top-2 left-2 rounded-md bg-ink-950/85 px-2 py-1 ring-1 ring-border/70 pointer-events-none">
+              <p className="micro-label text-[0.7rem]!">Event Focus</p>
             </div>
           </div>
           <QuickFacts d={d} />
@@ -319,7 +319,7 @@ function QuickFacts({ d }: { d: D }) {
       <div>
         <p className="micro-label mb-1.5">Risk</p>
         <RiskMeter score={e.riskScore} band={e.riskBand} />
-        <p className="mt-1 micro-label text-[0.6rem]! text-muted-foreground">
+        <p className="mt-1 micro-label text-[0.7rem]! text-muted-foreground">
           {e.riskModelVersion} · assessed {e.riskAssessedAt ? timeAgo(e.riskAssessedAt) : "-"}
         </p>
       </div>
@@ -331,7 +331,7 @@ function QuickFacts({ d }: { d: D }) {
         <Fact label="Category" value={<span className="data-mono">{e.category.toLowerCase()}</span>} />
         <Fact label="Classification" value={<ProviderChip provider={e.classificationProvider ?? "-"} model={e.modelVersion} />} />
         {e.groundTruthHotspotId && (
-          <Fact label="Ground Truth" value={<span className="text-[0.65rem] text-sev-moderate">{e.groundTruthHotspotId} · {e.groundTruthAgencyCode} (synthetic)</span>} />
+          <Fact label="Ground Truth" value={<span className="text-[0.7rem] text-sev-moderate">{e.groundTruthHotspotId} · {e.groundTruthAgencyCode} (synthetic)</span>} />
         )}
       </dl>
     </div>
@@ -341,7 +341,7 @@ function QuickFacts({ d }: { d: D }) {
 function Fact({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <dt className="micro-label text-[0.6rem]!">{label}</dt>
+      <dt className="micro-label text-[0.7rem]!">{label}</dt>
       <dd className="flex items-center">{value}</dd>
     </div>
   );
@@ -373,14 +373,14 @@ function OverviewTab({ d }: { d: D }) {
             {e.reports.map((r) => (
               <StaggerItem key={r.id} className="py-2.5 first:pt-0 last:pb-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="data-mono text-[0.65rem] text-water">{r.publicRef}</span>
-                  <span className="micro-label text-[0.6rem]!">{r.channel.toLowerCase()}</span>
-                  {r.isDuplicate && <span className="micro-label text-[0.6rem]! text-sev-moderate" title="This report described the same incident, so it was counted inside this event instead of separately">merged as duplicate</span>}
+                  <span className="data-mono text-[0.7rem] text-water">{r.publicRef}</span>
+                  <span className="micro-label text-[0.7rem]!">{r.channel.toLowerCase()}</span>
+                  {r.isDuplicate && <span className="micro-label text-[0.7rem]! text-sev-moderate" title="This report described the same incident, so it was counted inside this event instead of separately">merged as duplicate</span>}
                   <TimeAgo iso={r.submittedAt} />
                 </div>
                 <p className="mt-1 text-[0.82rem] text-slate-700 leading-relaxed">{r.description}</p>
                 {r.classification && (
-                  <div className="mt-1.5 flex items-center gap-2 flex-wrap text-[0.65rem] text-muted-foreground">
+                  <div className="mt-1.5 flex items-center gap-2 flex-wrap text-[0.7rem] text-muted-foreground">
                     <span>assessed <span className={cn("font-medium", sevClass(r.classification.severity))}>{r.classification.severity.toLowerCase()}</span></span>
                     <span className="data-mono">conf {Math.round(r.classification.confidence * 100)}%</span>
                     {r.classificationProvider && <ProviderChip provider={r.classificationProvider} />}
@@ -401,11 +401,11 @@ function OverviewTab({ d }: { d: D }) {
               <ul className="space-y-2">
                 {nearbyAssets.map((a) => (
                   <li key={a.code} className="flex items-center gap-2.5 text-xs">
-                    <span className="data-mono text-[0.62rem] text-muted-foreground w-12 shrink-0">{a.d}m</span>
+                    <span className="data-mono text-[0.7rem] text-muted-foreground w-12 shrink-0">{a.d}m</span>
                     <span className={cn("size-2 rounded-full shrink-0", a.conditionScore < 45 ? "bg-sev-high" : a.conditionScore < 65 ? "bg-sev-moderate" : "bg-verified")} aria-hidden />
                     <span className="flex-1 min-w-0">
                       <span className="block truncate text-slate-700">{a.name}</span>
-                      <span className="micro-label text-[0.6rem]!">{a.kind.toLowerCase().replace(/_/g, " ")} · {a.agencyCode} · condition {a.conditionScore}</span>
+                      <span className="micro-label text-[0.7rem]!">{a.kind.toLowerCase().replace(/_/g, " ")} · {a.agencyCode} · condition {a.conditionScore}</span>
                     </span>
                   </li>
                 ))}
@@ -420,7 +420,7 @@ function OverviewTab({ d }: { d: D }) {
               <ul className="space-y-2">
                 {nearIncidents.map((i) => (
                   <li key={i.id} className="flex items-baseline gap-2.5 text-xs">
-                    <span className="data-mono text-[0.62rem] text-slate-600 shrink-0 w-20">{new Date(i.occurredOn).toLocaleDateString("en-IN", { month: "short", year: "numeric" })}</span>
+                    <span className="data-mono text-[0.7rem] text-slate-600 shrink-0 w-20">{new Date(i.occurredOn).toLocaleDateString("en-IN", { month: "short", year: "numeric" })}</span>
                     <span className={cn("font-medium shrink-0", sevClass(i.severity))}>{i.severity.toLowerCase()}</span>
                     <span className="text-muted-foreground truncate">{i.waterDepthCm ?? "?"}cm · {i.durationHours?.toFixed(0) ?? "?"}h · {i.reportedVia.toLowerCase()}</span>
                   </li>
@@ -440,11 +440,11 @@ function OverviewTab({ d }: { d: D }) {
               <ul className="space-y-2">
                 {nearMaint.map((m, i) => (
                   <li key={i} className="flex items-baseline gap-2.5 text-xs">
-                    <span className="data-mono text-[0.62rem] text-muted-foreground w-20 shrink-0">
+                    <span className="data-mono text-[0.7rem] text-muted-foreground w-20 shrink-0">
                       {m.performedAt ? new Date(m.performedAt).toLocaleDateString("en-IN", { month: "short", year: "numeric" }) : "scheduled"}
                     </span>
                     <span className="flex-1 truncate text-slate-700">{m.asset?.name ?? "asset"} · {m.kind.toLowerCase()}</span>
-                    <span className={cn("micro-label text-[0.6rem]!", m.status === "COMPLETED" ? "text-verified" : "text-water")}>{m.status.toLowerCase()}</span>
+                    <span className={cn("micro-label text-[0.7rem]!", m.status === "COMPLETED" ? "text-verified" : "text-water")}>{m.status.toLowerCase()}</span>
                   </li>
                 ))}
               </ul>
@@ -455,9 +455,9 @@ function OverviewTab({ d }: { d: D }) {
             <ul className="space-y-1.5 text-xs">
               {context.rainfallSeries.slice(-12).map((s, i) => (
                 <li key={i} className="flex items-center gap-2">
-                  <span className="data-mono text-[0.6rem] text-muted-foreground w-11 shrink-0">{new Date(s.t).toLocaleTimeString("en-IN", { hour: "2-digit", hour12: false })}</span>
+                  <span className="data-mono text-[0.7rem] text-muted-foreground w-11 shrink-0">{new Date(s.t).toLocaleTimeString("en-IN", { hour: "2-digit", hour12: false })}</span>
                   <AnimatedProgress value={Math.min(100, s.mm * 3)} max={100} className="flex-1 h-1.5" fillClassName="bg-water-dim" delay={i * 0.04} />
-                  <span className="data-mono text-[0.62rem]">{s.mm}mm</span>
+                  <span className="data-mono text-[0.7rem]">{s.mm}mm</span>
                 </li>
               ))}
             </ul>
@@ -526,16 +526,16 @@ function EvidenceTab({ d, onMutated }: { d: D; onMutated: () => void }) {
                         />
                       ) : (
                         <div className="size-full p-2.5 overflow-auto">
-                          <p className="text-[0.6rem] data-mono text-muted-foreground wrap-break-word">{ev.content.slice(0, 260)}</p>
+                          <p className="text-[0.7rem] data-mono text-muted-foreground wrap-break-word">{ev.content.slice(0, 260)}</p>
                         </div>
                       )}
-                      <span className="absolute top-1 left-1 rounded-md bg-ink-950/85 px-1.5 py-0.5 micro-label text-[0.6rem]! text-slate-600 shadow-sm backdrop-blur-sm">
+                      <span className="absolute top-1 left-1 rounded-md bg-ink-950/85 px-1.5 py-0.5 micro-label text-[0.7rem]! text-slate-600">
                         {ev.kind.toLowerCase().replace(/_/g, " ")}
                       </span>
                     </div>
-                    <figcaption className="mt-1.5 text-[0.65rem] text-muted-foreground leading-snug">
+                    <figcaption className="mt-1.5 text-[0.7rem] text-muted-foreground leading-snug">
                       <span className="block truncate">{ev.caption ?? "-"}</span>
-                      <span className="micro-label text-[0.6rem]! text-muted-foreground">{ev.capturedBy.toLowerCase()} · {fmtDateTime(ev.capturedAt)}</span>
+                      <span className="micro-label text-[0.7rem]! text-muted-foreground">{ev.capturedBy.toLowerCase()} · {fmtDateTime(ev.capturedAt)}</span>
                     </figcaption>
                   </figure>
                 </StaggerItem>
@@ -577,7 +577,7 @@ function EvidenceTab({ d, onMutated }: { d: D; onMutated: () => void }) {
                 <Button type="button" variant="outline" size="sm" disabled={uploading || upload.isPending} onClick={() => fileRef.current?.click()} className="border-border rounded-lg">
                   <Camera className="size-3.5" /> {uploading || upload.isPending ? "Processing…" : "Select photo"}
                 </Button>
-                <p className="mt-1.5 text-[0.65rem] text-muted-foreground">Photos are automatically shrunk to 1024px or smaller and saved in the demo database.</p>
+                <p className="mt-1.5 text-[0.7rem] text-muted-foreground">Photos are automatically shrunk to 1024px or smaller and saved in the demo database.</p>
               </div>
             ) : (
               <div className="space-y-1.5">
@@ -618,11 +618,11 @@ function InvestigationTab({ d }: { d: D }) {
             {cl.factors.length > 0 && (
               <ul className="mt-3 flex flex-wrap gap-1.5">
                 {cl.factors.map((f, i) => (
-                  <li key={i} className="rounded-full border border-border/70 bg-slate-50 px-2 py-0.5 text-[0.65rem] text-slate-600">{f}</li>
+                  <li key={i} className="rounded-full border border-border/70 bg-slate-50 px-2 py-0.5 text-[0.7rem] text-slate-600">{f}</li>
                 ))}
               </ul>
             )}
-            <p className="mt-3 micro-label text-[0.6rem]! text-muted-foreground">
+            <p className="mt-3 micro-label text-[0.7rem]! text-muted-foreground">
               Structured output only. No chain-of-thought is exposed or stored.
             </p>
           </Panel>
@@ -642,12 +642,12 @@ function InvestigationTab({ d }: { d: D }) {
                   fillClassName={f.contribution > 12 ? "bg-sev-high" : f.contribution > 7 ? "bg-sev-moderate" : "bg-water-dim"}
                 />
                 <span className="sr-only">{f.label}: contribution {f.contribution} of 100</span>
-                <span className="data-mono text-[0.65rem] w-10 text-right text-foreground">{f.contribution.toFixed(1)}</span>
-                <span className="data-mono text-[0.6rem] w-20 text-right text-muted-foreground hidden sm:block" title={`raw: ${f.raw}`}>{f.raw}</span>
+                <span className="data-mono text-[0.7rem] w-10 text-right text-foreground">{f.contribution.toFixed(1)}</span>
+                <span className="data-mono text-[0.7rem] w-20 text-right text-muted-foreground hidden sm:block" title={`raw: ${f.raw}`}>{f.raw}</span>
               </div>
             ))}
           </div>
-          <p className="mt-3 text-[0.68rem] text-muted-foreground">
+          <p className="mt-3 text-[0.7rem] text-muted-foreground">
             The score adds up each factor (value × weight) and scales the total to 0–100. Weights: severity 0.20, rainfall 0.18, reports 0.16, recurrence 0.14, infrastructure 0.12, maintenance 0.10, history 0.10.
           </p>
         </Panel>
@@ -689,7 +689,7 @@ function InvestigationTab({ d }: { d: D }) {
                   <li key={i} className="flex items-center gap-3 text-xs">
                     <span className="data-mono text-muted-foreground w-20 shrink-0">{timeAgo(r.computedAt)}</span>
                     <RiskBadge band={r.band} score={r.score} />
-                    <span className="micro-label text-[0.6rem]! text-muted-foreground">{r.provider.toLowerCase()}</span>
+                    <span className="micro-label text-[0.7rem]! text-muted-foreground">{r.provider.toLowerCase()}</span>
                   </li>
                 ))
               )}
@@ -722,7 +722,7 @@ function InvestigationTab({ d }: { d: D }) {
                           <ul className="mt-2 flex flex-wrap gap-1.5">
                             {parsed.factors.map((f, i) => (
                               <li key={i} className={cn(
-                                "rounded-full border px-2 py-0.5 text-[0.62rem] font-medium",
+                                "rounded-full border px-2 py-0.5 text-[0.7rem] font-medium",
                                 f.direction === "AGGRAVATES" ? "border-orange-200 bg-orange-50 text-sev-high" : "border-emerald-200 bg-emerald-50 text-verified"
                               )}>
                                 {f.label} · w {f.weight.toFixed(2)}
@@ -793,7 +793,7 @@ function ResponseTab({ d, onMutated }: { d: D; onMutated: () => void }) {
   return (
     <>
       <Reveal>
-        <Panel title="Responsibility Chain" icon={<Network />} actions={<span className="micro-label text-[0.6rem]! text-muted-foreground">routing-rules v1.2</span>}>
+        <Panel title="Responsibility Chain" icon={<Network />} actions={<span className="micro-label text-[0.7rem]! text-muted-foreground">routing-rules v1.2</span>}>
           <ol className="space-y-0">
             <ChainLevel level="EVENT" label={e.code} detail={`${e.reportCount} reports · risk ${e.riskScore} (${e.riskBand})`} />
             <ChainLevel level="JURISDICTION" label={e.jurisdiction?.name ?? "-"} detail={e.jurisdiction ? `${e.jurisdiction.kind.toLowerCase()} · administered by ${e.jurisdiction.agencyCode ?? "n/a"}` : "outside pilot"} />
@@ -811,7 +811,7 @@ function ResponseTab({ d, onMutated }: { d: D; onMutated: () => void }) {
           </ol>
           <AssignForm onAssign={(p) => assign.mutateAsync(p)} pending={assign.isPending} />
           {e.groundTruthAgencyCode && (
-            <p className="mt-3 text-[0.65rem] text-sev-moderate">
+            <p className="mt-3 text-[0.7rem] text-sev-moderate">
               Routing evaluation note: seeded ground truth for this location is <span className="data-mono">{e.groundTruthAgencyCode}</span> (synthetic label for research metrics).
             </p>
           )}
@@ -829,29 +829,29 @@ function ResponseTab({ d, onMutated }: { d: D; onMutated: () => void }) {
                   <StaggerItem key={a.id}>
                     <li className="rounded-lg border border-border bg-slate-50 p-3">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="data-mono text-[0.62rem] font-semibold text-water">{a.kind.replace(/_/g, " ").toLowerCase()}</span>
-                      <span className={cn("micro-label text-[0.6rem]!", a.priority === "URGENT" ? "text-sev-critical" : a.priority === "HIGH" ? "text-sev-high" : "text-muted-foreground")}>{a.priority.toLowerCase()}</span>
-                      <span className="ml-auto data-mono text-[0.62rem] text-muted-foreground">{a.agencyCode ?? "-"}{a.assignedTo ? ` · ${a.assignedTo}` : ""}</span>
+                      <span className="data-mono text-[0.7rem] font-semibold text-water">{a.kind.replace(/_/g, " ").toLowerCase()}</span>
+                      <span className={cn("micro-label text-[0.7rem]!", a.priority === "URGENT" ? "text-sev-critical" : a.priority === "HIGH" ? "text-sev-high" : "text-muted-foreground")}>{a.priority.toLowerCase()}</span>
+                      <span className="ml-auto data-mono text-[0.7rem] text-muted-foreground">{a.agencyCode ?? "-"}{a.assignedTo ? ` · ${a.assignedTo}` : ""}</span>
                     </div>
                     <p className="mt-1 text-[0.8rem] text-slate-700">{a.instruction}</p>
                     {a.outcome && <p className="mt-1 text-xs text-verified/90">Outcome: {a.outcome}</p>}
                     <div className="mt-2 flex items-center gap-2 flex-wrap">
-                      <span className={cn("micro-label text-[0.6rem]!", a.status === "COMPLETED" ? "text-verified" : a.status === "FAILED" ? "text-sev-critical" : "text-water")}>
+                      <span className={cn("micro-label text-[0.7rem]!", a.status === "COMPLETED" ? "text-verified" : a.status === "FAILED" ? "text-sev-critical" : "text-water")}>
                         {a.status.toLowerCase().replace(/_/g, " ")}
                       </span>
-                      {a.assignedAt && <span className="text-[0.62rem] text-muted-foreground">assigned {timeAgo(a.assignedAt)}</span>}
-                      {a.completedAt && <span className="text-[0.62rem] text-muted-foreground">· done {timeAgo(a.completedAt)}</span>}
+                      {a.assignedAt && <span className="text-[0.7rem] text-muted-foreground">assigned {timeAgo(a.assignedAt)}</span>}
+                      {a.completedAt && <span className="text-[0.7rem] text-muted-foreground">· done {timeAgo(a.completedAt)}</span>}
                       {(a.status === "RECOMMENDED" || a.status === "ASSIGNED") && (
                         <div className="ml-auto flex gap-1.5">
                           {a.status === "RECOMMENDED" && (
-                            <Button size="sm" variant="outline" className="h-7 text-[0.65rem] border-border rounded-lg" onClick={() => actionUpdate.mutate({ actionId: a.id, status: "ASSIGNED" })}>
+                            <Button size="sm" variant="outline" className="h-7 text-[0.7rem] border-border rounded-lg" onClick={() => actionUpdate.mutate({ actionId: a.id, status: "ASSIGNED" })}>
                               accept
                             </Button>
                           )}
-                          <Button size="sm" variant="outline" className="h-7 text-[0.65rem] border-border rounded-lg" onClick={() => actionUpdate.mutate({ actionId: a.id, status: "IN_PROGRESS" })}>
+                          <Button size="sm" variant="outline" className="h-7 text-[0.7rem] border-border rounded-lg" onClick={() => actionUpdate.mutate({ actionId: a.id, status: "IN_PROGRESS" })}>
                             start
                           </Button>
-                          <Button size="sm" className="h-7 text-[0.65rem] rounded-lg bg-verified text-ink-950 hover:bg-emerald-600" onClick={() => actionUpdate.mutate({ actionId: a.id, status: "COMPLETED", outcome: "Completed via event dossier." })}>
+                          <Button size="sm" className="h-7 text-[0.7rem] rounded-lg bg-verified text-ink-950 hover:bg-emerald-600" onClick={() => actionUpdate.mutate({ actionId: a.id, status: "COMPLETED", outcome: "Completed via event dossier." })}>
                             complete
                           </Button>
                         </div>
@@ -892,7 +892,7 @@ function AssignForm({ onAssign, pending }: { onAssign: (p: { agencyCode: string;
       <p className="micro-label mb-2">Assign / Escalate Manually</p>
       <div className="flex flex-wrap gap-2 items-end">
         <div className="space-y-1">
-          <Label htmlFor="asg-agency" className="text-[0.65rem]">Agency</Label>
+          <Label htmlFor="asg-agency" className="text-[0.7rem]">Agency</Label>
           <Select value={agency} onValueChange={setAgency}>
             <SelectTrigger id="asg-agency" className="h-8 w-28 bg-ink-900 border-border text-xs" aria-label="Agency"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -901,7 +901,7 @@ function AssignForm({ onAssign, pending }: { onAssign: (p: { agencyCode: string;
           </Select>
         </div>
         <div className="space-y-1">
-          <Label htmlFor="asg-role" className="text-[0.65rem]">Role</Label>
+          <Label htmlFor="asg-role" className="text-[0.7rem]">Role</Label>
           <Select value={role} onValueChange={setRole}>
             <SelectTrigger id="asg-role" className="h-8 w-32 bg-ink-900 border-border text-xs" aria-label="Role"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -940,7 +940,7 @@ function VerificationStepper({ stages }: { stages: string[] }) {
               >
                 {done && <span className="size-1.5 rounded-full bg-ink-950" />}
               </span>
-              <span className={cn("micro-label text-[0.6rem]! text-center leading-tight", done ? "text-verified" : current ? "text-water" : "text-muted-foreground")}>
+              <span className={cn("micro-label text-[0.7rem]! text-center leading-tight", done ? "text-verified" : current ? "text-water" : "text-muted-foreground")}>
                 {s.toLowerCase().replace(/_/g, " ")}
               </span>
             </div>
@@ -965,12 +965,12 @@ function VerificationTimeline({ verifications }: { verifications: D["event"]["ve
           <span className={cn("absolute left-0 top-1 size-2.5 rounded-full", v.stage === "VERIFIED" || v.stage === "CLOSED" ? "bg-verified" : "bg-water-dim")} aria-hidden />
           {i < verifications.length - 1 && <span className="absolute left-[4.5px] top-3.5 bottom-0 w-px bg-border" aria-hidden />}
           <div className="flex items-baseline gap-2 flex-wrap">
-            <span className="micro-label text-[0.6rem]!">{v.stage.toLowerCase().replace(/_/g, " ")}</span>
-            <span className="text-[0.62rem] text-muted-foreground">{v.verifiedBy.toLowerCase()} · {fmtDateTime(v.verifiedAt)}</span>
+            <span className="micro-label text-[0.7rem]!">{v.stage.toLowerCase().replace(/_/g, " ")}</span>
+            <span className="text-[0.7rem] text-muted-foreground">{v.verifiedBy.toLowerCase()} · {fmtDateTime(v.verifiedAt)}</span>
           </div>
           {v.notes && <p className="mt-0.5 text-xs text-slate-600">{v.notes}</p>}
           {(v.waterDepthCm != null || v.observedSeverity) && (
-            <p className="mt-0.5 text-[0.65rem] data-mono text-muted-foreground">
+            <p className="mt-0.5 text-[0.7rem] data-mono text-muted-foreground">
               {v.waterDepthCm != null && <>depth {v.waterDepthCm}cm </>}
               {v.observedSeverity && <>· observed {v.observedSeverity.toLowerCase()}</>}
             </p>
@@ -1018,7 +1018,7 @@ function VerificationForms({ event, onVerify, onReopen, pending }: {
       <p className="micro-label mb-2">Record Verification Stage</p>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         <div className="space-y-1">
-          <Label className="text-[0.65rem]">Stage</Label>
+          <Label className="text-[0.7rem]">Stage</Label>
           <Select value={stage} onValueChange={setStage}>
             <SelectTrigger className="h-8 bg-ink-900 border-border text-xs" aria-label="Stage"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -1029,7 +1029,7 @@ function VerificationForms({ event, onVerify, onReopen, pending }: {
           </Select>
         </div>
         <div className="space-y-1">
-          <Label className="text-[0.65rem]">Observed Severity</Label>
+          <Label className="text-[0.7rem]">Observed Severity</Label>
           <Select value={observedSeverity} onValueChange={setObservedSeverity}>
             <SelectTrigger className="h-8 bg-ink-900 border-border text-xs" aria-label="Observed severity"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -1038,7 +1038,7 @@ function VerificationForms({ event, onVerify, onReopen, pending }: {
           </Select>
         </div>
         <div className="space-y-1">
-          <Label htmlFor="vf-depth" className="text-[0.65rem]">Water depth (cm)</Label>
+          <Label htmlFor="vf-depth" className="text-[0.7rem]">Water depth (cm)</Label>
           <Input id="vf-depth" inputMode="numeric" value={depth} onChange={(e) => setDepth(e.target.value.replace(/\D/g, ""))} placeholder="e.g. 35" className="h-8 bg-ink-900 border-border text-xs" maxLength={3} />
         </div>
         <div className="space-y-1 self-end">
@@ -1055,7 +1055,7 @@ function VerificationForms({ event, onVerify, onReopen, pending }: {
         </div>
       </div>
       <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="field notes (optional)" className="mt-2.5 bg-ink-900 border-border text-xs" maxLength={600} aria-label="Field notes" />
-      <p className="mt-1.5 text-[0.62rem] text-muted-foreground">
+      <p className="mt-1.5 text-[0.7rem] text-muted-foreground">
         Next expected stage: <span className="text-water">{effectiveStage.toLowerCase().replace(/_/g, " ")}</span>. Stages must be recorded in order.
       </p>
     </div>
@@ -1078,8 +1078,8 @@ function AuditTab({ d }: { d: D }) {
                   <li className="relative pl-5 py-2 hairline-b last:border-0 card-hover">
                     <span className={cn("absolute left-0 top-3.5 size-1.5 rounded-full", a.actor === "SYSTEM" ? "bg-muted-foreground" : a.actor === "CITIZEN" ? "bg-water-dim" : "bg-sev-moderate")} aria-hidden />
                     <div className="flex items-baseline gap-2 flex-wrap">
-                      <span className="data-mono text-[0.65rem] text-water">{a.action}</span>
-                      <span className="micro-label text-[0.6rem]!">{a.actor.toLowerCase()}</span>
+                      <span className="data-mono text-[0.7rem] text-water">{a.action}</span>
+                      <span className="micro-label text-[0.7rem]!">{a.actor.toLowerCase()}</span>
                       <span className="ml-auto"><TimeAgo iso={a.at} /></span>
                     </div>
                     {a.note && <p className="text-xs text-muted-foreground mt-0.5">{a.note}</p>}
@@ -1104,13 +1104,13 @@ function ChainLevel({ level, label, detail, asset, status, source }: {
       <span className={cn("absolute left-0 top-1.5 size-2 rounded-full", level === "ESCALATION" ? "bg-sev-critical" : level === "SUPPORT" ? "bg-sev-moderate" : level === "PRIMARY" || level === "AGENCY" ? "bg-water" : "bg-muted-foreground")} aria-hidden />
       <span className="absolute left-1 top-4.5 bottom-0 w-px bg-border" aria-hidden />
       <div className="flex items-baseline gap-2 flex-wrap">
-        <span className="micro-label text-[0.6rem]!">{level.toLowerCase()}</span>
+        <span className="micro-label text-[0.7rem]!">{level.toLowerCase()}</span>
         <span className="data-mono text-xs font-semibold text-foreground">{label}</span>
-        {status && <span className="micro-label text-[0.6rem]! text-muted-foreground">{status.toLowerCase()}</span>}
-        {source && <span className="micro-label text-[0.6rem]! text-muted-foreground">via {source.toLowerCase()}</span>}
+        {status && <span className="micro-label text-[0.7rem]! text-muted-foreground">{status.toLowerCase()}</span>}
+        {source && <span className="micro-label text-[0.7rem]! text-muted-foreground">via {source.toLowerCase()}</span>}
       </div>
       <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{detail}</p>
-      {asset && <p className="text-[0.65rem] text-muted-foreground mt-0.5">asset: {asset}</p>}
+      {asset && <p className="text-[0.7rem] text-muted-foreground mt-0.5">asset: {asset}</p>}
     </li>
   );
 }
@@ -1118,7 +1118,7 @@ function ChainLevel({ level, label, detail, asset, status, source }: {
 function Readout({ label, value, tone }: { label: string; value: React.ReactNode; tone?: string }) {
   return (
     <div className="rounded-lg border border-border/70 bg-slate-50 px-3 py-2">
-      <p className="micro-label text-[0.6rem]!">{label}</p>
+      <p className="micro-label text-[0.7rem]!">{label}</p>
       <p className={cn("data-mono text-sm mt-0.5", tone ?? "text-foreground")}>{value}</p>
     </div>
   );

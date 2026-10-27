@@ -16,7 +16,7 @@ const ViewSkeleton = () => (
       <div className="h-5 w-48 max-w-[60vw] rounded-lg shimmer" />
       <div className="mt-2 h-3 w-72 max-w-[80vw] rounded shimmer" />
     </div>
-    <div className="flex-1 grid place-items-center p-4 sm:p-6 bg-grid-faint">
+    <div className="flex-1 grid place-items-center p-4 sm:p-6">
       <div className="w-full max-w-md space-y-3">
         <div className="h-24 rounded-xl shimmer" />
         <div className="h-24 rounded-xl shimmer" />
@@ -100,8 +100,7 @@ function AppFooter() {
   });
   return (
     <footer className="mt-auto hairline-t bg-ink-900/60">
-      <div aria-hidden className="aurora-band" />
-      <div className="px-3 sm:px-4 lg:px-6 py-3 flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-2 text-[0.65rem] text-muted-foreground">
+      <div className="px-3 sm:px-4 lg:px-6 py-3 flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-2 text-[0.7rem] text-muted-foreground">
         <span className="hidden sm:flex items-center gap-2">
           <BrandLockupLight compact />
         </span>
@@ -110,15 +109,15 @@ function AppFooter() {
           <span className="font-display font-bold text-foreground text-xs">JalSetu</span>
         </span>
         <span className="hidden md:inline text-slate-600 font-medium">Urban Event Intelligence · Delhi pilot</span>
-        <span className="text-slate-600 hidden xs:inline text-[0.62rem] leading-tight">Research prototype · synthetic demo data · not a deployed government system</span>
-        <span className="xs:hidden text-slate-600 text-[0.62rem]">Synthetic demo · not live</span>
+        <span className="text-slate-600 hidden xs:inline text-[0.7rem] leading-tight">Research prototype · synthetic demo data · not a deployed government system</span>
+        <span className="xs:hidden text-slate-600 text-[0.7rem]">Synthetic demo · not live</span>
         {data && (
-          <span className="data-mono ml-auto hidden lg:inline text-slate-600 text-[0.62rem] break-safe">
+          <span className="data-mono ml-auto hidden lg:inline text-slate-600 text-[0.7rem] break-safe">
             {data.riskEngine} · {data.classification} · {data.routingRules}
           </span>
         )}
       </div>
-      <nav aria-label="Footer" className="px-3 sm:px-4 lg:px-6 pb-3 sm:pb-3 flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1.5 text-[0.62rem]">
+      <nav aria-label="Footer" className="px-3 sm:px-4 lg:px-6 pb-3 sm:pb-3 flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1.5 text-[0.7rem]">
         <FooterLink href="#/map" label="Waterlogging Map" />
         <FooterLink href="#/report" label="Report An Issue" />
         <FooterLink href="#/verify" label="Field Verification" />
